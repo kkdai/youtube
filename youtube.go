@@ -20,7 +20,7 @@ func NewYoutube() *Youtube {
 type stream map[string]string
 
 type Youtube struct {
-	streamList []stream
+	StreamList []stream
 	videoID    string
 	videoInfo  string
 }
