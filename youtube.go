@@ -46,7 +46,7 @@ func (y *Youtube) DecodeURL(url string) error {
 
 func (y *Youtube) StartDownload(dstDir string) {
 	//download highest resolution on [0]
-	targetStream := y.streamList[0]
+	targetStream := y.StreamList[0]
 	url := targetStream["url"] + "&signature=" + targetStream["sig"]
 	log.Println("Download url=", url)
 
@@ -116,7 +116,7 @@ func (y *Youtube) parseVideoInfo() error {
 		log.Printf("Stream found: quality '%s', format '%s'", stream_qry["quality"][0], stream_qry["type"][0])
 	}
 
-	y.streamList = streams
+	y.StreamList = streams
 	return nil
 }
 
