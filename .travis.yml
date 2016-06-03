@@ -1,15 +1,10 @@
 language: go
 
 go:
-    - 1.5
+    - 1.6
     - tip
 
 before_install:
-    - go get golang.org/x/tools/cmd/cover
-    - go get golang.org/x/tools/cmd/vet
-    - go get golang.org/x/tools/cmd/goimports
-    - go get github.com/golang/lint/golint
-    - go get github.com/mattn/goveralls
 
 script:
     - go vet ./...
