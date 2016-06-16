@@ -44,7 +44,7 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
-func (y *Youtube) StartDownload(dstDir string) {
+func (y *Youtube) StartDownload(dstDir string) error {
 	//download highest resolution on [0]
 	targetStream := y.StreamList[0]
 	url := targetStream["url"] + "&signature=" + targetStream["sig"]
@@ -53,7 +53,8 @@ func (y *Youtube) StartDownload(dstDir string) {
 	targetFile := fmt.Sprintf("%s/%s.%s", dstDir, targetStream["title"], "mp4")
 	//targetStream["title"], targetStream["author"])
 	log.Println("Download to file=", targetFile)
-	videoDLWorker(targetFile, url)
+	err := videoDLWorker(targetFile, url)
+	return err
 }
 
 func (y *Youtube) parseVideoInfo() error {
@@ -165,21 +166,26 @@ func (y *Youtube) findVideoId(url string) error {
 	return nil
 }
 
-func videoDLWorker(destFile string, target string) {
+func videoDLWorker(destFile string, target string) error {
 	resp, err := http.Get(target)
 	if err != nil {
 		log.Printf("Http.Get\nerror: %s\ntarget: %s\n", err, target)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		log.Printf("reading answer: non 200 status code received: '%s'", err)
+		return errors.New("non 200 status code received")
 	}
 	out, err := os.Create(destFile)
+	if err != nil {
+		return err
+	}
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		log.Println("download video err=", err)
-		return
+		return err
 	}
+	return nil
 }
