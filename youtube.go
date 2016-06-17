@@ -50,7 +50,7 @@ func (y *Youtube) StartDownload(dstDir string) error {
 	url := targetStream["url"] + "&signature=" + targetStream["sig"]
 	log.Println("Download url=", url)
 
-	targetFile := fmt.Sprintf("%s/%s.%s", dstDir, targetStream["title"], "mp4")
+	targetFile := fmt.Sprintf("%s%v%s.%s", dstDir, os.PathSeparator, targetStream["title"], "mp4")
 	//targetStream["title"], targetStream["author"])
 	log.Println("Download to file=", targetFile)
 	err := videoDLWorker(targetFile, url)
