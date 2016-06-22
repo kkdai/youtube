@@ -13,6 +13,10 @@ import (
 	"strings"
 )
 
+func setLogOutput(w io.Writer) {
+	log.SetOutput(w)
+}
+
 func NewYoutube() *Youtube {
 	return new(Youtube)
 }
