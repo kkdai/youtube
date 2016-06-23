@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func setLogOutput(w io.Writer) {
+func SetLogOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
@@ -24,9 +24,13 @@ func NewYoutube() *Youtube {
 type stream map[string]string
 
 type Youtube struct {
-	StreamList []stream
-	videoID    string
-	videoInfo  string
+	StreamList        []stream
+	VideoID           string
+	videoInfo         string
+	DownloadPercent   chan int64
+	contentLength     float64
+	totalWrittenBytes float64
+	downloadLevel     float64
 }
 
 func (y *Youtube) DecodeURL(url string) error {
@@ -49,6 +53,7 @@ func (y *Youtube) DecodeURL(url string) error {
 }
 
 func (y *Youtube) StartDownload(dstDir string) error {
+	y.DownloadPercent = make(chan int64, 100)
 	//download highest resolution on [0]
 	targetStream := y.StreamList[0]
 	url := targetStream["url"] + "&signature=" + targetStream["sig"]
@@ -57,7 +62,7 @@ func (y *Youtube) StartDownload(dstDir string) error {
 	targetFile := fmt.Sprintf("%s%c%s.%s", dstDir, os.PathSeparator, targetStream["title"], "mp4")
 	//targetStream["title"], targetStream["author"])
 	log.Println("Download to file=", targetFile)
-	err := videoDLWorker(targetFile, url)
+	err := y.videoDLWorker(targetFile, url)
 	return err
 }
 
@@ -126,7 +131,7 @@ func (y *Youtube) parseVideoInfo() error {
 }
 
 func (y *Youtube) getVideoInfo() error {
-	url := "http://youtube.com/get_video_info?video_id=" + y.videoID
+	url := "http://youtube.com/get_video_info?video_id=" + y.VideoID
 	log.Printf("url: %s", url)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -160,7 +165,7 @@ func (y *Youtube) findVideoId(url string) error {
 		}
 	}
 	log.Printf("Found video id: '%s'", videoId)
-	y.videoID = videoId
+	y.VideoID = videoId
 	if strings.ContainsAny(videoId, "?&/<%=") {
 		return errors.New("invalid characters in video id")
 	}
@@ -170,13 +175,24 @@ func (y *Youtube) findVideoId(url string) error {
 	return nil
 }
 
-func videoDLWorker(destFile string, target string) error {
+func (y *Youtube) Write(p []byte) (n int, err error) {
+	n = len(p)
+	y.totalWrittenBytes = y.totalWrittenBytes + float64(n)
+	currentPercent := ((y.totalWrittenBytes / y.contentLength) * 100)
+	if (y.downloadLevel <= currentPercent) && (y.downloadLevel < 100) {
+		y.downloadLevel++
+		y.DownloadPercent <- int64(y.downloadLevel)
+	}
+	return
+}
+func (y *Youtube) videoDLWorker(destFile string, target string) error {
 	resp, err := http.Get(target)
 	if err != nil {
 		log.Printf("Http.Get\nerror: %s\ntarget: %s\n", err, target)
 		return err
 	}
 	defer resp.Body.Close()
+	y.contentLength = float64(resp.ContentLength)
 
 	if resp.StatusCode != 200 {
 		log.Printf("reading answer: non 200 status code received: '%s'", err)
@@ -186,7 +202,8 @@ func videoDLWorker(destFile string, target string) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(out, resp.Body)
+	mw := io.MultiWriter(out, y)
+	_, err = io.Copy(mw, resp.Body)
 	if err != nil {
 		log.Println("download video err=", err)
 		return err
