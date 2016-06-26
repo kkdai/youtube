@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -52,17 +53,14 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
-func (y *Youtube) StartDownload(dstDir string) error {
-	// y.DownloadPercent = make(chan int64, 100)
+func (y *Youtube) StartDownload(destFile string) error {
 	//download highest resolution on [0]
 	targetStream := y.StreamList[0]
 	url := targetStream["url"] + "&signature=" + targetStream["sig"]
 	log.Println("Download url=", url)
 
-	targetFile := fmt.Sprintf("%s%c%s.%s", dstDir, os.PathSeparator, targetStream["title"], "mp4")
-	//targetStream["title"], targetStream["author"])
-	log.Println("Download to file=", targetFile)
-	err := y.videoDLWorker(targetFile, url)
+	log.Println("Download to file=", destFile)
+	err := y.videoDLWorker(destFile, url)
 	return err
 }
 
@@ -195,8 +193,12 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 	y.contentLength = float64(resp.ContentLength)
 
 	if resp.StatusCode != 200 {
-		log.Printf("reading answer: non 200 status code received: '%s'", err)
+		log.Printf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err)
 		return errors.New("non 200 status code received")
+	}
+	err = os.MkdirAll(filepath.Dir(destFile), 666)
+	if err != nil {
+		return err
 	}
 	out, err := os.Create(destFile)
 	if err != nil {
