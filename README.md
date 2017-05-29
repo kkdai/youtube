@@ -21,7 +21,7 @@ How it works
 	- Need sinature in "sig="
 - Download video from URL
 	- Need the string combination of "url+sig"
- 
+
 Install
 ---------------
 `go get github.com/kkdai/youtube`
@@ -44,11 +44,13 @@ import (
 )
 
 func main() {
-	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	log.Println("download to dir=", currentDir)
-	y := NewYoutube()
+	currentFile, _ := filepath.Abs(os.Args[0])
+	log.Println("download to file=", currentFile)
+
+	// NewYoutube(debug) if debug parameter will set true we can log of messages
+	y := NewYoutube(true)
 	y.DecodeURL("https://www.youtube.com/watch?v=rFejpH_tAHM")
-	y.StartDownload(currentDir)
+	y.StartDownload(currentFile)
 }
 ```
 
@@ -79,4 +81,3 @@ License
 ---------------
 
 This package is licensed under MIT license. See LICENSE for details.
-
