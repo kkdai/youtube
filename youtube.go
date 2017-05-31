@@ -18,13 +18,14 @@ func SetLogOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
-func NewYoutube() *Youtube {
-	return &Youtube{DownloadPercent: make(chan int64, 100)}
+func NewYoutube(debug bool) *Youtube {
+	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
 }
 
 type stream map[string]string
 
 type Youtube struct {
+	DebugMode         bool
 	StreamList        []stream
 	VideoID           string
 	videoInfo         string
@@ -57,9 +58,9 @@ func (y *Youtube) StartDownload(destFile string) error {
 	//download highest resolution on [0]
 	targetStream := y.StreamList[0]
 	url := targetStream["url"] + "&signature=" + targetStream["sig"]
-	log.Println("Download url=", url)
+	y.log(fmt.Sprintln("Download url=", url))
 
-	log.Println("Download to file=", destFile)
+	y.log(fmt.Sprintln("Download to file=", destFile))
 	err := y.videoDLWorker(destFile, url)
 	return err
 }
@@ -97,14 +98,13 @@ func (y *Youtube) parseVideoInfo() error {
 	}
 
 	// read each stream
-
 	streams_list := strings.Split(stream_map[0], ",")
 
 	var streams []stream
 	for stream_pos, stream_raw := range streams_list {
 		stream_qry, err := url.ParseQuery(stream_raw)
 		if err != nil {
-			log.Println(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", stream_pos, err))
+			log.Printf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", stream_pos, err)
 			continue
 		}
 		var sig string
@@ -112,16 +112,15 @@ func (y *Youtube) parseVideoInfo() error {
 			sig = stream_qry["sig"][0]
 		}
 
-		stream := stream{
+		streams = append(streams, stream{
 			"quality": stream_qry["quality"][0],
 			"type":    stream_qry["type"][0],
 			"url":     stream_qry["url"][0],
 			"sig":     sig,
 			"title":   answer["title"][0],
 			"author":  answer["author"][0],
-		}
-		streams = append(streams, stream)
-		log.Printf("Stream found: quality '%s', format '%s'", stream_qry["quality"][0], stream_qry["type"][0])
+		})
+		y.log(fmt.Sprintf("Stream found: quality '%s', format '%s'", stream_qry["quality"][0], stream_qry["type"][0]))
 	}
 
 	y.StreamList = streams
@@ -130,7 +129,7 @@ func (y *Youtube) parseVideoInfo() error {
 
 func (y *Youtube) getVideoInfo() error {
 	url := "http://youtube.com/get_video_info?video_id=" + y.VideoID
-	log.Printf("url: %s", url)
+	y.log(fmt.Sprintf("url: %s", url))
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -211,4 +210,10 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		return err
 	}
 	return nil
+}
+
+func (y *Youtube) log(logText string) {
+	if y.DebugMode {
+		log.Println(logText)
+	}
 }
