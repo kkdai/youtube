@@ -36,9 +36,9 @@ type Youtube struct {
 }
 
 func (y *Youtube) DecodeURL(url string) error {
-	err := y.findVideoId(url)
+	err := y.findVideoID(url)
 	if err != nil {
-		return fmt.Errorf("findvideoID error=%s", err)
+		return fmt.Errorf("findVideoID error=%s", err)
 	}
 
 	err = y.getVideoInfo()
@@ -91,36 +91,36 @@ func (y *Youtube) parseVideoInfo() error {
 	}
 
 	// read the streams map
-	stream_map, ok := answer["url_encoded_fmt_stream_map"]
+	streamMap, ok := answer["url_encoded_fmt_streamMap"]
 	if !ok {
 		err = errors.New(fmt.Sprint("no stream map found in the server's answer"))
 		return err
 	}
 
 	// read each stream
-	streams_list := strings.Split(stream_map[0], ",")
+	streamsList := strings.Split(streamMap[0], ",")
 
 	var streams []stream
-	for stream_pos, stream_raw := range streams_list {
-		stream_qry, err := url.ParseQuery(stream_raw)
+	for streamPos, streamRaw := range streamsList {
+		streamQry, err := url.ParseQuery(streamRaw)
 		if err != nil {
-			log.Printf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", stream_pos, err)
+			log.Printf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", streamPos, err)
 			continue
 		}
 		var sig string
-		if _, exist := stream_qry["sig"]; exist {
-			sig = stream_qry["sig"][0]
+		if _, exist := streamQry["sig"]; exist {
+			sig = streamQry["sig"][0]
 		}
 
 		streams = append(streams, stream{
-			"quality": stream_qry["quality"][0],
-			"type":    stream_qry["type"][0],
-			"url":     stream_qry["url"][0],
+			"quality": streamQry["quality"][0],
+			"type":    streamQry["type"][0],
+			"url":     streamQry["url"][0],
 			"sig":     sig,
 			"title":   answer["title"][0],
 			"author":  answer["author"][0],
 		})
-		y.log(fmt.Sprintf("Stream found: quality '%s', format '%s'", stream_qry["quality"][0], stream_qry["type"][0]))
+		y.log(fmt.Sprintf("Stream found: quality '%s', format '%s'", streamQry["quality"][0], streamQry["type"][0]))
 	}
 
 	y.StreamList = streams
@@ -146,27 +146,27 @@ func (y *Youtube) getVideoInfo() error {
 	return nil
 }
 
-func (y *Youtube) findVideoId(url string) error {
-	videoId := url
-	if strings.Contains(videoId, "youtu") || strings.ContainsAny(videoId, "\"?&/<%=") {
-		re_list := []*regexp.Regexp{
+func (y *Youtube) findVideoID(url string) error {
+	videoID := url
+	if strings.Contains(videoID, "youtu") || strings.ContainsAny(videoID, "\"?&/<%=") {
+		reList := []*regexp.Regexp{
 			regexp.MustCompile(`(?:v|embed|watch\?v)(?:=|/)([^"&?/=%]{11})`),
 			regexp.MustCompile(`(?:=|/)([^"&?/=%]{11})`),
 			regexp.MustCompile(`([^"&?/=%]{11})`),
 		}
-		for _, re := range re_list {
-			if is_match := re.MatchString(videoId); is_match {
-				subs := re.FindStringSubmatch(videoId)
-				videoId = subs[1]
+		for _, re := range reList {
+			if isMatch := re.MatchString(videoID); isMatch {
+				subs := re.FindStringSubmatch(videoID)
+				videoID = subs[1]
 			}
 		}
 	}
-	log.Printf("Found video id: '%s'", videoId)
-	y.VideoID = videoId
-	if strings.ContainsAny(videoId, "?&/<%=") {
+	log.Printf("Found video id: '%s'", videoID)
+	y.VideoID = videoID
+	if strings.ContainsAny(videoID, "?&/<%=") {
 		return errors.New("invalid characters in video id")
 	}
-	if len(videoId) < 10 {
+	if len(videoID) < 10 {
 		return errors.New("the video id must be at least 10 characters long")
 	}
 	return nil
