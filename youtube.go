@@ -27,7 +27,7 @@ type stream map[string]string
 type Youtube struct {
 	DebugMode         bool
 	StreamList        []stream
-	videoID           string
+	VideoID           string
 	videoInfo         string
 	DownloadPercent   chan int64
 	contentLength     float64
@@ -36,9 +36,9 @@ type Youtube struct {
 }
 
 func (y *Youtube) DecodeURL(url string) error {
-	err := y.findvideoID(url)
+	err := y.findVideoID(url)
 	if err != nil {
-		return fmt.Errorf("findvideoID error=%s", err)
+		return fmt.Errorf("findVideoID error=%s", err)
 	}
 
 	err = y.getVideoInfo()
@@ -128,7 +128,7 @@ func (y *Youtube) parseVideoInfo() error {
 }
 
 func (y *Youtube) getVideoInfo() error {
-	url := "http://youtube.com/get_video_info?video_id=" + y.videoID
+	url := "http://youtube.com/get_video_info?video_id=" + y.VideoID
 	y.log(fmt.Sprintf("url: %s", url))
 	resp, err := http.Get(url)
 	if err != nil {
@@ -146,7 +146,7 @@ func (y *Youtube) getVideoInfo() error {
 	return nil
 }
 
-func (y *Youtube) findvideoID(url string) error {
+func (y *Youtube) findVideoID(url string) error {
 	videoID := url
 	if strings.Contains(videoID, "youtu") || strings.ContainsAny(videoID, "\"?&/<%=") {
 		reList := []*regexp.Regexp{
@@ -162,7 +162,7 @@ func (y *Youtube) findvideoID(url string) error {
 		}
 	}
 	log.Printf("Found video id: '%s'", videoID)
-	y.videoID = videoID
+	y.VideoID = videoID
 	if strings.ContainsAny(videoID, "?&/<%=") {
 		return errors.New("invalid characters in video id")
 	}
