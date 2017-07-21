@@ -91,7 +91,7 @@ func (y *Youtube) parseVideoInfo() error {
 	}
 
 	// read the streams map
-	streamMap, ok := answer["url_encoded_fmt_streamMap"]
+	streamMap, ok := answer["url_encoded_fmt_stream_map"]
 	if !ok {
 		err = errors.New(fmt.Sprint("no stream map found in the server's answer"))
 		return err
