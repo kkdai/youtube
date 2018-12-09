@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
-	"os"
+	"os/user"
 	"path/filepath"
 
 	. "github.com/kkdai/youtube"
@@ -12,10 +13,15 @@ import (
 func main() {
 	flag.Parse()
 	log.Println(flag.Args())
-	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	usr, _ := user.Current()
+	currentDir := fmt.Sprintf("%v/Movies/youtubedr", usr.HomeDir)
 	log.Println("download to dir=", currentDir)
 	y := NewYoutube(true)
 	arg := flag.Arg(0)
-	y.DecodeURL(arg)
-	y.StartDownload(currentDir)
+	if err := y.DecodeURL(arg); err != nil {
+		fmt.Println("err:", err)
+	}
+	if err := y.StartDownload(filepath.Join(currentDir, "dl.mp4")); err != nil {
+		fmt.Println("err:", err)
+	}
 }

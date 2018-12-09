@@ -195,7 +195,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		log.Printf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err)
 		return errors.New("non 200 status code received")
 	}
-	err = os.MkdirAll(filepath.Dir(destFile), 666)
+	err = os.MkdirAll(filepath.Dir(destFile), 0755)
 	if err != nil {
 		return err
 	}
