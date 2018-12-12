@@ -20,6 +20,7 @@ func main() {
 	arg := flag.Arg(0)
 	if err := y.DecodeURL(arg); err != nil {
 		fmt.Println("err:", err)
+		return
 	}
 	if err := y.StartDownload(filepath.Join(currentDir, "dl.mp4")); err != nil {
 		fmt.Println("err:", err)
