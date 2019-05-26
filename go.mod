@@ -1,3 +1,3 @@
-module github.com/kkdai/bstream
+module github.com/kkdai/youtube
 
 go 1.6
