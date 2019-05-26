@@ -6,9 +6,8 @@ go:
 
 before_install:
 
+env:
+    - GO111MODULE=on
+
 script:
     - go vet ./...
-#    - $HOME/gopath/bin/goveralls -coverprofile=coverage.cov -service=travis-ci
-#    - bash <(curl -s https://codecov.io/bash)
-#- go test -bench=. -benchmem ./...
-    #- sh ./install_all_cmd.sh
