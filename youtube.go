@@ -14,10 +14,12 @@ import (
 	"strings"
 )
 
+//SetLogOutput :Set logger writer
 func SetLogOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
+//NewYoutube :Initialize youtube package object
 func NewYoutube(debug bool) *Youtube {
 	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
 }
@@ -54,6 +56,7 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
+//StartDownload : Starting download video to specific address.
 func (y *Youtube) StartDownload(destFile string) error {
 	//download highest resolution on [0]
 	var err error
@@ -117,13 +120,23 @@ func (y *Youtube) parseVideoInfo() error {
 			sig = streamQry["sig"][0]
 		}
 
+		var title string
+		var author string
+
+		if len(answer["title"]) > 0 {
+			title = answer["title"][0]
+		}
+		if len(answer["author"]) > 0 {
+			author = answer["author"][0]
+		}
+
 		streams = append(streams, stream{
 			"quality": streamQry["quality"][0],
 			"type":    streamQry["type"][0],
 			"url":     streamQry["url"][0],
 			"sig":     sig,
-			"title":   answer["title"][0],
-			"author":  answer["author"][0],
+			"title":   title,
+			"author":  author,
 		})
 		y.log(fmt.Sprintf("Stream found: quality '%s', format '%s'", streamQry["quality"][0], streamQry["type"][0]))
 	}
