@@ -37,6 +37,7 @@ type Youtube struct {
 	downloadLevel     float64
 }
 
+//DecodeURL : Decode youtube URL to retrieval video information.
 func (y *Youtube) DecodeURL(url string) error {
 	err := y.findVideoID(url)
 	if err != nil {
