@@ -62,7 +62,7 @@ func (y *Youtube) StartDownload(destFile string) error {
 	//download highest resolution on [0]
 	var err error
 	for _, v := range y.StreamList {
-		url := v["url"] + "&signature=" + v["sig"]
+		url := v["url"]
 		y.log(fmt.Sprintln("Download url=", url))
 
 		y.log(fmt.Sprintln("Download to file=", destFile))
@@ -116,10 +116,6 @@ func (y *Youtube) parseVideoInfo() error {
 			log.Printf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", streamPos, err)
 			continue
 		}
-		var sig string
-		if _, exist := streamQry["sig"]; exist {
-			sig = streamQry["sig"][0]
-		}
 
 		var title string
 		var author string
@@ -135,7 +131,7 @@ func (y *Youtube) parseVideoInfo() error {
 			"quality": streamQry["quality"][0],
 			"type":    streamQry["type"][0],
 			"url":     streamQry["url"][0],
-			"sig":     sig,
+
 			"title":   title,
 			"author":  author,
 		})
