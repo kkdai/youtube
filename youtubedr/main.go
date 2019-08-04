@@ -25,7 +25,7 @@ func main() {
 	flag.StringVar(&outputFile, "o", "dl.mp4", "The output file")
 	var outputDir string
 	flag.StringVar(&outputDir, "d",
-		filepath.Join(usr.HomeDir, "Movies", "yotubedr"),
+		filepath.Join(usr.HomeDir, "Movies", "youtubedr"),
 		"The output directory.")
 	flag.Parse()
 	log.Println(flag.Args())
