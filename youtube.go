@@ -117,6 +117,11 @@ func (y *Youtube) parseVideoInfo() error {
 			continue
 		}
 
+		if _, ok := streamQry["quality"]; !ok {
+			log.Printf("An empty video's stream's information: stream %d\n", streamPos)
+			continue
+		}
+
 		var title string
 		var author string
 
@@ -132,13 +137,16 @@ func (y *Youtube) parseVideoInfo() error {
 			"type":    streamQry["type"][0],
 			"url":     streamQry["url"][0],
 
-			"title":   title,
-			"author":  author,
+			"title":  title,
+			"author": author,
 		})
 		y.log(fmt.Sprintf("Stream found: quality '%s', format '%s'", streamQry["quality"][0], streamQry["type"][0]))
 	}
 
 	y.StreamList = streams
+	if len(y.StreamList) == 0 {
+		return errors.New(fmt.Sprint("no stream list found in the server's answer"))
+	}
 	return nil
 }
 
