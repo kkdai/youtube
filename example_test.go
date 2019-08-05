@@ -6,11 +6,12 @@ import (
 	"log"
 	"os/user"
 	"path/filepath"
+
 	. "github.com/kkdai/youtube"
 )
 
 //ExampleDownload : Example code for how to use this package for download video.
-func ExampleStartDownload() {
+func ExampleNewYoutube() {
 	flag.Parse()
 	log.Println(flag.Args())
 	usr, _ := user.Current()

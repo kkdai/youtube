@@ -1,7 +1,7 @@
 language: go
 
 go:
-    - 1.6
+    - "1.11"
     - tip
 
 before_install:
@@ -10,4 +10,5 @@ env:
     - GO111MODULE=on
 
 script:
+    - go test
     - go vet ./...
