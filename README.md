@@ -18,9 +18,8 @@ How it works
 - Parse and decode video information.
 	- Download URL in "url="
 	- title in "title="
-	- Need sinature in "sig="
 - Download video from URL
-	- Need the string combination of "url+sig"
+	- Need the string combination of "url"
 
 Install
 ---------------
