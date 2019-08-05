@@ -60,7 +60,7 @@ func (y *Youtube) DecodeURL(url string) error {
 //StartDownload : Starting download video to specific address.
 func (y *Youtube) StartDownload(destFile string) error {
 	//download highest resolution on [0]
-	var err error
+	err := errors.New("Empty stream list")
 	for _, v := range y.StreamList {
 		url := v["url"]
 		y.log(fmt.Sprintln("Download url=", url))
@@ -113,12 +113,12 @@ func (y *Youtube) parseVideoInfo() error {
 	for streamPos, streamRaw := range streamsList {
 		streamQry, err := url.ParseQuery(streamRaw)
 		if err != nil {
-			log.Printf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", streamPos, err)
+			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", streamPos, err))
 			continue
 		}
 
 		if _, ok := streamQry["quality"]; !ok {
-			log.Printf("An empty video's stream's information: stream %d\n", streamPos)
+			y.log(fmt.Sprintf("An empty video's stream's information: stream %d\n", streamPos))
 			continue
 		}
 
@@ -184,7 +184,7 @@ func (y *Youtube) findVideoID(url string) error {
 			}
 		}
 	}
-	log.Printf("Found video id: '%s'", videoID)
+	y.log(fmt.Sprintf("Found video id: '%s'", videoID))
 	y.VideoID = videoID
 	if strings.ContainsAny(videoID, "?&/<%=") {
 		return errors.New("invalid characters in video id")
@@ -208,14 +208,14 @@ func (y *Youtube) Write(p []byte) (n int, err error) {
 func (y *Youtube) videoDLWorker(destFile string, target string) error {
 	resp, err := http.Get(target)
 	if err != nil {
-		log.Printf("Http.Get\nerror: %s\ntarget: %s\n", err, target)
+		y.log(fmt.Sprintf("Http.Get\nerror: %s\ntarget: %s\n", err, target))
 		return err
 	}
 	defer resp.Body.Close()
 	y.contentLength = float64(resp.ContentLength)
 
 	if resp.StatusCode != 200 {
-		log.Printf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err)
+		y.log(fmt.Sprintf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err))
 		return errors.New("non 200 status code received")
 	}
 	err = os.MkdirAll(filepath.Dir(destFile), 0755)
@@ -229,7 +229,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 	mw := io.MultiWriter(out, y)
 	_, err = io.Copy(mw, resp.Body)
 	if err != nil {
-		log.Println("download video err=", err)
+		y.log(fmt.Sprintln("download video err=", err))
 		return err
 	}
 	return nil
