@@ -74,6 +74,28 @@ func (y *Youtube) StartDownload(destFile string) error {
 	return err
 }
 
+//StartDownloadWithQuality : Starting download video with specific quality.
+func (y *Youtube) StartDownloadWithQuality(destFile string, quality string) error {
+	//download highest resolution on [0]
+	err := errors.New("Empty stream list")
+	for _, v := range y.StreamList {
+		if strings.Compare(v["quality"], quality) == 0 {
+			url := v["url"]
+			y.log(fmt.Sprintln("Download url=", url))
+
+			y.log(fmt.Sprintln("Download to file=", destFile))
+			err = y.videoDLWorker(destFile, url)
+			if err == nil {
+				break
+			}
+		}
+	}
+
+	if err != nil {
+		return y.StartDownload(destFile)
+	}
+	return err
+}
 func (y *Youtube) parseVideoInfo() error {
 	answer, err := url.ParseQuery(y.videoInfo)
 	if err != nil {
