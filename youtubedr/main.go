@@ -27,7 +27,11 @@ func main() {
 	flag.StringVar(&outputDir, "d",
 		filepath.Join(usr.HomeDir, "Movies", "youtubedr"),
 		"The output directory.")
+
+	var outputQuality string
+	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
 	flag.Parse()
+
 	log.Println(flag.Args())
 	log.Println("download to dir=", outputDir)
 	y := NewYoutube(true)
@@ -36,7 +40,14 @@ func main() {
 		fmt.Println("err:", err)
 		return
 	}
-	if err := y.StartDownload(filepath.Join(outputDir, outputFile)); err != nil {
+	var err error
+	if len(outputQuality) > 0 {
+		err = y.StartDownloadWithQuality(filepath.Join(outputDir, outputFile), outputQuality)
+	} else {
+		err = y.StartDownload(filepath.Join(outputDir, outputFile))
+	}
+
+	if err != nil {
 		fmt.Println("err:", err)
 	}
 }
