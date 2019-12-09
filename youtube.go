@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -131,6 +132,10 @@ func (y *Youtube) parseVideoInfo() error {
 	// read each stream
 	streamsList := strings.Split(streamMap[0], ",")
 
+	// Get video title and author.
+	title, author := getVideoTitleAuthor(answer)
+
+	// Get video download link
 	var streams []stream
 	for streamPos, streamRaw := range streamsList {
 		streamQry, err := url.ParseQuery(streamRaw)
@@ -142,16 +147,6 @@ func (y *Youtube) parseVideoInfo() error {
 		if _, ok := streamQry["quality"]; !ok {
 			y.log(fmt.Sprintf("An empty video's stream's information: stream %d\n", streamPos))
 			continue
-		}
-
-		var title string
-		var author string
-
-		if len(answer["title"]) > 0 {
-			title = answer["title"][0]
-		}
-		if len(answer["author"]) > 0 {
-			author = answer["author"][0]
 		}
 
 		streams = append(streams, stream{
@@ -261,4 +256,24 @@ func (y *Youtube) log(logText string) {
 	if y.DebugMode {
 		log.Println(logText)
 	}
+}
+
+func getVideoTitleAuthor(in url.Values) (string, string) {
+	playResponse, ok := in["player_response"]
+	if !ok {
+		return "", ""
+	}
+	personMap := make(map[string]interface{})
+
+	if err := json.Unmarshal([]byte(playResponse[0]), &personMap); err != nil {
+		panic(err)
+	}
+
+	s := personMap["videoDetails"]
+	myMap := s.(map[string]interface{})
+	// fmt.Println("-->", myMap["title"], "oooo:", myMap["author"])
+	if title, ok := myMap["title"]; ok {
+		return title.(string), myMap["author"].(string)
+	}
+	return "", ""
 }
