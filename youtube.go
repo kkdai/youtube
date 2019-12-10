@@ -157,7 +157,7 @@ func (y *Youtube) parseVideoInfo() error {
 			"title":  title,
 			"author": author,
 		})
-		y.log(fmt.Sprintf("Stream found: quality '%s', format '%s'", streamQry["quality"][0], streamQry["type"][0]))
+		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s'", title, author, streamQry["quality"][0], streamQry["type"][0]))
 	}
 
 	y.StreamList = streams
@@ -273,7 +273,10 @@ func getVideoTitleAuthor(in url.Values) (string, string) {
 	myMap := s.(map[string]interface{})
 	// fmt.Println("-->", myMap["title"], "oooo:", myMap["author"])
 	if title, ok := myMap["title"]; ok {
-		return title.(string), myMap["author"].(string)
+		if author, ok := myMap["author"]; ok {
+			return title.(string), author.(string)
+		}
 	}
+
 	return "", ""
 }
