@@ -22,7 +22,7 @@ func main() {
 	}
 	usr, _ := user.Current()
 	var outputFile string
-	flag.StringVar(&outputFile, "o", "dl.mp4", "The output file")
+	flag.StringVar(&outputFile, "o", "", "The output file")
 	var outputDir string
 	flag.StringVar(&outputDir, "d",
 		filepath.Join(usr.HomeDir, "Movies", "youtubedr"),
@@ -43,6 +43,8 @@ func main() {
 	var err error
 	if len(outputQuality) > 0 {
 		err = y.StartDownloadWithQuality(filepath.Join(outputDir, outputFile), outputQuality)
+	} else if len(outputFile) == 0 {
+		err = y.StartDownloadFile()
 	} else {
 		err = y.StartDownload(filepath.Join(outputDir, outputFile))
 	}
