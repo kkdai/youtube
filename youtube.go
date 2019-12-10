@@ -190,7 +190,7 @@ func (y *Youtube) parseVideoInfo() error {
 }
 
 func (y *Youtube) getVideoInfo() error {
-	url := "http://youtube.com/get_video_info?video_id=" + y.VideoID
+	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID
 	y.log(fmt.Sprintf("url: %s", url))
 	resp, err := http.Get(url)
 	if err != nil {
