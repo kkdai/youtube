@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"golang.org/x/net/proxy"
 )
 
 //SetLogOutput :Set logger writer
@@ -26,6 +28,10 @@ func NewYoutube(debug bool) *Youtube {
 	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
 }
 
+func NewYoutubeWithSocks5Proxy(debug bool, socks5Proxy string) *Youtube {
+	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100), Socks5Proxy: socks5Proxy}
+}
+
 type stream map[string]string
 
 type Youtube struct {
@@ -34,6 +40,7 @@ type Youtube struct {
 	VideoID           string
 	videoInfo         string
 	DownloadPercent   chan int64
+	Socks5Proxy       string
 	contentLength     float64
 	totalWrittenBytes float64
 	downloadLevel     float64
@@ -189,10 +196,40 @@ func (y *Youtube) parseVideoInfo() error {
 	return nil
 }
 
+func (y *Youtube) getHTTPClient() (*http.Client, error) {
+
+	// setup a http client
+	httpTransport := &http.Transport{}
+	httpClient := &http.Client{Transport: httpTransport}
+
+	if len(y.Socks5Proxy) == 0 {
+		y.log("Using http without proxy.")
+		return httpClient, nil
+	}
+
+	dialer, err := proxy.SOCKS5("tcp", y.Socks5Proxy, nil, proxy.Direct)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
+		return nil, err
+	}
+	// set our socks5 as the dialer
+	httpTransport.Dial = dialer.Dial
+
+	y.log(fmt.Sprintf("Using http with proxy %s.", y.Socks5Proxy))
+
+	return httpClient, nil
+}
+
 func (y *Youtube) getVideoInfo() error {
 	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID
 	y.log(fmt.Sprintf("url: %s", url))
-	resp, err := http.Get(url)
+
+	httpClient, err := y.getHTTPClient()
+	if err != nil {
+		return err
+	}
+
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return err
 	}
@@ -245,7 +282,13 @@ func (y *Youtube) Write(p []byte) (n int, err error) {
 	return
 }
 func (y *Youtube) videoDLWorker(destFile string, target string) error {
-	resp, err := http.Get(target)
+
+	httpClient, err := y.getHTTPClient()
+	if err != nil {
+		return err
+	}
+
+	resp, err := httpClient.Get(target)
 	if err != nil {
 		y.log(fmt.Sprintf("Http.Get\nerror: %s\ntarget: %s\n", err, target))
 		return err
