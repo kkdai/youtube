@@ -30,11 +30,15 @@ func main() {
 
 	var outputQuality string
 	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
+
+	var socks5Proxy string
+	flag.StringVar(&socks5Proxy, "p", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
+
 	flag.Parse()
 
 	log.Println(flag.Args())
 	log.Println("download to dir=", outputDir)
-	y := NewYoutube(true)
+	y := NewYoutubeWithSocks5Proxy(true, socks5Proxy)
 	arg := flag.Arg(0)
 	if err := y.DecodeURL(arg); err != nil {
 		fmt.Println("err:", err)
