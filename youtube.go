@@ -150,10 +150,6 @@ func (y *Youtube) parseVideoInfo() error {
 		err = fmt.Errorf("non-success response status found in the server's answer (status: '%s')", status)
 		return err
 	}
-	// Parse answer
-	// for k, v := range answer {
-	// 	fmt.Println(" Key=", k, " Val=", v)
-	// }
 
 	// read the streams map
 	streamMap, ok := answer["player_response"]
