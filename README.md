@@ -77,6 +77,7 @@ Inspired
 - [https://github.com/ytdl-org/youtube-dl](https://github.com/ytdl-org/youtube-dl)
 - [https://github.com/lepidosteus/youtube-dl](https://github.com/lepidosteus/youtube-dl)
 - [拆解 Youtube 影片下載位置](http://hkgoldenmra.blogspot.tw/2013/05/youtube.html)
+- [iawia002/annie](https://github.com/iawia002/annie)
 
 Project52
 ---------------
