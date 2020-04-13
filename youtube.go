@@ -153,7 +153,7 @@ func (y *Youtube) parseVideoInfo() error {
 	// Parse answer
 	// for k, v := range answer {
 	// 	fmt.Println(" Key=", k, " Val=", v)
-	// } 	
+	// }
 
 	// read the streams map
 	streamMap, ok := answer["player_response"]
@@ -161,7 +161,7 @@ func (y *Youtube) parseVideoInfo() error {
 		err = errors.New(fmt.Sprint("no stream map found in the server's answer."))
 		return err
 	}
-	
+
 	// Get video title and author.
 	title, author := getVideoTitleAuthor(answer)
 
@@ -172,6 +172,13 @@ func (y *Youtube) parseVideoInfo() error {
 	}
 
 	// Get video download link
+	if prData.PlayabilityStatus.Status == "UNPLAYABLE" {
+		//Cannot playback on embedded video screen, could not download.
+		return errors.New(fmt.Sprint("Cannot playback and download, reason:", prData.PlayabilityStatus.Reason))
+	}
+
+	fmt.Println(">>>>>", len(prData.StreamingData.Formats), len(prData.StreamingData.AdaptiveFormats))
+	fmt.Println("<<<<<", status[0])
 	var streams []stream
 	for streamPos, streamRaw := range prData.StreamingData.Formats {
 
@@ -179,7 +186,7 @@ func (y *Youtube) parseVideoInfo() error {
 			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d.\n", streamPos))
 			continue
 		}
-		
+
 		streams = append(streams, stream{
 			"quality": streamRaw.Quality,
 			"type":    streamRaw.MimeType,
