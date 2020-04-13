@@ -150,43 +150,45 @@ func (y *Youtube) parseVideoInfo() error {
 		err = fmt.Errorf("non-success response status found in the server's answer (status: '%s')", status)
 		return err
 	}
+	// Parse answer
+	// for k, v := range answer {
+	// 	fmt.Println(" Key=", k, " Val=", v)
+	// } 	
 
 	// read the streams map
-	streamMap, ok := answer["url_encoded_fmt_stream_map"]
+	streamMap, ok := answer["player_response"]
 	if !ok {
-		err = errors.New(fmt.Sprint("no stream map found in the server's answer"))
+		err = errors.New(fmt.Sprint("no stream map found in the server's answer."))
 		return err
 	}
-
-	// read each stream
-	streamsList := strings.Split(streamMap[0], ",")
-
+	
 	// Get video title and author.
 	title, author := getVideoTitleAuthor(answer)
 
+	var prData PlayerResponseData
+	if err := json.Unmarshal([]byte(streamMap[0]), &prData); err != nil {
+		fmt.Println(err)
+		panic("Player response json data has changed.")
+	}
+
 	// Get video download link
 	var streams []stream
-	for streamPos, streamRaw := range streamsList {
-		streamQry, err := url.ParseQuery(streamRaw)
-		if err != nil {
-			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d: %s\n", streamPos, err))
+	for streamPos, streamRaw := range prData.StreamingData.Formats {
+
+		if streamRaw.MimeType == "" {
+			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d.\n", streamPos))
 			continue
 		}
-
-		if _, ok := streamQry["quality"]; !ok {
-			y.log(fmt.Sprintf("An empty video's stream's information: stream %d\n", streamPos))
-			continue
-		}
-
+		
 		streams = append(streams, stream{
-			"quality": streamQry["quality"][0],
-			"type":    streamQry["type"][0],
-			"url":     streamQry["url"][0],
+			"quality": streamRaw.Quality,
+			"type":    streamRaw.MimeType,
+			"url":     streamRaw.URL,
 
 			"title":  title,
 			"author": author,
 		})
-		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s'", title, author, streamQry["quality"][0], streamQry["type"][0]))
+		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s'", title, author, streamRaw.Quality, streamRaw.MimeType))
 	}
 
 	y.StreamList = streams
