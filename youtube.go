@@ -186,11 +186,20 @@ func (y *Youtube) parseVideoInfo() error {
 			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d.\n", streamPos))
 			continue
 		}
+		streamUrl := streamRaw.URL
+		if streamUrl == "" {
+			cipher := streamRaw.Cipher
+			decipheredUrl, err := y.decipher(cipher)
+			if err != nil {
+				return err
+			}
+			streamUrl = decipheredUrl
+		}
 
 		streams = append(streams, stream{
 			"quality": streamRaw.Quality,
 			"type":    streamRaw.MimeType,
-			"url":     streamRaw.URL,
+			"url":     streamUrl,
 
 			"title":  title,
 			"author": author,
@@ -203,6 +212,71 @@ func (y *Youtube) parseVideoInfo() error {
 		return errors.New(fmt.Sprint("no stream list found in the server's answer"))
 	}
 	return nil
+}
+
+func (y *Youtube) decipher(cipher string) (string, error) {
+	queryParams, err := url.ParseQuery(cipher)
+	if err != nil {
+		return "", err
+	}
+	cipherMap := make(map[string]string)
+	for key, value := range queryParams {
+		cipherMap[key] = strings.Join(value, "")
+	}
+	/*
+	    extract decipher from  https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
+
+	    var Mt={
+		ox:function(a,b){a.splice(0,b)},
+		ch:function(a){a.reverse()},
+		EQ:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
+
+		a=a.split("");
+		Mt.ox(a,3);
+		Mt.EQ(a,39);
+		Mt.ox(a,2);
+		Mt.EQ(a,1);
+		Mt.ox(a,1);
+		Mt.EQ(a,35);
+		Mt.EQ(a,51);
+		Mt.ox(a,2);
+		Mt.ch(a,52);
+		return a.join("")
+	*/
+
+	s := cipherMap["s"]
+	bs := []byte(s)
+	ox := func(b int) func() {
+		return func() {
+			bs = bs[b:]
+		}
+	}
+	eq := func(b int) func() {
+		return func() {
+			pos := b % len(bs)
+			bs[0], bs[pos] = bs[pos], bs[0]
+		}
+	}
+	ch := func(options ...interface{}) func() {
+		return func() {
+			l, r := 0, len(bs)-1
+			for l < r {
+				bs[l], bs[r] = bs[r], bs[l]
+				l++
+				r--
+			}
+		}
+	}
+	operations := []func(){
+		ox(3), eq(39), ox(2), eq(1), ox(1), eq(35), eq(51), ox(2), ch(52),
+	}
+	for _, op := range operations {
+		op()
+	}
+	cipherMap["s"] = string(bs)
+
+	decipheredUrl := fmt.Sprintf("%s&%s=%s", cipherMap["url"], cipherMap["sp"], cipherMap["s"])
+	return decipheredUrl, nil
 }
 
 func (y *Youtube) getHTTPClient() (*http.Client, error) {
@@ -230,7 +304,8 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 }
 
 func (y *Youtube) getVideoInfo() error {
-	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID
+	eurl := "https://youtube.googleapis.com/v/" + y.VideoID
+	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID + "&eurl=" + eurl
 	y.log(fmt.Sprintf("url: %s", url))
 
 	httpClient, err := y.getHTTPClient()
