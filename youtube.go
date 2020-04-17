@@ -108,17 +108,23 @@ func (y *Youtube) DecodeURL(url string) error {
 	if err != nil {
 		return err
 	}
+
+	// Ft=function(a){a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")} => get Ft
 	funcName := funcNameRegex.FindAllStringSubmatch(basejs, 2)[0][1]
 	decipherFuncBodyRegex, err := regexp.Compile(fmt.Sprintf(`[^h\.]%s=function\(\w+\)\{(.*?)\}`, funcName))
 	if err != nil {
 		return err
 	}
+	// eg: a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")
 	decipherFuncBody := decipherFuncBodyRegex.FindAllStringSubmatch(basejs, 2)[0][1]
 	_ = decipherFuncBody
-	defBodyRegex, _ := regexp.Compile(`var\s+{escapedFuncName}=\{{(\w+:function\(\w+(,\w+)?\)\{{(.*?)\}}),?\}};`)
+	// FuncName in Body (\w+).\w+\(\w+,\d+\); => get Et
+	defBodyRegex, _ := regexp.Compile(fmt.Sprintf(`var\s+%s=\{{(\w+:function\(\w+(,\w+)?\)\{{(.*?)\}}),?\}};`, funcName))
 	defBody := defBodyRegex.FindString(basejs)
 	_ = defBody
 
+	//calledFuncNameRegex \w+(?:.|\[)("?\w+(?:")?)\]?\(
+	//eg: Et.vw(a,2) => vw
 	return nil
 }
 
