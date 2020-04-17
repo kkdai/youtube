@@ -63,6 +63,62 @@ func (y *Youtube) DecodeURL(url string) error {
 		return fmt.Errorf("parse video info failed, err=%s", err)
 	}
 
+	// try to get whole page
+	client, err := y.getHTTPClient()
+	if err != nil {
+		return fmt.Errorf("get http client error=%s", err)
+	}
+
+	//resp, _ := client.Get("https://www.youtube.com/watch?v=" + y.VideoID)
+	embedUrl := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", y.VideoID)
+	resp, _ := client.Get(embedUrl)
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	embedPage := string(body)
+	reg, _ := regexp.Compile("yt\\.setConfig\\({'PLAYER_CONFIG':(.*)}\\);")
+	match1 := reg.FindString(embedPage)
+	reg2, _ := regexp.Compile(`"js":"\\/s\\/player(.*)base\.js`)
+	match2 := reg2.FindString(match1)
+	//eg: "js":"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
+	arr := strings.Split(match2, ":\"")
+	playsourceUrl := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
+	resp2, err := client.Get(playsourceUrl)
+	if err != nil {
+		return err
+	}
+	defer resp2.Body.Close()
+	if resp2.StatusCode != 200 {
+		return err
+	}
+	body2, err := ioutil.ReadAll(resp2.Body)
+	if err != nil {
+		return err
+	}
+	basejs := string(body2)
+
+	// regex to get funcs
+	funcNameRegex, err := regexp.Compile(`(\w+)=function\(\w+\){(\w+)=(\w+)\.split\(\x22{2}\);.*?return\s+(\w+)\.join\(\x22{2}\)}`)
+	if err != nil {
+		return err
+	}
+	funcName := funcNameRegex.FindAllStringSubmatch(basejs, 2)[0][1]
+	decipherFuncBodyRegex, err := regexp.Compile(fmt.Sprintf(`[^h\.]%s=function\(\w+\)\{(.*?)\}`, funcName))
+	if err != nil {
+		return err
+	}
+	decipherFuncBody := decipherFuncBodyRegex.FindAllStringSubmatch(basejs, 2)[0][1]
+	_ = decipherFuncBody
+	defBodyRegex, _ := regexp.Compile(`var\s+{escapedFuncName}=\{{(\w+:function\(\w+(,\w+)?\)\{{(.*?)\}}),?\}};`)
+	defBody := defBodyRegex.FindString(basejs)
+	_ = defBody
+
 	return nil
 }
 
@@ -181,7 +237,6 @@ func (y *Youtube) parseVideoInfo() error {
 	fmt.Println("<<<<<", status[0])
 	var streams []stream
 	for streamPos, streamRaw := range prData.StreamingData.Formats {
-
 		if streamRaw.MimeType == "" {
 			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d.\n", streamPos))
 			continue
@@ -224,24 +279,24 @@ func (y *Youtube) decipher(cipher string) (string, error) {
 		cipherMap[key] = strings.Join(value, "")
 	}
 	/*
-	    extract decipher from  https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
+		    extract decipher from  https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
 
-	    var Mt={
-		ox:function(a,b){a.splice(0,b)},
-		ch:function(a){a.reverse()},
-		EQ:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
+		    var Mt={
+			ox:function(a,b){a.splice(0,b)},
+			ch:function(a){a.reverse()},
+			EQ:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
 
-		a=a.split("");
-		Mt.ox(a,3);
-		Mt.EQ(a,39);
-		Mt.ox(a,2);
-		Mt.EQ(a,1);
-		Mt.ox(a,1);
-		Mt.EQ(a,35);
-		Mt.EQ(a,51);
-		Mt.ox(a,2);
-		Mt.ch(a,52);
-		return a.join("")
+			a=a.split("");
+			Mt.ox(a,3);
+			Mt.EQ(a,39);
+			Mt.ox(a,2);
+			Mt.EQ(a,1);
+			Mt.ox(a,1);
+			Mt.EQ(a,35);
+			Mt.EQ(a,51);
+			Mt.ox(a,2);
+			Mt.ch(a,52);
+			return a.join("")
 	*/
 
 	s := cipherMap["s"]
