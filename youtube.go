@@ -13,6 +13,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"golang.org/x/net/proxy"
@@ -63,7 +64,7 @@ func (y *Youtube) DecodeURL(url string) error {
 		return fmt.Errorf("parse video info failed, err=%s", err)
 	}
 
-	// try to get whole page
+	/// try to get whole page
 	client, err := y.getHTTPClient()
 	if err != nil {
 		return fmt.Errorf("get http client error=%s", err)
@@ -110,21 +111,117 @@ func (y *Youtube) DecodeURL(url string) error {
 	}
 
 	// Ft=function(a){a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")} => get Ft
-	funcName := funcNameRegex.FindAllStringSubmatch(basejs, 2)[0][1]
+	arr = funcNameRegex.FindStringSubmatch(basejs)
+	funcName := arr[1]
 	decipherFuncBodyRegex, err := regexp.Compile(fmt.Sprintf(`[^h\.]%s=function\(\w+\)\{(.*?)\}`, funcName))
 	if err != nil {
 		return err
 	}
-	// eg: a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")
-	decipherFuncBody := decipherFuncBodyRegex.FindAllStringSubmatch(basejs, 2)[0][1]
-	_ = decipherFuncBody
-	// FuncName in Body (\w+).\w+\(\w+,\d+\); => get Et
-	defBodyRegex, _ := regexp.Compile(fmt.Sprintf(`var\s+%s=\{{(\w+:function\(\w+(,\w+)?\)\{{(.*?)\}}),?\}};`, funcName))
-	defBody := defBodyRegex.FindString(basejs)
-	_ = defBody
 
-	//calledFuncNameRegex \w+(?:.|\[)("?\w+(?:")?)\]?\(
-	//eg: Et.vw(a,2) => vw
+	// eg: a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")
+	arr = decipherFuncBodyRegex.FindStringSubmatch(basejs)
+	decipherFuncBody := arr[1]
+
+	// FuncName in Body (\w+).\w+\(\w+,\d+\); => get Et
+	funcNameInBodyRegex, err := regexp.Compile(`(\w+).\w+\(\w+,\d+\);`)
+	if err != nil {
+		return err
+	}
+	arr = funcNameInBodyRegex.FindStringSubmatch(decipherFuncBody)
+	funcNameInBody := arr[1]
+	_ = funcNameInBody
+	decipherDefBodyRegex, err := regexp.Compile(fmt.Sprintf(`var\s+%s=\{(\w+:function\(\w+(,\w+)?\)\{(.*?)\}),?\};`, funcNameInBody))
+	if err != nil {
+		return err
+	}
+	re := regexp.MustCompile(`\r?\n`)
+	basejs = re.ReplaceAllString(basejs, "")
+	arr1 := decipherDefBodyRegex.FindStringSubmatch(basejs)
+	// vw:function(a,b){a.splice(0,b)},cn:function(a){a.reverse()},Zm:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}
+	decipherDefBody := arr1[1]
+	_ = decipherDefBody
+	decipherFuncs := strings.Split(decipherFuncBody, ";")
+
+	var funcSeq []string
+	var funcArgs []int
+
+	for _, v := range decipherFuncs {
+		//calledFuncNameRegex \w+(?:.|\[)("?\w+(?:")?)\]?\(
+		//eg: Et.vw(a,2) => vw
+		calledFuncNameRegex, err := regexp.Compile(`\w+(?:.|\[)("?\w+(?:")?)\]?\(`)
+		if err != nil {
+			return err
+		}
+		arr := calledFuncNameRegex.FindStringSubmatch(v)
+		if len(arr) < 1 || arr[1] == "" {
+			continue
+		}
+		calledFuncName := arr[1]
+		_ = calledFuncName
+
+		// splice
+		splicePattern := fmt.Sprintf(`%s:\bfunction\b\([a],b\).(\breturn\b)?.?\w+\.splice`, calledFuncName)
+		ok, err := regexp.MatchString(splicePattern, decipherDefBody)
+		if err != nil {
+			return err
+		}
+		if ok {
+			re, err := regexp.Compile(`\(\w+,(\d+)\)`)
+			if err != nil {
+				return err
+			}
+			arr := re.FindStringSubmatch(v)
+			arg, err := strconv.Atoi(arr[1])
+			if err != nil {
+				return err
+			}
+			funcSeq = append(funcSeq, "splice")
+			funcArgs = append(funcArgs, arg)
+			continue
+		}
+
+		// Swap
+		swapPattern := fmt.Sprintf(`%s:\bfunction\b\(\w+\,\w\).\bvar\b.\bc=a\b`, calledFuncName)
+		ok, err = regexp.MatchString(swapPattern, decipherDefBody)
+		if err != nil {
+			return err
+		}
+		if ok {
+			re, err := regexp.Compile(`\(\w+,(\d+)\)`)
+			if err != nil {
+				return err
+			}
+			arr := re.FindStringSubmatch(v)
+			arg, err := strconv.Atoi(arr[1])
+			if err != nil {
+				return err
+			}
+			funcSeq = append(funcSeq, "swap")
+			funcArgs = append(funcArgs, arg)
+			continue
+		}
+
+		// Reverse
+		reversePattern := fmt.Sprintf(`%s:\bfunction\b\(\w+\)`, calledFuncName)
+		ok, err = regexp.MatchString(reversePattern, decipherDefBody)
+		if err != nil {
+			return err
+		}
+		if ok {
+			re, err := regexp.Compile(`\(\w+,(\d+)\)`)
+			if err != nil {
+				return err
+			}
+			arr := re.FindStringSubmatch(v)
+			arg, err := strconv.Atoi(arr[1])
+			if err != nil {
+				return err
+			}
+			funcSeq = append(funcSeq, "reverse")
+			funcArgs = append(funcArgs, arg)
+			continue
+		}
+	}
 	return nil
 }
 
