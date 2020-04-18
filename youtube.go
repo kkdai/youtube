@@ -64,23 +64,30 @@ func (y *Youtube) DecodeURL(url string) error {
 		return fmt.Errorf("parse video info failed, err=%s", err)
 	}
 
+	return nil
+}
+
+func (y *Youtube) parseDecipherOpsAndArgs() (operations []string, args []int, err error) {
 	/// try to get whole page
 	client, err := y.getHTTPClient()
 	if err != nil {
-		return fmt.Errorf("get http client error=%s", err)
+		return nil, nil, fmt.Errorf("get http client error=%s", err)
 	}
 
 	//resp, _ := client.Get("https://www.youtube.com/watch?v=" + y.VideoID)
+	if y.VideoID == "" {
+		return nil, nil, fmt.Errorf("video id is empty , err=%s", err)
+	}
 	embedUrl := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", y.VideoID)
 	resp, _ := client.Get(embedUrl)
 
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return err
+		return nil, nil, err
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	embedPage := string(body)
 	reg, _ := regexp.Compile("yt\\.setConfig\\({'PLAYER_CONFIG':(.*)}\\);")
@@ -92,22 +99,22 @@ func (y *Youtube) DecodeURL(url string) error {
 	playsourceUrl := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
 	resp2, err := client.Get(playsourceUrl)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	defer resp2.Body.Close()
 	if resp2.StatusCode != 200 {
-		return err
+		return nil, nil, err
 	}
 	body2, err := ioutil.ReadAll(resp2.Body)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	basejs := string(body2)
 
 	// regex to get funcs
 	funcNameRegex, err := regexp.Compile(`(\w+)=function\(\w+\){(\w+)=(\w+)\.split\(\x22{2}\);.*?return\s+(\w+)\.join\(\x22{2}\)}`)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	// Ft=function(a){a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")} => get Ft
@@ -115,7 +122,7 @@ func (y *Youtube) DecodeURL(url string) error {
 	funcName := arr[1]
 	decipherFuncBodyRegex, err := regexp.Compile(fmt.Sprintf(`[^h\.]%s=function\(\w+\)\{(.*?)\}`, funcName))
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	// eg: a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")
@@ -125,14 +132,14 @@ func (y *Youtube) DecodeURL(url string) error {
 	// FuncName in Body (\w+).\w+\(\w+,\d+\); => get Et
 	funcNameInBodyRegex, err := regexp.Compile(`(\w+).\w+\(\w+,\d+\);`)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	arr = funcNameInBodyRegex.FindStringSubmatch(decipherFuncBody)
 	funcNameInBody := arr[1]
 	_ = funcNameInBody
 	decipherDefBodyRegex, err := regexp.Compile(fmt.Sprintf(`var\s+%s=\{(\w+:function\(\w+(,\w+)?\)\{(.*?)\}),?\};`, funcNameInBody))
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	re := regexp.MustCompile(`\r?\n`)
 	basejs = re.ReplaceAllString(basejs, "")
@@ -150,7 +157,7 @@ func (y *Youtube) DecodeURL(url string) error {
 		//eg: Et.vw(a,2) => vw
 		calledFuncNameRegex, err := regexp.Compile(`\w+(?:.|\[)("?\w+(?:")?)\]?\(`)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		arr := calledFuncNameRegex.FindStringSubmatch(v)
 		if len(arr) < 1 || arr[1] == "" {
@@ -163,17 +170,17 @@ func (y *Youtube) DecodeURL(url string) error {
 		splicePattern := fmt.Sprintf(`%s:\bfunction\b\([a],b\).(\breturn\b)?.?\w+\.splice`, calledFuncName)
 		ok, err := regexp.MatchString(splicePattern, decipherDefBody)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		if ok {
 			re, err := regexp.Compile(`\(\w+,(\d+)\)`)
 			if err != nil {
-				return err
+				return nil, nil, err
 			}
 			arr := re.FindStringSubmatch(v)
 			arg, err := strconv.Atoi(arr[1])
 			if err != nil {
-				return err
+				return nil, nil, err
 			}
 			funcSeq = append(funcSeq, "splice")
 			funcArgs = append(funcArgs, arg)
@@ -184,17 +191,17 @@ func (y *Youtube) DecodeURL(url string) error {
 		swapPattern := fmt.Sprintf(`%s:\bfunction\b\(\w+\,\w\).\bvar\b.\bc=a\b`, calledFuncName)
 		ok, err = regexp.MatchString(swapPattern, decipherDefBody)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		if ok {
 			re, err := regexp.Compile(`\(\w+,(\d+)\)`)
 			if err != nil {
-				return err
+				return nil, nil, err
 			}
 			arr := re.FindStringSubmatch(v)
 			arg, err := strconv.Atoi(arr[1])
 			if err != nil {
-				return err
+				return nil, nil, err
 			}
 			funcSeq = append(funcSeq, "swap")
 			funcArgs = append(funcArgs, arg)
@@ -205,24 +212,24 @@ func (y *Youtube) DecodeURL(url string) error {
 		reversePattern := fmt.Sprintf(`%s:\bfunction\b\(\w+\)`, calledFuncName)
 		ok, err = regexp.MatchString(reversePattern, decipherDefBody)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		if ok {
 			re, err := regexp.Compile(`\(\w+,(\d+)\)`)
 			if err != nil {
-				return err
+				return nil, nil, err
 			}
 			arr := re.FindStringSubmatch(v)
 			arg, err := strconv.Atoi(arr[1])
 			if err != nil {
-				return err
+				return nil, nil, err
 			}
 			funcSeq = append(funcSeq, "reverse")
 			funcArgs = append(funcArgs, arg)
 			continue
 		}
 	}
-	return nil
+	return funcSeq, funcArgs, nil
 }
 
 //StartDownload : Starting download video to specific address.
@@ -381,55 +388,57 @@ func (y *Youtube) decipher(cipher string) (string, error) {
 	for key, value := range queryParams {
 		cipherMap[key] = strings.Join(value, "")
 	}
-	/*
-		    extract decipher from  https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
+	/* eg:
+	    extract decipher from  https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
 
-		    var Mt={
-			ox:function(a,b){a.splice(0,b)},
-			ch:function(a){a.reverse()},
-			EQ:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
+	    var Mt={
+		splice:function(a,b){a.splice(0,b)},
+		reverse:function(a){a.reverse()},
+		EQ:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
 
-			a=a.split("");
-			Mt.ox(a,3);
-			Mt.EQ(a,39);
-			Mt.ox(a,2);
-			Mt.EQ(a,1);
-			Mt.ox(a,1);
-			Mt.EQ(a,35);
-			Mt.EQ(a,51);
-			Mt.ox(a,2);
-			Mt.ch(a,52);
-			return a.join("")
+		a=a.split("");
+		Mt.splice(a,3);
+		Mt.EQ(a,39);
+		Mt.splice(a,2);
+		Mt.EQ(a,1);
+		Mt.splice(a,1);
+		Mt.EQ(a,35);
+		Mt.EQ(a,51);
+		Mt.splice(a,2);
+		Mt.reverse(a,52);
+		return a.join("")
 	*/
 
 	s := cipherMap["s"]
 	bs := []byte(s)
-	ox := func(b int) func() {
-		return func() {
-			bs = bs[b:]
+	splice := func(b int) {
+		bs = bs[b:]
+	}
+	swap := func(b int) {
+		pos := b % len(bs)
+		bs[0], bs[pos] = bs[pos], bs[0]
+	}
+	reverse := func(options ...interface{}) {
+		l, r := 0, len(bs)-1
+		for l < r {
+			bs[l], bs[r] = bs[r], bs[l]
+			l++
+			r--
 		}
 	}
-	eq := func(b int) func() {
-		return func() {
-			pos := b % len(bs)
-			bs[0], bs[pos] = bs[pos], bs[0]
+	operations, args, err := y.parseDecipherOpsAndArgs()
+	if err != nil {
+		return "", err
+	}
+	for i, op := range operations {
+		switch op {
+		case "splice":
+			splice(args[i])
+		case "swap":
+			swap(args[i])
+		case "reverse":
+			reverse(args[i])
 		}
-	}
-	ch := func(options ...interface{}) func() {
-		return func() {
-			l, r := 0, len(bs)-1
-			for l < r {
-				bs[l], bs[r] = bs[r], bs[l]
-				l++
-				r--
-			}
-		}
-	}
-	operations := []func(){
-		ox(3), eq(39), ox(2), eq(1), ox(1), eq(35), eq(51), ox(2), ch(52),
-	}
-	for _, op := range operations {
-		op()
 	}
 	cipherMap["s"] = string(bs)
 
@@ -438,7 +447,6 @@ func (y *Youtube) decipher(cipher string) (string, error) {
 }
 
 func (y *Youtube) getHTTPClient() (*http.Client, error) {
-
 	// setup a http client
 	httpTransport := &http.Transport{}
 	httpClient := &http.Client{Transport: httpTransport}
