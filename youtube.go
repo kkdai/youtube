@@ -181,16 +181,24 @@ func (y *Youtube) parseVideoInfo() error {
 	fmt.Println("<<<<<", status[0])
 	var streams []stream
 	for streamPos, streamRaw := range prData.StreamingData.Formats {
-
 		if streamRaw.MimeType == "" {
 			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d.\n", streamPos))
 			continue
+		}
+		streamUrl := streamRaw.URL
+		if streamUrl == "" {
+			cipher := streamRaw.Cipher
+			decipheredUrl, err := y.decipher(cipher)
+			if err != nil {
+				return err
+			}
+			streamUrl = decipheredUrl
 		}
 
 		streams = append(streams, stream{
 			"quality": streamRaw.Quality,
 			"type":    streamRaw.MimeType,
-			"url":     streamRaw.URL,
+			"url":     streamUrl,
 
 			"title":  title,
 			"author": author,
@@ -206,7 +214,6 @@ func (y *Youtube) parseVideoInfo() error {
 }
 
 func (y *Youtube) getHTTPClient() (*http.Client, error) {
-
 	// setup a http client
 	httpTransport := &http.Transport{}
 	httpClient := &http.Client{Transport: httpTransport}
@@ -230,7 +237,8 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 }
 
 func (y *Youtube) getVideoInfo() error {
-	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID
+	eurl := "https://youtube.googleapis.com/v/" + y.VideoID
+	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID + "&eurl=" + eurl
 	y.log(fmt.Sprintf("url: %s", url))
 
 	httpClient, err := y.getHTTPClient()
