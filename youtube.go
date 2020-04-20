@@ -173,8 +173,6 @@ func (y *Youtube) parseVideoInfo() error {
 		return errors.New(fmt.Sprint("Cannot playback and download, reason:", prData.PlayabilityStatus.Reason))
 	}
 
-	fmt.Println(">>>>>", len(prData.StreamingData.Formats), len(prData.StreamingData.AdaptiveFormats))
-	fmt.Println("<<<<<", status[0])
 	var streams []stream
 	for streamPos, streamRaw := range prData.StreamingData.Formats {
 		if streamRaw.MimeType == "" {
