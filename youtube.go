@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -109,21 +110,54 @@ func (y *Youtube) StartDownloadWithQuality(destFile string, quality string) erro
 func (y *Youtube) StartDownloadFile() error {
 	//download highest resolution on [0]
 	err := errors.New("Empty stream list")
-	for _, v := range y.StreamList {
-		url := v["url"]
-		y.log(fmt.Sprintln("Download url=", url))
+	for _, stream := range y.StreamList {
+		streamUrl := stream["url"]
+		streamType := stream["type"]
+		y.log(fmt.Sprintln("Download url=", streamUrl))
+
+		// Find out what the file name should be.
+		fileName := sanitizeFilename(stream["title"])
+
+		// Find out what the file extension should be.
+		fileExtensions, err := mime.ExtensionsByType(streamType)
+		if err != nil {
+			fileName += ".mov"
+		} else {
+			fileName += fileExtensions[0]
+		}
 
 		usr, _ := user.Current()
-		fileName := fmt.Sprintf("%s.mov", v["title"])
 		destFile := filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
 		y.log(fmt.Sprintln("Download to file=", destFile))
 
-		err = y.videoDLWorker(destFile, url)
+		err = y.videoDLWorker(destFile, streamUrl)
 		if err == nil {
-			break
+			return nil
 		}
 	}
 	return err
+}
+
+func sanitizeFilename(fileName string) string {
+	// Characters not allowed on mac
+	//	:/
+	// Characters not allowed on linux
+	//	/
+	// Characters not allowed on windows
+	//	<>:"/\|?*
+
+	// Ref https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
+
+	reg, err := regexp.Compile(`[:/<>\:"\\|?*]`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fileName = reg.ReplaceAllString(fileName, "")
+	fileName = strings.ReplaceAll(fileName, "  ", " ")
+	fileName = strings.ReplaceAll(fileName, "  ", " ")
+
+	return fileName
 }
 
 func (y *Youtube) parseVideoInfo() error {
