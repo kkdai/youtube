@@ -63,3 +63,23 @@ func TestParseVideo(t *testing.T) {
 		return
 	}
 }
+
+func TestSanitizeFilename(t *testing.T) {
+	fileName := "a<b>c:d\\e\"f/g\\h|i?j*k"
+	sanitized := sanitizeFilename(fileName)
+	if sanitized != "abcdefghijk" {
+		t.Error("Invalid characters must get stripped")
+	}
+
+	fileName = "aB Cd"
+	sanitized = sanitizeFilename(fileName)
+	if sanitized != "aB Cd" {
+		t.Error("Casing and whitespaces must be preserved")
+	}
+
+	fileName = "~!@#$%^&()[].,"
+	sanitized = sanitizeFilename(fileName)
+	if sanitized != "~!@#$%^&()[].," {
+		t.Error("The common harmless symbols should remain valid")
+	}
+}
