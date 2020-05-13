@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestDownload(t *testing.T) {
+func TestDownloadFromYT_AssignOutputFileName(t *testing.T) {
 	y := NewYoutube(false)
 	if y == nil {
 		t.Error("Cannot init object.")
