@@ -77,8 +77,9 @@ func (y *Youtube) StartDownload(destFile string) error {
 
 		y.log(fmt.Sprintln("Download to file=", destFile))
 		err = y.videoDLWorker(destFile, url)
-		if err == nil {
-			break
+		if err != nil {
+			y.log(fmt.Sprintln("Err: ", err.Error()))
+			return err
 		}
 	}
 	return err
@@ -146,18 +147,18 @@ func pickIdealFileExtension(mediaType string) string {
 	// [3] https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
 	// [4] https://www.iana.org/assignments/media-types/media-types.xhtml#video
 	// [5] https://support.google.com/youtube/troubleshooter/2888402?hl=en
-	canonicals := map[string]string {
-		"video/quicktime": ".mov",
-		"video/x-msvideo": ".avi",
+	canonicals := map[string]string{
+		"video/quicktime":  ".mov",
+		"video/x-msvideo":  ".avi",
 		"video/x-matroska": ".mkv",
-		"video/mpeg": ".mpeg",
-		"video/webm": ".webm",
-		"video/3gpp2": ".3g2",
-		"video/x-flv": ".flv",
-		"video/3gpp": ".3gp",
-		"video/mp4": ".mp4",
-		"video/ogg": ".ogv",
-		"video/mp2t": ".ts",
+		"video/mpeg":       ".mpeg",
+		"video/webm":       ".webm",
+		"video/3gpp2":      ".3g2",
+		"video/x-flv":      ".flv",
+		"video/3gpp":       ".3gp",
+		"video/mp4":        ".mp4",
+		"video/ogg":        ".ogv",
+		"video/mp2t":       ".ts",
 	}
 
 	if extension, ok := canonicals[mediaType]; ok {
