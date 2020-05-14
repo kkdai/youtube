@@ -1,6 +1,8 @@
 package youtube
 
 import (
+	"log"
+	"os"
 	"os/user"
 	"path/filepath"
 	"testing"
@@ -9,6 +11,7 @@ import (
 const dwlURL string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
 const priURL string = "https://www.youtube.com/watch?v=FHpvI8oGsuQ"
 const errURL string = "https://www.youtube.com/watch?v=I8oGsuQ"
+const downloadToDir = "download_test"
 
 var dfPath string
 
@@ -17,7 +20,14 @@ func TestMain(m *testing.M) {
 	usr, _ := user.Current()
 	dfPath = filepath.Join(usr.HomeDir, "Movies", "test")
 
-	m.Run()
+	exitCode := m.Run()
+	// the following code doesn't work under debugger, please delete download files manually
+	path, _ := os.Getwd()
+	path += "\\" + downloadToDir
+	if err := os.RemoveAll(path); err != nil {
+		log.Fatal(err.Error())
+	}
+	os.Exit(exitCode)
 }
 
 func TestDownloadFirst(t *testing.T) {
