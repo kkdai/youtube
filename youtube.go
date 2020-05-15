@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"golang.org/x/net/proxy"
 )
@@ -273,7 +275,15 @@ func (y *Youtube) parseVideoInfo() error {
 
 func (y *Youtube) getHTTPClient() (*http.Client, error) {
 	// setup a http client
-	httpTransport := &http.Transport{}
+	httpTransport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		IdleConnTimeout:       60 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
 	httpClient := &http.Client{Transport: httpTransport}
 
 	if len(y.Socks5Proxy) == 0 {
