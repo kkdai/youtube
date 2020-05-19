@@ -45,6 +45,6 @@ test-unit:
 	@go test -v
 
 .PHONY: test-integration
-test-integration: ## Runs all Youtube Go unit tests
+test-integration: ## Runs all Youtube Go integration tests
 test-integration:
 	@go test -v -tags="integration"
