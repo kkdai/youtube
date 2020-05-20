@@ -10,7 +10,7 @@ import (
 )
 
 func (y *Youtube) parseDecipherOpsAndArgs() (operations []string, args []int, err error) {
-	/// try to get whole page
+	// try to get whole page
 	client, err := y.getHTTPClient()
 	if err != nil {
 		return nil, nil, fmt.Errorf("get http client error=%s", err)
@@ -37,13 +37,13 @@ func (y *Youtube) parseDecipherOpsAndArgs() (operations []string, args []int, er
 	}
 	embeddedPage := string(embeddedPageBodyBytes)
 
-	playerConfigPattern := regexp.MustCompile("yt\\.setConfig\\({'PLAYER_CONFIG':(.*)}\\);")
+	playerConfigPattern := regexp.MustCompile(`yt.setConfig({'PLAYER_CONFIG':(.*)});`)
 	playerConfig := playerConfigPattern.FindString(embeddedPage)
 
 	basejsPattern := regexp.MustCompile(`"js":"\\/s\\/player(.*)base\.js`)
-	//eg: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
+	// eg: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
 	escapedBasejsUrl := basejsPattern.FindString(playerConfig)
-	//eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
+	// eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
 	arr := strings.Split(escapedBasejsUrl, ":\"")
 	basejsUrl := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
 	basejsUrlResp, err := client.Get(basejsUrl)
@@ -92,8 +92,8 @@ func (y *Youtube) parseDecipherOpsAndArgs() (operations []string, args []int, er
 	var funcArgs []int
 
 	for _, v := range decipherFuncs {
-		//calledFuncNameRegex \w+(?:.|\[)("?\w+(?:")?)\]?\(
-		//eg: Et.vw(a,2) => vw
+		// calledFuncNameRegex \w+(?:.|\[)("?\w+(?:")?)\]?\(
+		// eg: Et.vw(a,2) => vw
 		calledFuncNameRegex, err := regexp.Compile(`\w+(?:.|\[)("?\w+(?:")?)\]?\(`)
 		if err != nil {
 			return nil, nil, err
