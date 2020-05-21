@@ -9,7 +9,6 @@ import (
 )
 
 const dwlURL string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
-const priURL string = "https://www.youtube.com/watch?v=FHpvI8oGsuQ"
 const errURL string = "https://www.youtube.com/watch?v=I8oGsuQ"
 const downloadToDir = "download_test"
 

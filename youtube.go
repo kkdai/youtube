@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -242,7 +243,7 @@ func (y *Youtube) parseVideoInfo() error {
 	var streams []stream
 	for streamPos, streamRaw := range prData.StreamingData.Formats {
 		if streamRaw.MimeType == "" {
-			y.log(fmt.Sprintf("An error occured while decoding one of the video's stream's information: stream %d.\n", streamPos))
+			y.log(fmt.Sprintf("An error occurred while decoding one of the video's stream's information: stream %d.\n", streamPos))
 			continue
 		}
 		streamUrl := streamRaw.URL
@@ -297,7 +298,10 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 		return nil, err
 	}
 	// set our socks5 as the dialer
-	httpTransport.Dial = dialer.Dial
+	dc := dialer.(interface {
+		DialContext(ctx context.Context, network, addr string) (net.Conn, error)
+	})
+	httpTransport.DialContext = dc.DialContext
 
 	y.log(fmt.Sprintf("Using http with proxy %s.", y.Socks5Proxy))
 
