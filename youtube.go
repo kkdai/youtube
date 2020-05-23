@@ -27,17 +27,16 @@ func SetLogOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
-//NewYoutube :Initialize youtube package object
-func NewYoutube(debug bool) *Youtube {
-	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
+type stream struct {
+	Quality string
+	Type    string
+	URL     string
+	Itag    int
+	Title   string
+	Author  string
 }
 
-func NewYoutubeWithSocks5Proxy(debug bool, socks5Proxy string) *Youtube {
-	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100), Socks5Proxy: socks5Proxy}
-}
-
-type stream map[string]string
-
+// Youtube implements the downloader to download youtube videos.
 type Youtube struct {
 	DebugMode         bool
 	StreamList        []stream
@@ -48,6 +47,15 @@ type Youtube struct {
 	contentLength     float64
 	totalWrittenBytes float64
 	downloadLevel     float64
+}
+
+//NewYoutube :Initialize youtube package object
+func NewYoutube(debug bool) *Youtube {
+	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
+}
+
+func NewYoutubeWithSocks5Proxy(debug bool, socks5Proxy string) *Youtube {
+	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100), Socks5Proxy: socks5Proxy}
 }
 
 //DecodeURL : Decode youtube URL to retrieval video information.
@@ -74,12 +82,12 @@ func (y *Youtube) DecodeURL(url string) error {
 func (y *Youtube) StartDownload(destFile string) error {
 	//download highest resolution on [0]
 	err := errors.New("Empty stream list")
-	for _, v := range y.StreamList {
-		url := v["url"]
-		y.log(fmt.Sprintln("Download url=", url))
+	for _, stream := range y.StreamList {
+		streamURL := stream.URL
+		y.log(fmt.Sprintln("Download url=", streamURL))
 
 		y.log(fmt.Sprintln("Download to file=", destFile))
-		err = y.videoDLWorker(destFile, url)
+		err = y.videoDLWorker(destFile, streamURL)
 		if err != nil {
 			y.log(fmt.Sprintln("Err: ", err.Error()))
 			return err
@@ -92,12 +100,12 @@ func (y *Youtube) StartDownload(destFile string) error {
 func (y *Youtube) StartDownloadWithQuality(destFile string, quality string) error {
 	//download highest resolution on [0]
 	err := errors.New("Empty stream list")
-	for _, v := range y.StreamList {
-		if strings.Compare(v["quality"], quality) == 0 {
-			url := v["url"]
-			y.log(fmt.Sprintln("Download url=", url))
+	for _, stream := range y.StreamList {
+		if strings.Compare(stream.Quality, quality) == 0 {
+			streamURL := stream.URL
+			y.log(fmt.Sprintln("Download url=", streamURL))
 			y.log(fmt.Sprintln("Download to file=", destFile))
-			err = y.videoDLWorker(destFile, url)
+			err = y.videoDLWorker(destFile, streamURL)
 			if err == nil {
 				break
 			}
@@ -115,12 +123,12 @@ func (y *Youtube) StartDownloadFile() error {
 	//download highest resolution on [0]
 	err := errors.New("Empty stream list")
 	for _, stream := range y.StreamList {
-		streamURL := stream["url"]
+		streamURL := stream.URL
 		y.log(fmt.Sprintln("Download url=", streamURL))
 
 		// Find out what the file name should be.
-		fileName := SanitizeFilename(stream["title"])
-		fileName += pickIdealFileExtension(stream["type"])
+		fileName := SanitizeFilename(stream.Title)
+		fileName += pickIdealFileExtension(stream.Type)
 
 		usr, _ := user.Current()
 		destFile := filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
@@ -130,6 +138,39 @@ func (y *Youtube) StartDownloadFile() error {
 		if err == nil {
 			return nil
 		}
+	}
+	return err
+}
+
+//  StartDownloadWithItag : Starting download video according to given itag value
+func (y *Youtube) StartDownloadWithItag(destFile string, itag int) error {
+	err := errors.New("Empty stream list")
+	itagFound := false
+	for _, stream := range y.StreamList {
+		if stream.Itag == itag {
+			itagFound = true
+			streamURL := stream.URL
+			y.log(fmt.Sprintln("Download url=", streamURL))
+
+			if destFile == "" {
+				// Find out what the file name should be.
+				fileName := SanitizeFilename(stream.Title)
+				fileName += pickIdealFileExtension(stream.Type)
+
+				usr, _ := user.Current()
+				destFile = filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
+			}
+
+			y.log(fmt.Sprintln("Download to file=", destFile))
+			err = y.videoDLWorker(destFile, streamURL)
+			if err == nil {
+				return nil
+			}
+		}
+	}
+
+	if !itagFound {
+		return errors.New("Invalid itag value, please specify correct value.")
 	}
 	return err
 }
@@ -257,12 +298,13 @@ func (y *Youtube) parseVideoInfo() error {
 		}
 
 		streams = append(streams, stream{
-			"quality": streamRaw.Quality,
-			"type":    streamRaw.MimeType,
-			"url":     streamUrl,
+			Quality: streamRaw.Quality,
+			Type:    streamRaw.MimeType,
+			URL:     streamUrl,
+			Itag:    streamRaw.Itag,
 
-			"title":  title,
-			"author": author,
+			Title:  title,
+			Author: author,
 		})
 		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s'", title, author, streamRaw.Quality, streamRaw.MimeType))
 	}

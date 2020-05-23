@@ -33,6 +33,9 @@ func main() {
 	var socks5Proxy string
 	flag.StringVar(&socks5Proxy, "p", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
 
+	var itag int
+	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
+
 	flag.Parse()
 	outputFile = SanitizeFilename(outputFile)
 	log.Println(flag.Args())
@@ -46,6 +49,12 @@ func main() {
 	var err error
 	if len(outputQuality) > 0 {
 		err = y.StartDownloadWithQuality(filepath.Join(outputDir, outputFile), outputQuality)
+	} else if itag != 0 {
+		destFile := ""
+		if outputFile != "" {
+			destFile = filepath.Join(outputDir, outputFile)
+		}
+		err = y.StartDownloadWithItag(destFile, itag)
 	} else if len(outputFile) == 0 {
 		err = y.StartDownloadFile()
 	} else {
