@@ -35,8 +35,6 @@ func main() {
 
 	flag.Parse()
 	outputFile = SanitizeFilename(outputFile)
-	fmt.Println("MNZ outputfile=", outputFile)
-
 	log.Println(flag.Args())
 	log.Println("download to dir=", outputDir)
 	y := NewYoutubeWithSocks5Proxy(true, socks5Proxy)
