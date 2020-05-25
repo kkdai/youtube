@@ -209,7 +209,7 @@ func (y *Youtube) parseVideoInfo() error {
 		if ok {
 			err = fmt.Errorf("'fail' response status found in the server's answer, reason: '%s'", reason[0])
 		} else {
-			err = errors.New(fmt.Sprint("'fail' response status found in the server's answer, no reason given"))
+			err = errors.New("'fail' response status found in the server's answer, no reason given")
 		}
 		return err
 	}
@@ -221,7 +221,7 @@ func (y *Youtube) parseVideoInfo() error {
 	// read the streams map
 	streamMap, ok := answer["player_response"]
 	if !ok {
-		err = errors.New(fmt.Sprint("no stream map found in the server's answer."))
+		err = errors.New("no stream map found in the server's answer")
 		return err
 	}
 
@@ -269,7 +269,7 @@ func (y *Youtube) parseVideoInfo() error {
 
 	y.StreamList = streams
 	if len(y.StreamList) == 0 {
-		return errors.New(fmt.Sprint("no stream list found in the server's answer"))
+		return errors.New("no stream list found in the server's answer")
 	}
 	return nil
 }
