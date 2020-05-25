@@ -27,7 +27,6 @@ func main() {
 	flag.StringVar(&outputDir, "d",
 		filepath.Join(usr.HomeDir, "Movies", "youtubedr"),
 		"The output directory.")
-
 	var outputQuality string
 	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
 
@@ -35,6 +34,8 @@ func main() {
 	flag.StringVar(&socks5Proxy, "p", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
 
 	flag.Parse()
+	outputFile = SanitizeFilename(outputFile)
+	fmt.Println("MNZ outputfile=", outputFile)
 
 	log.Println(flag.Args())
 	log.Println("download to dir=", outputDir)
