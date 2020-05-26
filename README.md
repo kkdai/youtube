@@ -10,6 +10,7 @@ This package is a Youtube video download package, for more detail refer [https:/
 ## Overview
   * [Install](#install)
   * [Usage](#usage)
+  * [Options](#options)
   * [Example: Download video from \[dotGo 2015 - Rob Pike - Simplicity is Complicated\]](#download-dotGo-2015-rob-pike-video)
 
 ## Install:
@@ -66,6 +67,15 @@ func main() {
 }
 ```
 
+## Options:
+
+| option | type   | description                                                    | default value          |
+| :----- | :----- | :------------------------------------------------------------- | :--------------------- |
+| `-d`   | string | the output directory                                           | $HOME/Movies/youtubedr |
+| `-o`   | string | the output file name ( ext will auto detect on default value ) | [video's title].ext    |
+| `-d`   | string | the Socks 5 proxy (e.g. 10.10.10.10:7878)                      |                        |
+| `-q`   | string | the output file quality (medium, hd720)                        |                        |
+
 ## Example:
  * ### download-dotGo-2015-rob-pike-video
 
@@ -76,7 +86,28 @@ func main() {
     ```
     youtubedr https://www.youtube.com/watch?v=rFejpH_tAHM
     ```
- 
+
+ * ### Download video to specific folder and name
+
+	`go get github.com/kkdai/youtube/youtubedr`
+
+	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) to current directory and name the file to simplicity-is-complicated.mp4
+
+	```
+	youtubedr -d ./ -o simplicity-is-complicated.mp4 https://www.youtube.com/watch?v=rFejpH_tAHM
+	```
+
+ * ### Download video with specific quality
+
+	`go get github.com/kkdai/youtube/youtubedr`
+
+	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) with specific quality
+
+	```
+	youtubedr -q medium https://www.youtube.com/watch?v=rFejpH_tAHM
+	```
+
+
 ## How it works
 
 - Parse the video ID you input in URL
