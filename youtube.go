@@ -115,18 +115,18 @@ func (y *Youtube) StartDownloadFile() error {
 	//download highest resolution on [0]
 	err := errors.New("Empty stream list")
 	for _, stream := range y.StreamList {
-		streamUrl := stream["url"]
-		y.log(fmt.Sprintln("Download url=", streamUrl))
+		streamURL := stream["url"]
+		y.log(fmt.Sprintln("Download url=", streamURL))
 
 		// Find out what the file name should be.
-		fileName := sanitizeFilename(stream["title"])
+		fileName := SanitizeFilename(stream["title"])
 		fileName += pickIdealFileExtension(stream["type"])
 
 		usr, _ := user.Current()
 		destFile := filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
 		y.log(fmt.Sprintln("Download to file=", destFile))
 
-		err = y.videoDLWorker(destFile, streamUrl)
+		err = y.videoDLWorker(destFile, streamURL)
 		if err == nil {
 			return nil
 		}
@@ -177,7 +177,7 @@ func pickIdealFileExtension(mediaType string) string {
 	return extensions[0]
 }
 
-func sanitizeFilename(fileName string) string {
+func SanitizeFilename(fileName string) string {
 	// Characters not allowed on mac
 	//	:/
 	// Characters not allowed on linux
