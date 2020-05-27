@@ -306,7 +306,8 @@ func (y *Youtube) parseVideoInfo() error {
 			Title:  title,
 			Author: author,
 		})
-		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s'", title, author, streamRaw.Quality, streamRaw.MimeType))
+		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
+			title, author, streamRaw.Quality, streamRaw.MimeType, streamRaw.Itag))
 	}
 
 	y.StreamList = streams
