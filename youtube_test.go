@@ -42,7 +42,7 @@ func TestDownloadFirst(t *testing.T) {
 	}
 }
 
-func TestDownloadSpeicificQuality(t *testing.T) {
+func TestDownloadSpecificQuality(t *testing.T) {
 	y := NewYoutube(false)
 	if y == nil {
 		t.Error("Cannot init object.")
@@ -50,6 +50,19 @@ func TestDownloadSpeicificQuality(t *testing.T) {
 	}
 
 	if err := y.StartDownloadWithQuality(dfPath, "hd720"); err == nil {
+		t.Error("No video URL input should not download.")
+		return
+	}
+}
+
+func TestDownloadSpecificItag(t *testing.T) {
+	y := NewYoutube(false)
+	if y == nil {
+		t.Error("Cannot init object.")
+		return
+	}
+
+	if err := y.StartDownloadWithItag(dfPath, 22); err == nil {
 		t.Error("No video URL input should not download.")
 		return
 	}
