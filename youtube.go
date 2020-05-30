@@ -88,9 +88,8 @@ func (y *Youtube) StartDownload(destFile string) error {
 
 		y.log(fmt.Sprintln("Download to file=", destFile))
 		err = y.videoDLWorker(destFile, streamURL)
-		if err != nil {
-			y.log(fmt.Sprintln("Err: ", err.Error()))
-			return err
+		if err == nil {
+			break
 		}
 	}
 	return err
@@ -290,6 +289,9 @@ func (y *Youtube) parseVideoInfo() error {
 		streamUrl := streamRaw.URL
 		if streamUrl == "" {
 			cipher := streamRaw.Cipher
+			if cipher == "" {
+				return errors.New("cipher not found")
+			}
 			decipheredUrl, err := y.decipher(cipher)
 			if err != nil {
 				return err
