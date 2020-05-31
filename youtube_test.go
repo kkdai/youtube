@@ -36,7 +36,7 @@ func TestDownloadFirst(t *testing.T) {
 		return
 	}
 
-	if err := y.StartDownload(dfPath); err == nil {
+	if err := y.StartDownload(dfPath, ""); err == nil {
 		t.Error("No video URL input should not download.")
 		return
 	}

@@ -80,46 +80,32 @@ func (y *Youtube) DecodeURL(url string) error {
 
 var emptyStreamListErr = errors.New("Empty stream list") //
 
-//StartDownload : Starting download video to specific address.
-func (y *Youtube) StartDownload(destFile string) error {
-	//download highest resolution on [0]
-	index := 0
+//StartDownload : Starting download video
+func (y *Youtube) StartDownload(outputDir, outputFile string) error {
 	if len(y.StreamList) == 0 {
 		return emptyStreamListErr
 	}
-	if destFile == "" {
+
+	//download highest resolution on [0]
+	index := 0
+	outputFile = SanitizeFilename(outputFile)
+	if outputFile == "" {
 		fileName := SanitizeFilename(y.StreamList[0].Title)
 		fileName += pickIdealFileExtension(y.StreamList[0].Type)
-		usr, _ := user.Current()
-		destFile = filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
 	}
 
+	if outputDir == "" {
+		usr, _ := user.Current()
+		outputDir = filepath.Join(usr.HomeDir, "Movies", "youtubedr")
+	}
+
+	destFile := filepath.Join(outputDir, outputFile)
 	stream := y.StreamList[index]
 	streamURL := stream.URL
 	y.log(fmt.Sprintln("Download url=", streamURL))
 	y.log(fmt.Sprintln("Download to file=", destFile))
 	return y.videoDLWorker(destFile, streamURL)
 }
-
-//StartDownloadFile : Starting download video on my download.
-//func (y *Youtube) StartDownloadFile() error {
-//	//download highest resolution on [0]
-//	index := 0
-//	err := errors.New("Empty stream list")
-//	stream := y.StreamList[index]
-//	// Find out what the file name should be.
-//	fileName := SanitizeFilename(stream.Title)
-//	fileName += pickIdealFileExtension(stream.Type)
-//	usr, _ := user.Current()
-//	destFile := filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
-//
-//	streamURL := stream.URL
-//	y.log(fmt.Sprintln("Download url=", streamURL))
-//	y.log(fmt.Sprintln("Download to file=", destFile))
-//
-//	err = y.videoDLWorker(destFile, streamURL)
-//	return err
-//}
 
 //StartDownloadWithQuality : Starting download video with specific quality.
 func (y *Youtube) StartDownloadWithQuality(destFile string, quality string) error {
@@ -138,7 +124,9 @@ func (y *Youtube) StartDownloadWithQuality(destFile string, quality string) erro
 	}
 
 	if err != nil {
-		return y.StartDownload(destFile)
+		//return y.StartDownload(destFile)
+		// todo
+		return y.StartDownload("", "")
 	}
 	return err
 }

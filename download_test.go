@@ -21,10 +21,11 @@ func TestDownloadFromYT_AssignOutputFileName(t *testing.T) {
 		t.Error("Cannot decode download url")
 		return
 	}
-	path, _ := os.Getwd()
-	path += "\\" + downloadToDir + "\\download_test.mp4"
-	fmt.Println("download to " + path)
-	if err := y.StartDownload(path); err != nil {
+	curDir, _ := os.Getwd()
+	outputDir := curDir + "\\" + downloadToDir
+	outputFile := "download_test.mp4"
+	fmt.Println("download to " + outputDir + "\\" + outputFile)
+	if err := y.StartDownload(outputDir, outputFile); err != nil {
 		t.Error("Failed in downloading")
 		return
 	}

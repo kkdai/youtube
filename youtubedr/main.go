@@ -37,7 +37,6 @@ func main() {
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
 
 	flag.Parse()
-	outputFile = SanitizeFilename(outputFile)
 	log.Println(flag.Args())
 	log.Println("download to dir=", outputDir)
 	y := NewYoutubeWithSocks5Proxy(true, socks5Proxy)
@@ -55,10 +54,8 @@ func main() {
 			destFile = filepath.Join(outputDir, outputFile)
 		}
 		err = y.StartDownloadWithItag(destFile, itag)
-	} else if len(outputFile) == 0 {
-		err = y.StartDownloadFile()
 	} else {
-		err = y.StartDownload(filepath.Join(outputDir, outputFile))
+		err = y.StartDownload(outputDir, outputFile)
 	}
 
 	if err != nil {

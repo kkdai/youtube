@@ -3,11 +3,9 @@ package youtube_test
 import (
 	"flag"
 	"fmt"
+	. "github.com/kkdai/youtube"
 	"log"
 	"os/user"
-	"path/filepath"
-
-	. "github.com/kkdai/youtube"
 )
 
 //ExampleDownload : Example code for how to use this package for download video.
@@ -22,7 +20,7 @@ func ExampleNewYoutube() {
 	if err := y.DecodeURL(arg); err != nil {
 		fmt.Println("err:", err)
 	}
-	if err := y.StartDownload(filepath.Join(currentDir, "dl.mp4")); err != nil {
+	if err := y.StartDownload(currentDir, "dl.mp4"); err != nil {
 		fmt.Println("err:", err)
 	}
 }
