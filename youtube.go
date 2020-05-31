@@ -81,17 +81,20 @@ func (y *Youtube) DecodeURL(url string) error {
 var emptyStreamListErr = errors.New("Empty stream list") //
 
 //StartDownload : Starting download video
-func (y *Youtube) StartDownload(outputDir, outputFile string) error {
+func (y *Youtube) StartDownload(outputDir, outputFile, quality string) error {
 	if len(y.StreamList) == 0 {
 		return emptyStreamListErr
 	}
 
-	//download highest resolution on [0]
+	//download highest resolution on [0] by default
 	index := 0
-	outputFile = SanitizeFilename(outputFile)
-	if outputFile == "" {
-		fileName := SanitizeFilename(y.StreamList[0].Title)
-		fileName += pickIdealFileExtension(y.StreamList[0].Type)
+	if quality != "" {
+		for i, stream := range y.StreamList {
+			if strings.Compare(stream.Quality, quality) == 0 {
+				index = i
+				break
+			}
+		}
 	}
 
 	if outputDir == "" {
@@ -99,36 +102,18 @@ func (y *Youtube) StartDownload(outputDir, outputFile string) error {
 		outputDir = filepath.Join(usr.HomeDir, "Movies", "youtubedr")
 	}
 
-	destFile := filepath.Join(outputDir, outputFile)
 	stream := y.StreamList[index]
+	outputFile = SanitizeFilename(outputFile)
+	if outputFile == "" {
+		//
+		outputFile = SanitizeFilename(stream.Title)
+		outputFile += pickIdealFileExtension(stream.Type)
+	}
+	destFile := filepath.Join(outputDir, outputFile)
 	streamURL := stream.URL
 	y.log(fmt.Sprintln("Download url=", streamURL))
 	y.log(fmt.Sprintln("Download to file=", destFile))
 	return y.videoDLWorker(destFile, streamURL)
-}
-
-//StartDownloadWithQuality : Starting download video with specific quality.
-func (y *Youtube) StartDownloadWithQuality(destFile string, quality string) error {
-	//download highest resolution on [0]
-	err := errors.New("Empty stream list")
-	for _, stream := range y.StreamList {
-		if strings.Compare(stream.Quality, quality) == 0 {
-			streamURL := stream.URL
-			y.log(fmt.Sprintln("Download url=", streamURL))
-			y.log(fmt.Sprintln("Download to file=", destFile))
-			err = y.videoDLWorker(destFile, streamURL)
-			if err == nil {
-				break
-			}
-		}
-	}
-
-	if err != nil {
-		//return y.StartDownload(destFile)
-		// todo
-		return y.StartDownload("", "")
-	}
-	return err
 }
 
 //  StartDownloadWithItag : Starting download video according to given itag value

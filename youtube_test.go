@@ -19,10 +19,14 @@ func TestMain(m *testing.M) {
 	usr, _ := user.Current()
 	dfPath = filepath.Join(usr.HomeDir, "Movies", "test")
 
-	exitCode := m.Run()
-	// the following code doesn't work under debugger, please delete download files manually
 	path, _ := os.Getwd()
 	path += "\\" + downloadToDir
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	exitCode := m.Run()
+	// the following code doesn't work under debugger, please delete download files manually
 	if err := os.RemoveAll(path); err != nil {
 		log.Fatal(err.Error())
 	}
@@ -36,7 +40,7 @@ func TestDownloadFirst(t *testing.T) {
 		return
 	}
 
-	if err := y.StartDownload(dfPath, ""); err == nil {
+	if err := y.StartDownload(dfPath, "", ""); err == nil {
 		t.Error("No video URL input should not download.")
 		return
 	}
@@ -49,7 +53,7 @@ func TestDownloadSpecificQuality(t *testing.T) {
 		return
 	}
 
-	if err := y.StartDownloadWithQuality(dfPath, "hd720"); err == nil {
+	if err := y.StartDownload(dfPath, "", "hd720"); err == nil {
 		t.Error("No video URL input should not download.")
 		return
 	}

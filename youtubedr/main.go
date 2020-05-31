@@ -46,16 +46,14 @@ func main() {
 		return
 	}
 	var err error
-	if len(outputQuality) > 0 {
-		err = y.StartDownloadWithQuality(filepath.Join(outputDir, outputFile), outputQuality)
-	} else if itag != 0 {
+	if itag != 0 {
 		destFile := ""
 		if outputFile != "" {
 			destFile = filepath.Join(outputDir, outputFile)
 		}
 		err = y.StartDownloadWithItag(destFile, itag)
 	} else {
-		err = y.StartDownload(outputDir, outputFile)
+		err = y.StartDownload(outputDir, outputFile, outputQuality)
 	}
 
 	if err != nil {
