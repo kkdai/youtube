@@ -26,7 +26,7 @@ type PlayerResponseData struct {
 			ApproxDurationMs string `json:"approxDurationMs"`
 			AudioSampleRate  string `json:"audioSampleRate"`
 			AudioChannels    int    `json:"audioChannels"`
-			Cipher           string `json:"cipher"`
+			Cipher           string `json:"signatureCipher"`
 		} `json:"formats"`
 		AdaptiveFormats []struct {
 			Itag      int    `json:"itag"`
