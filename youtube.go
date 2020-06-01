@@ -78,12 +78,10 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
-var emptyStreamListErr = errors.New("Empty stream list") //
-
 //StartDownload : Starting download video
 func (y *Youtube) StartDownload(outputDir, outputFile, quality string) error {
 	if len(y.StreamList) == 0 {
-		return emptyStreamListErr
+		return ErrEmptyStreamList
 	}
 
 	//download highest resolution on [0] by default
@@ -105,7 +103,6 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string) error {
 	stream := y.StreamList[index]
 	outputFile = SanitizeFilename(outputFile)
 	if outputFile == "" {
-		//
 		outputFile = SanitizeFilename(stream.Title)
 		outputFile += pickIdealFileExtension(stream.Type)
 	}

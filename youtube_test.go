@@ -33,29 +33,31 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestDownloadFirst(t *testing.T) {
-	y := NewYoutube(false)
-	if y == nil {
-		t.Error("Cannot init object.")
-		return
+func TestDownload(t *testing.T) {
+	testcases := []struct {
+		name      string
+		outputDir string
+		ouputFile string
+		quality   string
+	}{
+		{name: "Default"},
+		{name: "with outputDir", outputDir: dfPath},
+		{name: "SpecificQuality", quality: "hd720"},
 	}
 
-	if err := y.StartDownload(dfPath, "", ""); err == nil {
-		t.Error("No video URL input should not download.")
-		return
-	}
-}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			if y == nil {
+				t.Error("Cannot init object.")
+				return
+			}
 
-func TestDownloadSpecificQuality(t *testing.T) {
-	y := NewYoutube(false)
-	if y == nil {
-		t.Error("Cannot init object.")
-		return
-	}
-
-	if err := y.StartDownload(dfPath, "", "hd720"); err == nil {
-		t.Error("No video URL input should not download.")
-		return
+			if err := y.StartDownload(tc.outputDir, tc.ouputFile, tc.quality); err == nil {
+				t.Error("No video URL input should not download.")
+				return
+			}
+		})
 	}
 }
 
@@ -72,6 +74,18 @@ func TestDownloadSpecificItag(t *testing.T) {
 	}
 }
 
+func TestDownloadErrEmptyStreamList(t *testing.T) {
+	y := NewYoutube(false)
+	if y == nil {
+		t.Error("Cannot init object.")
+		return
+	}
+
+	if err := y.StartDownload("", "", ""); err != ErrEmptyStreamList {
+		t.Error("no error returned by empty stream list")
+		return
+	}
+}
 func TestParseVideo(t *testing.T) {
 	y := NewYoutube(false)
 	if y == nil {
