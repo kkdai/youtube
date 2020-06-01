@@ -20,7 +20,7 @@ func ExampleNewYoutube() {
 	if err := y.DecodeURL(arg); err != nil {
 		fmt.Println("err:", err)
 	}
-	if err := y.StartDownload(currentDir, "dl.mp4", ""); err != nil {
+	if err := y.StartDownload(currentDir, "dl.mp4", "", 0); err != nil {
 		fmt.Println("err:", err)
 	}
 }

@@ -45,17 +45,8 @@ func main() {
 		fmt.Println("err:", err)
 		return
 	}
-	var err error
-	if itag != 0 {
-		destFile := ""
-		if outputFile != "" {
-			destFile = filepath.Join(outputDir, outputFile)
-		}
-		err = y.StartDownloadWithItag(destFile, itag)
-	} else {
-		err = y.StartDownload(outputDir, outputFile, outputQuality)
-	}
 
+	err := y.StartDownload(outputDir, outputFile, outputQuality, itag)
 	if err != nil {
 		fmt.Println("err:", err)
 	}

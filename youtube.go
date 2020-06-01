@@ -78,15 +78,28 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
-//StartDownload : Starting download video
-func (y *Youtube) StartDownload(outputDir, outputFile, quality string) error {
+//StartDownload : Starting download video by arguments
+func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itag int) error {
 	if len(y.StreamList) == 0 {
 		return ErrEmptyStreamList
 	}
 
 	//download highest resolution on [0] by default
 	index := 0
-	if quality != "" {
+	switch {
+	case itag != 0:
+		itagFound := false
+		for i, stream := range y.StreamList {
+			if stream.Itag == itag {
+				itagFound = true
+				index = i
+				break
+			}
+		}
+		if !itagFound {
+			return ErrItagNotFound
+		}
+	case quality != "":
 		for i, stream := range y.StreamList {
 			if strings.Compare(stream.Quality, quality) == 0 {
 				index = i
@@ -94,13 +107,13 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string) error {
 			}
 		}
 	}
+	stream := y.StreamList[index]
 
 	if outputDir == "" {
 		usr, _ := user.Current()
 		outputDir = filepath.Join(usr.HomeDir, "Movies", "youtubedr")
 	}
 
-	stream := y.StreamList[index]
 	outputFile = SanitizeFilename(outputFile)
 	if outputFile == "" {
 		outputFile = SanitizeFilename(stream.Title)
@@ -111,39 +124,6 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string) error {
 	y.log(fmt.Sprintln("Download url=", streamURL))
 	y.log(fmt.Sprintln("Download to file=", destFile))
 	return y.videoDLWorker(destFile, streamURL)
-}
-
-//  StartDownloadWithItag : Starting download video according to given itag value
-func (y *Youtube) StartDownloadWithItag(destFile string, itag int) error {
-	err := errors.New("Empty stream list")
-	itagFound := false
-	for _, stream := range y.StreamList {
-		if stream.Itag == itag {
-			itagFound = true
-			streamURL := stream.URL
-			y.log(fmt.Sprintln("Download url=", streamURL))
-
-			if destFile == "" {
-				// Find out what the file name should be.
-				fileName := SanitizeFilename(stream.Title)
-				fileName += pickIdealFileExtension(stream.Type)
-
-				usr, _ := user.Current()
-				destFile = filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
-			}
-
-			y.log(fmt.Sprintln("Download to file=", destFile))
-			err = y.videoDLWorker(destFile, streamURL)
-			if err == nil {
-				return nil
-			}
-		}
-	}
-
-	if !itagFound {
-		return errors.New("Invalid itag value, please specify correct value.")
-	}
-	return err
 }
 
 func pickIdealFileExtension(mediaType string) string {

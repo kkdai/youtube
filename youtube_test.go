@@ -39,10 +39,12 @@ func TestDownload(t *testing.T) {
 		outputDir string
 		ouputFile string
 		quality   string
+		itag      int
 	}{
 		{name: "Default"},
 		{name: "with outputDir", outputDir: dfPath},
 		{name: "SpecificQuality", quality: "hd720"},
+		{name: "SpecificITag", itag: 22},
 	}
 
 	for _, tc := range testcases {
@@ -53,7 +55,7 @@ func TestDownload(t *testing.T) {
 				return
 			}
 
-			if err := y.StartDownload(tc.outputDir, tc.ouputFile, tc.quality); err == nil {
+			if err := y.StartDownload(tc.outputDir, tc.ouputFile, tc.quality, tc.itag); err == nil {
 				t.Error("No video URL input should not download.")
 				return
 			}
@@ -61,31 +63,26 @@ func TestDownload(t *testing.T) {
 	}
 }
 
-func TestDownloadSpecificItag(t *testing.T) {
+func TestDownloadError(t *testing.T) {
 	y := NewYoutube(false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
 	}
+	t.Run("empty stream list error", func(t *testing.T) {
+		if err := y.StartDownload("", "", "", 0); err != ErrEmptyStreamList {
+			t.Error("no err returned for empty stream list")
+		}
+	})
 
-	if err := y.StartDownloadWithItag(dfPath, 22); err == nil {
-		t.Error("No video URL input should not download.")
-		return
-	}
+	t.Run("itag not found error", func(t *testing.T) {
+		y.StreamList = append(y.StreamList, stream{})
+		if err := y.StartDownload("", "", "", 18); err != ErrItagNotFound {
+			t.Error("no error returned for itag not found")
+		}
+	})
 }
 
-func TestDownloadErrEmptyStreamList(t *testing.T) {
-	y := NewYoutube(false)
-	if y == nil {
-		t.Error("Cannot init object.")
-		return
-	}
-
-	if err := y.StartDownload("", "", ""); err != ErrEmptyStreamList {
-		t.Error("no error returned by empty stream list")
-		return
-	}
-}
 func TestParseVideo(t *testing.T) {
 	y := NewYoutube(false)
 	if y == nil {
