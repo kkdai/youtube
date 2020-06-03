@@ -78,100 +78,52 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
-//StartDownload : Starting download video to specific address.
-func (y *Youtube) StartDownload(destFile string) error {
-	//download highest resolution on [0]
-	err := errors.New("Empty stream list")
-	for _, stream := range y.StreamList {
-		streamURL := stream.URL
-		y.log(fmt.Sprintln("Download url=", streamURL))
-
-		y.log(fmt.Sprintln("Download to file=", destFile))
-		err = y.videoDLWorker(destFile, streamURL)
-		if err == nil {
-			break
-		}
+//StartDownload : Starting download video by arguments
+func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itag int) error {
+	if len(y.StreamList) == 0 {
+		return ErrEmptyStreamList
 	}
-	return err
-}
 
-//StartDownloadWithQuality : Starting download video with specific quality.
-func (y *Youtube) StartDownloadWithQuality(destFile string, quality string) error {
-	//download highest resolution on [0]
-	err := errors.New("Empty stream list")
-	for _, stream := range y.StreamList {
-		if strings.Compare(stream.Quality, quality) == 0 {
-			streamURL := stream.URL
-			y.log(fmt.Sprintln("Download url=", streamURL))
-			y.log(fmt.Sprintln("Download to file=", destFile))
-			err = y.videoDLWorker(destFile, streamURL)
-			if err == nil {
+	//download highest resolution on [0] by default
+	index := 0
+	switch {
+	case itag != 0:
+		itagFound := false
+		for i, stream := range y.StreamList {
+			if stream.Itag == itag {
+				itagFound = true
+				index = i
+				break
+			}
+		}
+		if !itagFound {
+			return ErrItagNotFound
+		}
+	case quality != "":
+		for i, stream := range y.StreamList {
+			if strings.Compare(stream.Quality, quality) == 0 {
+				index = i
 				break
 			}
 		}
 	}
+	stream := y.StreamList[index]
 
-	if err != nil {
-		return y.StartDownload(destFile)
-	}
-	return err
-}
-
-//StartDownloadFile : Starting download video on my download.
-func (y *Youtube) StartDownloadFile() error {
-	//download highest resolution on [0]
-	err := errors.New("Empty stream list")
-	for _, stream := range y.StreamList {
-		streamURL := stream.URL
-		y.log(fmt.Sprintln("Download url=", streamURL))
-
-		// Find out what the file name should be.
-		fileName := SanitizeFilename(stream.Title)
-		fileName += pickIdealFileExtension(stream.Type)
-
+	if outputDir == "" {
 		usr, _ := user.Current()
-		destFile := filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
-		y.log(fmt.Sprintln("Download to file=", destFile))
-
-		err = y.videoDLWorker(destFile, streamURL)
-		if err == nil {
-			return nil
-		}
-	}
-	return err
-}
-
-//  StartDownloadWithItag : Starting download video according to given itag value
-func (y *Youtube) StartDownloadWithItag(destFile string, itag int) error {
-	err := errors.New("Empty stream list")
-	itagFound := false
-	for _, stream := range y.StreamList {
-		if stream.Itag == itag {
-			itagFound = true
-			streamURL := stream.URL
-			y.log(fmt.Sprintln("Download url=", streamURL))
-
-			if destFile == "" {
-				// Find out what the file name should be.
-				fileName := SanitizeFilename(stream.Title)
-				fileName += pickIdealFileExtension(stream.Type)
-
-				usr, _ := user.Current()
-				destFile = filepath.Join(filepath.Join(usr.HomeDir, "Movies", "youtubedr"), fileName)
-			}
-
-			y.log(fmt.Sprintln("Download to file=", destFile))
-			err = y.videoDLWorker(destFile, streamURL)
-			if err == nil {
-				return nil
-			}
-		}
+		outputDir = filepath.Join(usr.HomeDir, "Movies", "youtubedr")
 	}
 
-	if !itagFound {
-		return errors.New("Invalid itag value, please specify correct value.")
+	outputFile = SanitizeFilename(outputFile)
+	if outputFile == "" {
+		outputFile = SanitizeFilename(stream.Title)
+		outputFile += pickIdealFileExtension(stream.Type)
 	}
-	return err
+	destFile := filepath.Join(outputDir, outputFile)
+	streamURL := stream.URL
+	y.log(fmt.Sprintln("Download url=", streamURL))
+	y.log(fmt.Sprintln("Download to file=", destFile))
+	return y.videoDLWorker(destFile, streamURL)
 }
 
 func pickIdealFileExtension(mediaType string) string {

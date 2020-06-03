@@ -19,53 +19,68 @@ func TestMain(m *testing.M) {
 	usr, _ := user.Current()
 	dfPath = filepath.Join(usr.HomeDir, "Movies", "test")
 
-	exitCode := m.Run()
-	// the following code doesn't work under debugger, please delete download files manually
 	path, _ := os.Getwd()
 	path += "\\" + downloadToDir
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	exitCode := m.Run()
+	// the following code doesn't work under debugger, please delete download files manually
 	if err := os.RemoveAll(path); err != nil {
 		log.Fatal(err.Error())
 	}
 	os.Exit(exitCode)
 }
 
-func TestDownloadFirst(t *testing.T) {
-	y := NewYoutube(false)
-	if y == nil {
-		t.Error("Cannot init object.")
-		return
+func TestDownload(t *testing.T) {
+	testcases := []struct {
+		name      string
+		outputDir string
+		ouputFile string
+		quality   string
+		itag      int
+	}{
+		{name: "Default"},
+		{name: "with outputDir", outputDir: dfPath},
+		{name: "SpecificQuality", quality: "hd720"},
+		{name: "SpecificITag", itag: 22},
 	}
 
-	if err := y.StartDownload(dfPath); err == nil {
-		t.Error("No video URL input should not download.")
-		return
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			if y == nil {
+				t.Error("Cannot init object.")
+				return
+			}
+
+			if err := y.StartDownload(tc.outputDir, tc.ouputFile, tc.quality, tc.itag); err == nil {
+				t.Error("No video URL input should not download.")
+				return
+			}
+		})
 	}
 }
 
-func TestDownloadSpecificQuality(t *testing.T) {
+func TestDownloadError(t *testing.T) {
 	y := NewYoutube(false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
 	}
+	t.Run("empty stream list error", func(t *testing.T) {
+		if err := y.StartDownload("", "", "", 0); err != ErrEmptyStreamList {
+			t.Error("no err returned for empty stream list")
+		}
+	})
 
-	if err := y.StartDownloadWithQuality(dfPath, "hd720"); err == nil {
-		t.Error("No video URL input should not download.")
-		return
-	}
-}
-
-func TestDownloadSpecificItag(t *testing.T) {
-	y := NewYoutube(false)
-	if y == nil {
-		t.Error("Cannot init object.")
-		return
-	}
-
-	if err := y.StartDownloadWithItag(dfPath, 22); err == nil {
-		t.Error("No video URL input should not download.")
-		return
-	}
+	t.Run("itag not found error", func(t *testing.T) {
+		y.StreamList = append(y.StreamList, stream{})
+		if err := y.StartDownload("", "", "", 18); err != ErrItagNotFound {
+			t.Error("no error returned for itag not found")
+		}
+	})
 }
 
 func TestParseVideo(t *testing.T) {
