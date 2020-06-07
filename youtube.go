@@ -409,6 +409,18 @@ func (y *Youtube) log(logText string) {
 	}
 }
 
+func (y *Youtube) Listitags() {
+	if len(y.StreamList) == 0 {
+		fmt.Println("-----no available itag-----")
+		return
+	}
+
+	fmt.Println("-----available itag-----")
+	for _, stream := range y.StreamList {
+		fmt.Printf("itag: %2d , quality: %6s , type: %10s\n", stream.Itag, stream.Quality, stream.Type)
+	}
+}
+
 func getVideoTitleAuthor(in url.Values) (string, string) {
 	playResponse, ok := in["player_response"]
 	if !ok {

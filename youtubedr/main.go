@@ -36,6 +36,9 @@ func main() {
 	var itag int
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
 
+	var itags bool
+	flag.BoolVar(&itags, "itags", false, "list available itags of video")
+
 	flag.Parse()
 	log.Println(flag.Args())
 	log.Println("download to dir=", outputDir)
@@ -46,8 +49,13 @@ func main() {
 		return
 	}
 
-	err := y.StartDownload(outputDir, outputFile, outputQuality, itag)
-	if err != nil {
-		fmt.Println("err:", err)
+	if itags {
+		y.Listitags()
+	} else {
+		err := y.StartDownload(outputDir, outputFile, outputQuality, itag)
+		if err != nil {
+			fmt.Println("err:", err)
+		}
 	}
+
 }
