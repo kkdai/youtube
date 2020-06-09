@@ -413,7 +413,8 @@ func (y *Youtube) Listitags() {
 		fmt.Println("-----no available itag-----")
 		return
 	}
-
+	fmt.Printf("Title: %s\n", y.StreamList[0].Title)
+	fmt.Printf("Author: %s\n", y.StreamList[0].Author)
 	fmt.Println("-----available itag-----")
 	for _, stream := range y.StreamList {
 		fmt.Printf("itag: %2d , quality: %6s , type: %10s\n", stream.Itag, stream.Quality, stream.Type)
