@@ -43,6 +43,9 @@ func main() {
 	log.Println(flag.Args())
 	log.Println("download to dir=", outputDir)
 	y := NewYoutubeWithSocks5Proxy(true, socks5Proxy)
+	if len(y.Socks5Proxy) == 0 {
+		log.Println("Using http without proxy.")
+	}
 	arg := flag.Arg(0)
 	if err := y.DecodeURL(arg); err != nil {
 		fmt.Println("err:", err)

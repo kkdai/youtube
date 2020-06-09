@@ -285,7 +285,6 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 	httpClient := &http.Client{Transport: httpTransport}
 
 	if len(y.Socks5Proxy) == 0 {
-		y.log("Using http without proxy.")
 		return httpClient, nil
 	}
 
