@@ -53,7 +53,17 @@ func main() {
 	}
 
 	if itags {
-		y.Listitags()
+		info := y.GetItagInfo()
+		if info == nil {
+			fmt.Println("-----no available itag-----")
+			return
+		}
+		fmt.Printf("Title: %s\n", info.Title)
+		fmt.Printf("Author: %s\n", info.Author)
+		fmt.Println("-----available itag-----")
+		for _, itag := range info.Itags {
+			fmt.Printf("itag: %2d , quality: %6s , type: %10s\n", itag.ItagNo, itag.Quality, itag.Type)
+		}
 	} else {
 		err := y.StartDownload(outputDir, outputFile, outputQuality, itag)
 		if err != nil {

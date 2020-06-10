@@ -408,17 +408,28 @@ func (y *Youtube) log(logText string) {
 	}
 }
 
-func (y *Youtube) Listitags() {
+type ItagInfo struct {
+	Title  string
+	Author string
+	Itags  []Itag
+}
+
+type Itag struct {
+	ItagNo  int
+	Quality string
+	Type    string
+}
+
+func (y *Youtube) GetItagInfo() *ItagInfo {
 	if len(y.StreamList) == 0 {
-		fmt.Println("-----no available itag-----")
-		return
+		return nil
 	}
-	fmt.Printf("Title: %s\n", y.StreamList[0].Title)
-	fmt.Printf("Author: %s\n", y.StreamList[0].Author)
-	fmt.Println("-----available itag-----")
+	model := ItagInfo{Title: y.StreamList[0].Title, Author: y.StreamList[0].Author}
+
 	for _, stream := range y.StreamList {
-		fmt.Printf("itag: %2d , quality: %6s , type: %10s\n", stream.Itag, stream.Quality, stream.Type)
+		model.Itags = append(model.Itags, Itag{ItagNo: stream.Itag, Quality: stream.Quality, Type: stream.Type})
 	}
+	return &model
 }
 
 func getVideoTitleAuthor(in url.Values) (string, string) {

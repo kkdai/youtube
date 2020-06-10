@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -118,5 +119,101 @@ func TestSanitizeFilename(t *testing.T) {
 	sanitized = SanitizeFilename(fileName)
 	if sanitized != "~!@#$%^&()[].," {
 		t.Error("The common harmless symbols should remain valid")
+	}
+}
+
+func TestGetItagInfo(t *testing.T) {
+	type args struct {
+		StreamList []stream
+	}
+	videoQuality := "TestQuality"
+	videoType := "TestType"
+	videoTitle := "TestTitle"
+	videoAuthor := "TestAuthor"
+	tests := []struct {
+		name string
+		args args
+		want *ItagInfo
+	}{
+		{
+			name: "no itag",
+			args: args{
+				StreamList: nil,
+			},
+			want: nil,
+		},
+		{
+			name: "one itag",
+			args: args{
+				StreamList: []stream{
+					{
+						Quality: videoQuality,
+						Type:    videoType,
+						URL:     "",
+						Itag:    0,
+						Title:   videoTitle,
+						Author:  videoAuthor,
+					},
+				},
+			},
+			want: &ItagInfo{
+				Title:  videoTitle,
+				Author: videoAuthor,
+				Itags: []Itag{{
+					ItagNo:  0,
+					Quality: videoQuality,
+					Type:    videoType,
+				}},
+			},
+		},
+		{
+			name: "two itags",
+			args: args{
+				StreamList: []stream{
+					{
+						Quality: videoQuality,
+						Type:    videoType,
+						URL:     "",
+						Itag:    0,
+						Title:   videoTitle,
+						Author:  videoAuthor,
+					},
+					{
+						Quality: videoQuality,
+						Type:    videoType,
+						URL:     "",
+						Itag:    0,
+						Title:   videoTitle,
+						Author:  videoAuthor,
+					},
+				},
+			},
+			want: &ItagInfo{
+				Title:  videoTitle,
+				Author: videoAuthor,
+				Itags: []Itag{
+					{
+						ItagNo:  0,
+						Quality: videoQuality,
+						Type:    videoType,
+					},
+					{
+						ItagNo:  0,
+						Quality: videoQuality,
+						Type:    videoType,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := &Youtube{
+				StreamList: tt.args.StreamList,
+			}
+			if got := y.GetItagInfo(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetItagInfo() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
