@@ -285,7 +285,6 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 	httpClient := &http.Client{Transport: httpTransport}
 
 	if len(y.Socks5Proxy) == 0 {
-		y.log("Using http without proxy.")
 		return httpClient, nil
 	}
 
@@ -407,6 +406,30 @@ func (y *Youtube) log(logText string) {
 	if y.DebugMode {
 		log.Println(logText)
 	}
+}
+
+type ItagInfo struct {
+	Title  string
+	Author string
+	Itags  []Itag
+}
+
+type Itag struct {
+	ItagNo  int
+	Quality string
+	Type    string
+}
+
+func (y *Youtube) GetItagInfo() *ItagInfo {
+	if len(y.StreamList) == 0 {
+		return nil
+	}
+	model := ItagInfo{Title: y.StreamList[0].Title, Author: y.StreamList[0].Author}
+
+	for _, stream := range y.StreamList {
+		model.Itags = append(model.Itags, Itag{ItagNo: stream.Itag, Quality: stream.Quality, Type: stream.Type})
+	}
+	return &model
 }
 
 func getVideoTitleAuthor(in url.Values) (string, string) {
