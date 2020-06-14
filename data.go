@@ -60,6 +60,7 @@ type PlayerResponseData struct {
 			AudioQuality    string `json:"audioQuality,omitempty"`
 			AudioSampleRate string `json:"audioSampleRate,omitempty"`
 			AudioChannels   int    `json:"audioChannels,omitempty"`
+			Cipher          string `json:"signatureCipher"`
 		} `json:"adaptiveFormats"`
 	} `json:"streamingData"`
 	PlaybackTracking struct {
