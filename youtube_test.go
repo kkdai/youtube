@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"errors"
 	"log"
 	"os"
 	"os/user"
@@ -213,6 +214,80 @@ func TestGetItagInfo(t *testing.T) {
 			}
 			if got := y.GetItagInfo(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetItagInfo() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestYoutube_getStream(t *testing.T) {
+	type args struct {
+		title      string
+		author     string
+		streamPos  int
+		formatBase FormatBase
+	}
+	tests := []struct {
+		name      string
+		args      args
+		want      stream
+		wantErr   bool
+		expectErr error
+	}{
+		{
+			name: "MimeType is empty",
+			args: args{
+				title:     "",
+				author:    "",
+				streamPos: 0,
+				formatBase: FormatBase{
+					Itag:     0,
+					URL:      "",
+					MimeType: "",
+					Quality:  "",
+					Cipher:   "",
+				},
+			},
+			want:      stream{},
+			wantErr:   true,
+			expectErr: ErrDecodingStreamInfo{0},
+		},
+		{
+			name: "get stream",
+			args: args{
+				title:     "test",
+				author:    "test",
+				streamPos: 0,
+				formatBase: FormatBase{
+					Itag:     0,
+					URL:      "test",
+					MimeType: "test",
+					Quality:  "test",
+					Cipher:   "test",
+				},
+			},
+			want: stream{
+				Quality: "test",
+				Type:    "test",
+				URL:     "test",
+				Itag:    0,
+				Title:   "test",
+				Author:  "test",
+			},
+			wantErr:   false,
+			expectErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			got, err := y.getStream(tt.args.title, tt.args.author, tt.args.streamPos, tt.args.formatBase)
+			if tt.wantErr && !errors.Is(err, tt.expectErr) {
+				t.Errorf("getStream() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("get stream failed, want %v, but got %v", tt.want, got)
 			}
 		})
 	}

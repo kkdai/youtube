@@ -97,7 +97,7 @@ func TestDownloadFromYT_WithItag(t *testing.T) {
 	for _, ts := range testcases {
 		t.Run(ts.name, func(t *testing.T) {
 			if err := y.StartDownload(outputDir, ts.outputFile, "", ts.itagNo); err != nil {
-				t.Error("Failed in downloading")
+				t.Errorf("Failed in downloading, err:%v\n", err)
 				return
 			}
 		})
