@@ -242,7 +242,7 @@ func (y *Youtube) parseVideoInfo() error {
 		if streamUrl == "" {
 			cipher := streamRaw.Cipher
 			if cipher == "" {
-				return errors.New("cipher not found")
+				return ErrCipherNotFound
 			}
 			decipheredUrl, err := y.decipher(cipher)
 			if err != nil {
@@ -264,6 +264,36 @@ func (y *Youtube) parseVideoInfo() error {
 			title, author, streamRaw.Quality, streamRaw.MimeType, streamRaw.Itag))
 	}
 
+	for streamPos, streamRaw := range prData.StreamingData.AdaptiveFormats {
+		if streamRaw.MimeType == "" {
+			y.log(fmt.Sprintf("An error occurred while decoding one of the video's stream's information: stream %d.\n", streamPos))
+			continue
+		}
+		streamUrl := streamRaw.URL
+		if streamUrl == "" {
+			cipher := streamRaw.Cipher
+			if cipher == "" {
+				return ErrCipherNotFound
+			}
+			decipheredUrl, err := y.decipher(cipher)
+			if err != nil {
+				return err
+			}
+			streamUrl = decipheredUrl
+		}
+
+		streams = append(streams, stream{
+			Quality: streamRaw.Quality,
+			Type:    streamRaw.MimeType,
+			URL:     streamUrl,
+			Itag:    streamRaw.Itag,
+
+			Title:  title,
+			Author: author,
+		})
+		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
+			title, author, streamRaw.Quality, streamRaw.MimeType, streamRaw.Itag))
+	}
 	y.StreamList = streams
 	if len(y.StreamList) == 0 {
 		return errors.New("no stream list found in the server's answer")
@@ -359,7 +389,7 @@ func (y *Youtube) findVideoID(url string) error {
 func (y *Youtube) Write(p []byte) (n int, err error) {
 	n = len(p)
 	y.totalWrittenBytes = y.totalWrittenBytes + float64(n)
-	currentPercent := ((y.totalWrittenBytes / y.contentLength) * 100)
+	currentPercent := (y.totalWrittenBytes / y.contentLength) * 100
 	if (y.downloadLevel <= currentPercent) && (y.downloadLevel < 100) {
 		y.downloadLevel++
 		y.DownloadPercent <- int64(y.downloadLevel)
