@@ -69,9 +69,37 @@ func TestDownloadFromYT_WithItag(t *testing.T) {
 
 	curDir, _ := os.Getwd()
 	outputDir := curDir + "\\" + downloadToDir
-	outputFile := "download_test.mp4"
-	if err := y.StartDownload(outputDir, outputFile, "", 18); err != nil {
-		t.Error("Failed in downloading")
-		return
+
+	//outputFile := "download_test.mp4"
+
+	testcases := []struct {
+		name       string
+		outputFile string
+		itagNo     int
+	}{
+		{
+			name:       "Format",
+			outputFile: "download_test.mp4",
+			itagNo:     18,
+		},
+		{
+			name:       "AdaptiveFormat_video",
+			outputFile: "download_test.m4v",
+			itagNo:     134,
+		},
+		{
+			name:       "AdaptiveFormat_audio",
+			outputFile: "download_test.m4a",
+			itagNo:     140,
+		},
+	}
+
+	for _, ts := range testcases {
+		t.Run(ts.name, func(t *testing.T) {
+			if err := y.StartDownload(outputDir, ts.outputFile, "", ts.itagNo); err != nil {
+				t.Error("Failed in downloading")
+				return
+			}
+		})
 	}
 }
