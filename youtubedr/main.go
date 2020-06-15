@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"os/user"
 	"path/filepath"
 
@@ -40,7 +41,12 @@ func main() {
 	flag.BoolVar(&itags, "itags", false, "list available itags of video")
 
 	flag.Parse()
-	log.Println(flag.Args())
+
+	if len(flag.Args()) == 0 {
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
 	log.Println("download to dir=", outputDir)
 	y := NewYoutubeWithSocks5Proxy(true, socks5Proxy)
 	if len(y.Socks5Proxy) == 0 {
