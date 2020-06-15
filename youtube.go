@@ -232,73 +232,69 @@ func (y *Youtube) parseVideoInfo() error {
 		return errors.New(fmt.Sprint("Cannot playback and download, reason:", prData.PlayabilityStatus.Reason))
 	}
 
-	var streams []stream
+	size := len(prData.StreamingData.Formats) + len(prData.StreamingData.AdaptiveFormats)
+	formatBases := make([]FormatBase, 0, size)
+	streamPositions := make([]int, 0, size)
+
 	for streamPos, streamRaw := range prData.StreamingData.Formats {
-		if streamRaw.MimeType == "" {
-			y.log(fmt.Sprintf("An error occurred while decoding one of the video's stream's information: stream %d.\n", streamPos))
-			continue
-		}
-		streamUrl := streamRaw.URL
-		if streamUrl == "" {
-			cipher := streamRaw.Cipher
-			if cipher == "" {
-				return ErrCipherNotFound
-			}
-			decipheredUrl, err := y.decipher(cipher)
-			if err != nil {
-				return err
-			}
-			streamUrl = decipheredUrl
-		}
-
-		streams = append(streams, stream{
-			Quality: streamRaw.Quality,
-			Type:    streamRaw.MimeType,
-			URL:     streamUrl,
-			Itag:    streamRaw.Itag,
-
-			Title:  title,
-			Author: author,
-		})
-		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
-			title, author, streamRaw.Quality, streamRaw.MimeType, streamRaw.Itag))
+		formatBases = append(formatBases, streamRaw.FormatBase)
+		streamPositions = append(streamPositions, streamPos)
 	}
-
 	for streamPos, streamRaw := range prData.StreamingData.AdaptiveFormats {
-		if streamRaw.MimeType == "" {
-			y.log(fmt.Sprintf("An error occurred while decoding one of the video's stream's information: stream %d.\n", streamPos))
-			continue
-		}
-		streamUrl := streamRaw.URL
-		if streamUrl == "" {
-			cipher := streamRaw.Cipher
-			if cipher == "" {
-				return ErrCipherNotFound
-			}
-			decipheredUrl, err := y.decipher(cipher)
-			if err != nil {
-				return err
-			}
-			streamUrl = decipheredUrl
-		}
-
-		streams = append(streams, stream{
-			Quality: streamRaw.Quality,
-			Type:    streamRaw.MimeType,
-			URL:     streamUrl,
-			Itag:    streamRaw.Itag,
-
-			Title:  title,
-			Author: author,
-		})
-		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
-			title, author, streamRaw.Quality, streamRaw.MimeType, streamRaw.Itag))
+		formatBases = append(formatBases, streamRaw.FormatBase)
+		streamPositions = append(streamPositions, streamPos)
 	}
+	var streams []stream
+	for idx, formatBase := range formatBases {
+		stream, err := y.getStream(title, author, streamPositions[idx], formatBase)
+		if err != nil {
+			if errors.Is(err, ErrDecodingStreamInfo{}) {
+				y.log(err.Error())
+				continue
+			}
+			return err
+		}
+		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
+			title, author, stream.Quality, stream.Type, stream.Itag))
+		streams = append(streams, stream)
+	}
+
 	y.StreamList = streams
 	if len(y.StreamList) == 0 {
 		return errors.New("no stream list found in the server's answer")
 	}
 	return nil
+}
+
+func (y Youtube) getStream(title, author string, streamPos int, formatBase FormatBase) (stream, error) {
+	if formatBase.MimeType == "" {
+		return stream{}, ErrDecodingStreamInfo{
+			streamPos: streamPos,
+		}
+	}
+	streamUrl := formatBase.URL
+	if streamUrl == "" {
+		cipher := formatBase.Cipher
+		if cipher == "" {
+			return stream{}, ErrCipherNotFound
+		}
+		decipheredUrl, err := y.decipher(cipher)
+		if err != nil {
+			return stream{}, err
+		}
+		streamUrl = decipheredUrl
+	}
+
+	stream := stream{
+		Quality: formatBase.Quality,
+		Type:    formatBase.MimeType,
+		URL:     streamUrl,
+		Itag:    formatBase.Itag,
+
+		Title:  title,
+		Author: author,
+	}
+	return stream, nil
 }
 
 func (y *Youtube) getHTTPClient() (*http.Client, error) {
