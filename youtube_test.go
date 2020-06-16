@@ -276,6 +276,20 @@ func TestYoutube_getStream(t *testing.T) {
 			wantErr:   false,
 			expectErr: nil,
 		},
+		{
+			name: "stream download url and cipher are empty",
+			args: args{
+				formatBase: FormatBase{
+					ItagNo:   0,
+					URL:      "",
+					MimeType: "test",
+					Cipher:   "",
+				},
+			},
+			want:      stream{},
+			wantErr:   true,
+			expectErr: ErrCipherNotFound,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
