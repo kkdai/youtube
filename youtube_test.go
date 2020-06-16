@@ -219,7 +219,7 @@ func TestGetItagInfo(t *testing.T) {
 	}
 }
 
-func TestYoutube_getStream(t *testing.T) {
+func TestYoutube_parseStream(t *testing.T) {
 	type args struct {
 		title      string
 		author     string
@@ -252,7 +252,7 @@ func TestYoutube_getStream(t *testing.T) {
 			expectErr: ErrDecodingStreamInfo{0},
 		},
 		{
-			name: "get stream",
+			name: "parse stream correctly",
 			args: args{
 				title:     "test",
 				author:    "test",
@@ -294,9 +294,9 @@ func TestYoutube_getStream(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			y := NewYoutube(false)
-			got, err := y.getStream(tt.args.title, tt.args.author, tt.args.streamPos, tt.args.formatBase)
+			got, err := y.parseStream(tt.args.title, tt.args.author, tt.args.streamPos, tt.args.formatBase)
 			if tt.wantErr && !errors.Is(err, tt.expectErr) {
-				t.Errorf("getStream() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseStream() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 

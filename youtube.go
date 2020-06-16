@@ -259,7 +259,7 @@ func (y Youtube) getStreams(prData PlayerResponseData, title string, author stri
 	}
 	var streams []stream
 	for idx, formatBase := range formatBases {
-		stream, err := y.getStream(title, author, streamPositions[idx], formatBase)
+		stream, err := y.parseStream(title, author, streamPositions[idx], formatBase)
 		if err != nil {
 			if errors.Is(err, ErrDecodingStreamInfo{}) {
 				y.log(err.Error())
@@ -274,7 +274,7 @@ func (y Youtube) getStreams(prData PlayerResponseData, title string, author stri
 	return streams, nil
 }
 
-func (y Youtube) getStream(title, author string, streamPos int, formatBase FormatBase) (stream, error) {
+func (y Youtube) parseStream(title, author string, streamPos int, formatBase FormatBase) (stream, error) {
 	if formatBase.MimeType == "" {
 		return stream{}, ErrDecodingStreamInfo{
 			streamPos: streamPos,
