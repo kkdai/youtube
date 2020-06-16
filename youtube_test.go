@@ -306,3 +306,56 @@ func TestYoutube_getStream(t *testing.T) {
 		})
 	}
 }
+
+func TestYoutube_findVideoID(t *testing.T) {
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantErr     bool
+		expectedErr error
+	}{
+		{
+			name: "valid url",
+			args: args{
+				dwlURL,
+			},
+			wantErr:     false,
+			expectedErr: nil,
+		},
+		{
+			name: "valid id",
+			args: args{
+				"rFejpH_tAHM",
+			},
+			wantErr:     false,
+			expectedErr: nil,
+		},
+		{
+			name: "invalid character in id",
+			args: args{
+				"<M13",
+			},
+			wantErr:     true,
+			expectedErr: ErrInvalidCharactersInVideoId,
+		},
+		{
+			name: "video id is less than 10 characters",
+			args: args{
+				"rFejpH",
+			},
+			wantErr:     true,
+			expectedErr: ErrVideoIdMinLength,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			if err := y.findVideoID(tt.args.url); (err != nil) != tt.wantErr {
+				t.Errorf("findVideoID() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

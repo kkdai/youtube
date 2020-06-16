@@ -382,10 +382,10 @@ func (y *Youtube) findVideoID(url string) error {
 	y.log(fmt.Sprintf("Found video id: '%s'", videoID))
 	y.VideoID = videoID
 	if strings.ContainsAny(videoID, "?&/<%=") {
-		return errors.New("invalid characters in video id")
+		return ErrInvalidCharactersInVideoId
 	}
 	if len(videoID) < 10 {
-		return errors.New("the video id must be at least 10 characters long")
+		return ErrVideoIdMinLength
 	}
 	return nil
 }
