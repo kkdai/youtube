@@ -240,7 +240,7 @@ func TestYoutube_getStream(t *testing.T) {
 				author:    "",
 				streamPos: 0,
 				formatBase: FormatBase{
-					Itag:     0,
+					ItagNo:   0,
 					URL:      "",
 					MimeType: "",
 					Quality:  "",
@@ -258,7 +258,7 @@ func TestYoutube_getStream(t *testing.T) {
 				author:    "test",
 				streamPos: 0,
 				formatBase: FormatBase{
-					Itag:     0,
+					ItagNo:   0,
 					URL:      "test",
 					MimeType: "test",
 					Quality:  "test",

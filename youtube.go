@@ -79,7 +79,7 @@ func (y *Youtube) DecodeURL(url string) error {
 }
 
 //StartDownload : Starting download video by arguments
-func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itag int) error {
+func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo int) error {
 	if len(y.StreamList) == 0 {
 		return ErrEmptyStreamList
 	}
@@ -87,10 +87,10 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itag int)
 	//download highest resolution on [0] by default
 	index := 0
 	switch {
-	case itag != 0:
+	case itagNo != 0:
 		itagFound := false
 		for i, stream := range y.StreamList {
-			if stream.Itag == itag {
+			if stream.Itag == itagNo {
 				itagFound = true
 				index = i
 				break
@@ -232,17 +232,30 @@ func (y *Youtube) parseVideoInfo() error {
 		return errors.New(fmt.Sprint("Cannot playback and download, reason:", prData.PlayabilityStatus.Reason))
 	}
 
+	streams, err := y.getStreams(prData, title, author)
+	if err != nil {
+		return err
+	}
+
+	y.StreamList = streams
+	if len(y.StreamList) == 0 {
+		return errors.New("no stream list found in the server's answer")
+	}
+	return nil
+}
+
+func (y Youtube) getStreams(prData PlayerResponseData, title string, author string) ([]stream, error) {
 	size := len(prData.StreamingData.Formats) + len(prData.StreamingData.AdaptiveFormats)
 	formatBases := make([]FormatBase, 0, size)
 	streamPositions := make([]int, 0, size)
 
-	for streamPos, streamRaw := range prData.StreamingData.Formats {
-		formatBases = append(formatBases, streamRaw.FormatBase)
-		streamPositions = append(streamPositions, streamPos)
+	for muxedStreamPos, muxedStreamRaw := range prData.StreamingData.Formats {
+		formatBases = append(formatBases, muxedStreamRaw.FormatBase)
+		streamPositions = append(streamPositions, muxedStreamPos)
 	}
-	for streamPos, streamRaw := range prData.StreamingData.AdaptiveFormats {
-		formatBases = append(formatBases, streamRaw.FormatBase)
-		streamPositions = append(streamPositions, streamPos)
+	for adaptiveStreamPos, adaptiveStreamRaw := range prData.StreamingData.AdaptiveFormats {
+		formatBases = append(formatBases, adaptiveStreamRaw.FormatBase)
+		streamPositions = append(streamPositions, adaptiveStreamPos)
 	}
 	var streams []stream
 	for idx, formatBase := range formatBases {
@@ -252,18 +265,13 @@ func (y *Youtube) parseVideoInfo() error {
 				y.log(err.Error())
 				continue
 			}
-			return err
+			return nil, err
 		}
 		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
 			title, author, stream.Quality, stream.Type, stream.Itag))
 		streams = append(streams, stream)
 	}
-
-	y.StreamList = streams
-	if len(y.StreamList) == 0 {
-		return errors.New("no stream list found in the server's answer")
-	}
-	return nil
+	return streams, nil
 }
 
 func (y Youtube) getStream(title, author string, streamPos int, formatBase FormatBase) (stream, error) {
@@ -289,7 +297,7 @@ func (y Youtube) getStream(title, author string, streamPos int, formatBase Forma
 		Quality: formatBase.Quality,
 		Type:    formatBase.MimeType,
 		URL:     streamUrl,
-		Itag:    formatBase.Itag,
+		Itag:    formatBase.ItagNo,
 
 		Title:  title,
 		Author: author,
@@ -432,18 +440,6 @@ func (y *Youtube) log(logText string) {
 	if y.DebugMode {
 		log.Println(logText)
 	}
-}
-
-type ItagInfo struct {
-	Title  string
-	Author string
-	Itags  []Itag
-}
-
-type Itag struct {
-	ItagNo  int
-	Quality string
-	Type    string
 }
 
 func (y *Youtube) GetItagInfo() *ItagInfo {

@@ -1,7 +1,7 @@
 package youtube
 
 type FormatBase struct {
-	Itag     int    `json:"itag"`
+	ItagNo   int    `json:"itag"`
 	URL      string `json:"url"`
 	MimeType string `json:"mimeType"`
 	Quality  string `json:"quality"`
@@ -309,4 +309,16 @@ type PlayerResponseData struct {
 			} `json:"messageTitle"`
 		} `json:"mealbarPromoRenderer"`
 	} `json:"messages"`
+}
+
+type ItagInfo struct {
+	Title  string
+	Author string
+	Itags  []Itag
+}
+
+type Itag struct {
+	ItagNo  int
+	Quality string
+	Type    string
 }

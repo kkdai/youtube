@@ -23,6 +23,6 @@ func TestYoutube_GetItagInfo(t *testing.T) {
 	cnt := 18
 	gotCnt := len(itagInfo.Itags)
 	if gotCnt != cnt {
-		t.Errorf("get Itag info failed, want %v, but get %v", cnt, gotCnt)
+		t.Errorf("get ItagNo info failed, want %v, but get %v", cnt, gotCnt)
 	}
 }
