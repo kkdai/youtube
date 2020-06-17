@@ -151,7 +151,7 @@ func TestGetItagInfo(t *testing.T) {
 						Quality: videoQuality,
 						Type:    videoType,
 						URL:     "",
-						Itag:    0,
+						ItagNo:  0,
 						Title:   videoTitle,
 						Author:  videoAuthor,
 					},
@@ -175,7 +175,7 @@ func TestGetItagInfo(t *testing.T) {
 						Quality: videoQuality,
 						Type:    videoType,
 						URL:     "",
-						Itag:    0,
+						ItagNo:  0,
 						Title:   videoTitle,
 						Author:  videoAuthor,
 					},
@@ -183,7 +183,7 @@ func TestGetItagInfo(t *testing.T) {
 						Quality: videoQuality,
 						Type:    videoType,
 						URL:     "",
-						Itag:    0,
+						ItagNo:  0,
 						Title:   videoTitle,
 						Author:  videoAuthor,
 					},
@@ -269,7 +269,7 @@ func TestYoutube_parseStream(t *testing.T) {
 				Quality: "test",
 				Type:    "test",
 				URL:     "test",
-				Itag:    0,
+				ItagNo:  0,
 				Title:   "test",
 				Author:  "test",
 			},
@@ -353,7 +353,7 @@ func TestYoutube_findVideoID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			y := NewYoutube(false)
-			if err := y.findVideoID(tt.args.url); (err != nil) != tt.wantErr {
+			if err := y.findVideoID(tt.args.url); (err != nil) != tt.wantErr || err != tt.expectedErr {
 				t.Errorf("findVideoID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

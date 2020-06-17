@@ -31,7 +31,7 @@ type stream struct {
 	Quality string
 	Type    string
 	URL     string
-	Itag    int
+	ItagNo  int
 	Title   string
 	Author  string
 }
@@ -90,7 +90,7 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo in
 	case itagNo != 0:
 		itagFound := false
 		for i, stream := range y.StreamList {
-			if stream.Itag == itagNo {
+			if stream.ItagNo == itagNo {
 				itagFound = true
 				index = i
 				break
@@ -268,7 +268,7 @@ func (y Youtube) getStreams(prData PlayerResponseData, title string, author stri
 			return nil, err
 		}
 		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
-			title, author, stream.Quality, stream.Type, stream.Itag))
+			title, author, stream.Quality, stream.Type, stream.ItagNo))
 		streams = append(streams, stream)
 	}
 	return streams, nil
@@ -297,7 +297,7 @@ func (y Youtube) parseStream(title, author string, streamPos int, formatBase For
 		Quality: formatBase.Quality,
 		Type:    formatBase.MimeType,
 		URL:     streamUrl,
-		Itag:    formatBase.ItagNo,
+		ItagNo:  formatBase.ItagNo,
 
 		Title:  title,
 		Author: author,
@@ -449,7 +449,7 @@ func (y *Youtube) GetItagInfo() *ItagInfo {
 	model := ItagInfo{Title: y.StreamList[0].Title, Author: y.StreamList[0].Author}
 
 	for _, stream := range y.StreamList {
-		model.Itags = append(model.Itags, Itag{ItagNo: stream.Itag, Quality: stream.Quality, Type: stream.Type})
+		model.Itags = append(model.Itags, Itag{ItagNo: stream.ItagNo, Quality: stream.Quality, Type: stream.Type})
 	}
 	return &model
 }
