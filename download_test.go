@@ -59,7 +59,7 @@ func TestDownloadFromYT_NoOutputFileName(t *testing.T) {
 		return
 	}
 
-	// url from issue #
+	// url from issue #21
 	testVideoUrl := "https://www.youtube.com/watch?v=n3kPvBCYT3E"
 	if err := y.DecodeURL(testVideoUrl); err != nil {
 		t.Error("Cannot decode download url")
@@ -90,9 +90,6 @@ func TestDownloadFromYT_WithItag(t *testing.T) {
 
 	curDir, _ := os.Getwd()
 	outputDir := curDir + "\\" + downloadToDir
-
-	//outputFile := "download_test.mp4"
-
 	testcases := []struct {
 		name       string
 		outputFile string
