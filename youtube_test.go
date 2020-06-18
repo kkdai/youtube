@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"errors"
 	"log"
 	"os"
 	"os/user"
@@ -150,7 +151,7 @@ func TestGetItagInfo(t *testing.T) {
 						Quality: videoQuality,
 						Type:    videoType,
 						URL:     "",
-						Itag:    0,
+						ItagNo:  0,
 						Title:   videoTitle,
 						Author:  videoAuthor,
 					},
@@ -174,7 +175,7 @@ func TestGetItagInfo(t *testing.T) {
 						Quality: videoQuality,
 						Type:    videoType,
 						URL:     "",
-						Itag:    0,
+						ItagNo:  0,
 						Title:   videoTitle,
 						Author:  videoAuthor,
 					},
@@ -182,7 +183,7 @@ func TestGetItagInfo(t *testing.T) {
 						Quality: videoQuality,
 						Type:    videoType,
 						URL:     "",
-						Itag:    0,
+						ItagNo:  0,
 						Title:   videoTitle,
 						Author:  videoAuthor,
 					},
@@ -213,6 +214,147 @@ func TestGetItagInfo(t *testing.T) {
 			}
 			if got := y.GetItagInfo(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetItagInfo() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestYoutube_parseStream(t *testing.T) {
+	type args struct {
+		title      string
+		author     string
+		streamPos  int
+		formatBase FormatBase
+	}
+	tests := []struct {
+		name      string
+		args      args
+		want      stream
+		wantErr   bool
+		expectErr error
+	}{
+		{
+			name: "MimeType is empty",
+			args: args{
+				title:     "",
+				author:    "",
+				streamPos: 0,
+				formatBase: FormatBase{
+					ItagNo:   0,
+					URL:      "",
+					MimeType: "",
+					Quality:  "",
+					Cipher:   "",
+				},
+			},
+			want:      stream{},
+			wantErr:   true,
+			expectErr: ErrDecodingStreamInfo{0},
+		},
+		{
+			name: "parse stream correctly",
+			args: args{
+				title:     "test",
+				author:    "test",
+				streamPos: 0,
+				formatBase: FormatBase{
+					ItagNo:   0,
+					URL:      "test",
+					MimeType: "test",
+					Quality:  "test",
+					Cipher:   "test",
+				},
+			},
+			want: stream{
+				Quality: "test",
+				Type:    "test",
+				URL:     "test",
+				ItagNo:  0,
+				Title:   "test",
+				Author:  "test",
+			},
+			wantErr:   false,
+			expectErr: nil,
+		},
+		{
+			name: "stream download url and cipher are empty",
+			args: args{
+				formatBase: FormatBase{
+					ItagNo:   0,
+					URL:      "",
+					MimeType: "test",
+					Cipher:   "",
+				},
+			},
+			want:      stream{},
+			wantErr:   true,
+			expectErr: ErrCipherNotFound,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			got, err := y.parseStream(tt.args.title, tt.args.author, tt.args.streamPos, tt.args.formatBase)
+			if tt.wantErr && !errors.Is(err, tt.expectErr) {
+				t.Errorf("parseStream() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("get stream failed, want %v, but got %v", tt.want, got)
+			}
+		})
+	}
+}
+
+func TestYoutube_findVideoID(t *testing.T) {
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantErr     bool
+		expectedErr error
+	}{
+		{
+			name: "valid url",
+			args: args{
+				dwlURL,
+			},
+			wantErr:     false,
+			expectedErr: nil,
+		},
+		{
+			name: "valid id",
+			args: args{
+				"rFejpH_tAHM",
+			},
+			wantErr:     false,
+			expectedErr: nil,
+		},
+		{
+			name: "invalid character in id",
+			args: args{
+				"<M13",
+			},
+			wantErr:     true,
+			expectedErr: ErrInvalidCharactersInVideoId,
+		},
+		{
+			name: "video id is less than 10 characters",
+			args: args{
+				"rFejpH",
+			},
+			wantErr:     true,
+			expectedErr: ErrVideoIdMinLength,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			if err := y.findVideoID(tt.args.url); (err != nil) != tt.wantErr || err != tt.expectedErr {
+				t.Errorf("findVideoID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

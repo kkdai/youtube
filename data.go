@@ -1,5 +1,12 @@
 package youtube
 
+type FormatBase struct {
+	ItagNo   int    `json:"itag"`
+	URL      string `json:"url"`
+	MimeType string `json:"mimeType"`
+	Quality  string `json:"quality"`
+	Cipher   string `json:"signatureCipher"`
+}
 type PlayerResponseData struct {
 	PlayabilityStatus struct {
 		Status          string `json:"status"`
@@ -10,15 +17,12 @@ type PlayerResponseData struct {
 	StreamingData struct {
 		ExpiresInSeconds string `json:"expiresInSeconds"`
 		Formats          []struct {
-			Itag             int    `json:"itag"`
-			URL              string `json:"url"`
-			MimeType         string `json:"mimeType"`
+			FormatBase
 			Bitrate          int    `json:"bitrate"`
 			Width            int    `json:"width"`
 			Height           int    `json:"height"`
 			LastModified     string `json:"lastModified"`
 			ContentLength    string `json:"contentLength,omitempty"`
-			Quality          string `json:"quality"`
 			QualityLabel     string `json:"qualityLabel"`
 			ProjectionType   string `json:"projectionType"`
 			AverageBitrate   int    `json:"averageBitrate,omitempty"`
@@ -26,15 +30,12 @@ type PlayerResponseData struct {
 			ApproxDurationMs string `json:"approxDurationMs"`
 			AudioSampleRate  string `json:"audioSampleRate"`
 			AudioChannels    int    `json:"audioChannels"`
-			Cipher           string `json:"signatureCipher"`
 		} `json:"formats"`
 		AdaptiveFormats []struct {
-			Itag      int    `json:"itag"`
-			URL       string `json:"url"`
-			MimeType  string `json:"mimeType"`
-			Bitrate   int    `json:"bitrate"`
-			Width     int    `json:"width,omitempty"`
-			Height    int    `json:"height,omitempty"`
+			FormatBase
+			Bitrate   int `json:"bitrate"`
+			Width     int `json:"width,omitempty"`
+			Height    int `json:"height,omitempty"`
 			InitRange struct {
 				Start string `json:"start"`
 				End   string `json:"end"`
@@ -45,7 +46,6 @@ type PlayerResponseData struct {
 			} `json:"indexRange"`
 			LastModified     string `json:"lastModified"`
 			ContentLength    string `json:"contentLength"`
-			Quality          string `json:"quality"`
 			Fps              int    `json:"fps,omitempty"`
 			QualityLabel     string `json:"qualityLabel,omitempty"`
 			ProjectionType   string `json:"projectionType"`
@@ -309,4 +309,16 @@ type PlayerResponseData struct {
 			} `json:"messageTitle"`
 		} `json:"mealbarPromoRenderer"`
 	} `json:"messages"`
+}
+
+type ItagInfo struct {
+	Title  string
+	Author string
+	Itags  []Itag
+}
+
+type Itag struct {
+	ItagNo  int
+	Quality string
+	Type    string
 }
