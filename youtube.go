@@ -193,28 +193,23 @@ func (y *Youtube) parseVideoInfo() error {
 
 	status, ok := answer["status"]
 	if !ok {
-		err = fmt.Errorf("no response status found in the server's answer")
-		return err
+		return fmt.Errorf("no response status found in the server's answer")
 	}
 	if status[0] == "fail" {
 		reason, ok := answer["reason"]
 		if ok {
-			err = fmt.Errorf("'fail' response status found in the server's answer, reason: '%s'", reason[0])
-		} else {
-			err = errors.New("'fail' response status found in the server's answer, no reason given")
+			return fmt.Errorf("'fail' response status found in the server's answer, reason: '%s'", reason[0])
 		}
-		return err
+		return errors.New("'fail' response status found in the server's answer, no reason given")
 	}
 	if status[0] != "ok" {
-		err = fmt.Errorf("non-success response status found in the server's answer (status: '%s')", status)
-		return err
+		return fmt.Errorf("non-success response status found in the server's answer (status: '%s')", status)
 	}
 
 	// read the streams map
 	streamMap, ok := answer["player_response"]
 	if !ok {
-		err = errors.New("no stream map found in the server's answer")
-		return err
+		return errors.New("no stream map found in the server's answer")
 	}
 
 	// Get video title and author.
@@ -241,6 +236,7 @@ func (y *Youtube) parseVideoInfo() error {
 	if len(y.StreamList) == 0 {
 		return errors.New("no stream list found in the server's answer")
 	}
+
 	return nil
 }
 
