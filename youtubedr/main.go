@@ -8,7 +8,7 @@ import (
 	"os/user"
 	"path/filepath"
 
-	. "github.com/kkdai/youtube"
+	"github.com/kkdai/youtube"
 )
 
 const usageString string = `Usage: youtubedr [OPTION] [URL]
@@ -16,28 +16,28 @@ Download a video from youtube.
 Example: youtubedr -o "Campaign Diary".mp4 https://www.youtube.com/watch\?v\=XbNghLqsVwU
 `
 
+var (
+	outputFile    string
+	outputDir     string
+	outputQuality string
+	socks5Proxy   string
+	itag          int
+	itags         bool
+)
+
 func main() {
 	flag.Usage = func() {
 		fmt.Println(usageString)
 		flag.PrintDefaults()
 	}
 	usr, _ := user.Current()
-	var outputFile string
 	flag.StringVar(&outputFile, "o", "", "The output file")
-	var outputDir string
 	flag.StringVar(&outputDir, "d",
 		filepath.Join(usr.HomeDir, "Movies", "youtubedr"),
 		"The output directory.")
-	var outputQuality string
 	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
-
-	var socks5Proxy string
 	flag.StringVar(&socks5Proxy, "p", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
-
-	var itag int
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
-
-	var itags bool
 	flag.BoolVar(&itags, "itags", false, "list available itags of video")
 
 	flag.Parse()
@@ -48,7 +48,7 @@ func main() {
 	}
 
 	log.Println("download to dir=", outputDir)
-	y := NewYoutubeWithSocks5Proxy(true, socks5Proxy)
+	y := youtube.NewYoutubeWithSocks5Proxy(true, socks5Proxy)
 	if len(y.Socks5Proxy) == 0 {
 		log.Println("Using http without proxy.")
 	}
@@ -76,5 +76,4 @@ func main() {
 			fmt.Println("err:", err)
 		}
 	}
-
 }
