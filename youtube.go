@@ -220,7 +220,9 @@ func (y *Youtube) parseVideoInfo() error {
 
 	// Check if video is downloadable
 	if prData.PlayabilityStatus.Status == "UNPLAYABLE" || prData.PlayabilityStatus.Status == "LOGIN_REQUIRED" {
-		// Cannot playback on embedded video screen, could not download.
+		if prData.PlayabilityStatus.Reason == "" {
+			return errors.New(fmt.Sprint("Cannot playback and download, status:", prData.PlayabilityStatus.Status))
+		}
 		return errors.New(fmt.Sprint("Cannot playback and download, reason:", prData.PlayabilityStatus.Reason))
 	}
 
