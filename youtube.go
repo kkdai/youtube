@@ -219,11 +219,8 @@ func (y *Youtube) parseVideoInfo() error {
 	}
 
 	// Check if video is downloadable
-	if prData.PlayabilityStatus.Status == "UNPLAYABLE" || prData.PlayabilityStatus.Status == "LOGIN_REQUIRED" {
-		if prData.PlayabilityStatus.Reason == "" {
-			return errors.New(fmt.Sprint("Cannot playback and download, status:", prData.PlayabilityStatus.Status))
-		}
-		return errors.New(fmt.Sprint("Cannot playback and download, reason:", prData.PlayabilityStatus.Reason))
+	if prData.PlayabilityStatus.Status != "OK" {
+		return errors.New(fmt.Sprintf("Cannot playback and download, status: %s, reason: %s", prData.PlayabilityStatus.Status, prData.PlayabilityStatus.Reason))
 	}
 
 	// Get video title and author.
