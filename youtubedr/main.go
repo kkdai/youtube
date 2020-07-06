@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 
@@ -71,6 +72,15 @@ func main() {
 			fmt.Printf("itag: %2d , quality: %6s , type: %10s\n", itag.ItagNo, itag.Quality, itag.Type)
 		}
 	} else {
+		if outputQuality == "hd1080" {
+			ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
+			ffmpegVersionCmd.Stderr = os.Stderr
+			ffmpegVersionCmd.Stdout = os.Stdout
+			if err := ffmpegVersionCmd.Run(); err != nil {
+				fmt.Println("err:", err)
+				os.Exit(1)
+			}
+		}
 		err := y.StartDownload(outputDir, outputFile, outputQuality, itag)
 		if err != nil {
 			fmt.Println("err:", err)
