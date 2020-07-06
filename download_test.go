@@ -52,6 +52,7 @@ func TestDownloadFromYT_AssignOutputFileName(t *testing.T) {
 		})
 	}
 }
+
 func TestDownloadFromYT_NoOutputFileName(t *testing.T) {
 	y := NewYoutube(false)
 	if y == nil {
@@ -117,6 +118,36 @@ func TestDownloadFromYT_WithItag(t *testing.T) {
 			if err := y.StartDownload(outputDir, ts.outputFile, "", ts.itagNo); err != nil {
 				t.Errorf("Failed in downloading, err:%v\n", err)
 				return
+			}
+		})
+	}
+}
+
+func TestDownloadFromYT_WhenPlayabilityStatusIsNotOK(t *testing.T) {
+	y := NewYoutube(false)
+	if y == nil {
+		t.Error("Cannot init object.")
+		return
+	}
+
+	testcases := []struct {
+		issue   string
+		videoId string
+	}{
+		{
+			issue:   "issue#65",
+			videoId: "9ja-K2FslBU",
+		},
+		{
+			issue:   "issue#59",
+			videoId: "nINQjT7Zr9w",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.issue, func(t *testing.T) {
+			if err := y.DecodeURL(tc.videoId); err == nil {
+				t.Errorf("videoId %s should get error, but no error happened", tc.videoId)
 			}
 		})
 	}
