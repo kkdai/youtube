@@ -81,7 +81,7 @@ func main() {
 				os.Exit(1)
 			}
 		}
-		err := y.StartDownload(outputDir, outputFile, outputQuality, itag)
+		err := y.StartDownload(outputDir, outputFile, outputQuality, 0)
 		if err != nil {
 			fmt.Println("err:", err)
 		}
