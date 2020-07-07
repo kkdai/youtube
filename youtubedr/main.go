@@ -73,15 +73,17 @@ func main() {
 		}
 	} else {
 		if outputQuality == "hd1080" {
-			ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
+			fmt.Println("check ffmpeg is installed....")
+			ffmpegVersionCmd := exec.Command("ffmpeg", "-h", "-loglevel", "warning")
 			ffmpegVersionCmd.Stderr = os.Stderr
 			ffmpegVersionCmd.Stdout = os.Stdout
 			if err := ffmpegVersionCmd.Run(); err != nil {
 				fmt.Println("err:", err)
+				fmt.Println("please check ffmpeg is installed correctly")
 				os.Exit(1)
 			}
 		}
-		err := y.StartDownload(outputDir, outputFile, outputQuality, 0)
+		err := y.StartDownloadWithHighResolution(outputDir, outputFile, outputQuality)
 		if err != nil {
 			fmt.Println("err:", err)
 		}
