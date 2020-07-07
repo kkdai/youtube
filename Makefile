@@ -47,4 +47,4 @@ test-unit:
 .PHONY: test-integration
 test-integration: ## Runs all Youtube Go integration tests
 test-integration:
-	@go test -v -tags="integration" -coverprofile=cover.out
+	@go test -v -tags="integration" -coverprofile=coverage.out
