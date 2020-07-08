@@ -6,4 +6,5 @@ go run main.go https://www.youtube.com/watch?v=n3kPvBCYT3E
 go run main.go -q medium https://www.youtube.com/watch?v=n3kPvBCYT3E
 go run main.go -i 18 https://www.youtube.com/watch?v=n3kPvBCYT3E
 go run main.go -i 22 https://www.youtube.com/watch?v=n3kPvBCYT3E  #download should fail
+go run main.go -q hd1080 https://www.youtube.com/watch?v=n3kPvBCYT3E  #download 1080p
 cd ..

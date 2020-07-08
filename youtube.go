@@ -174,18 +174,20 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 		os.Remove(videoFile)
 		os.Remove(audioFile)
 	}()
+	y.log(fmt.Sprintln("Download url=", stream.URL))
 	var err error
+	y.log("Downloading video file...")
 	err = y.videoDLWorker(videoFile, videoStream.URL)
 	if err != nil {
 		return err
 	}
+	y.log("Downloading audio file...")
 	err = y.videoDLWorker(audioFile, audioStream.URL)
 	if err != nil {
 		return err
 	}
 
 	destFile := filepath.Join(outputDir, outputFile)
-	y.log(fmt.Sprintln("Download url=", stream.URL))
 	y.log(fmt.Sprintln("Download to file=", destFile))
 	ffmpegVersionCmd := exec.Command("ffmpeg", "-y", "-i", videoFile, "-i", audioFile, "-shortest", destFile, "-loglevel", "warning")
 	ffmpegVersionCmd.Stderr = os.Stderr

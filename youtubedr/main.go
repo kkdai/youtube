@@ -77,9 +77,7 @@ func main() {
 	var err error
 	if outputQuality == "hd1080" {
 		fmt.Println("check ffmpeg is installed....")
-		ffmpegVersionCmd := exec.Command("ffmpeg", "-h", "-loglevel", "warning")
-		ffmpegVersionCmd.Stderr = os.Stderr
-		ffmpegVersionCmd.Stdout = os.Stdout
+		ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
 		if err := ffmpegVersionCmd.Run(); err != nil {
 			fmt.Println("err:", err)
 			fmt.Println("please check ffmpeg is installed correctly")
