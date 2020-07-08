@@ -189,7 +189,7 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 
 	destFile := filepath.Join(outputDir, outputFile)
 	y.log(fmt.Sprintln("Download to file=", destFile))
-	ffmpegVersionCmd := exec.Command("ffmpeg", "-y", "-i", videoFile, "-i", audioFile, "-shortest", destFile, "-loglevel", "warning")
+	ffmpegVersionCmd := exec.Command("ffmpeg", "-y", "-i", videoFile, "-i", audioFile, "-strict", "-2", "-shortest", destFile, "-loglevel", "warning")
 	ffmpegVersionCmd.Stderr = os.Stderr
 	ffmpegVersionCmd.Stdout = os.Stdout
 	y.log("merging video and audio.....")
