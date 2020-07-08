@@ -37,7 +37,7 @@ func TestDownloadFromYT_AssignOutputFileName(t *testing.T) {
 			quality:    "",
 		},
 		{
-			name:       "quality: medium",
+			name:       "quality:medium",
 			outputFile: "medium_test.mp4",
 			itagNo:     0,
 			quality:    "medium",
@@ -69,6 +69,28 @@ func TestDownloadFromYT_NoOutputFileName(t *testing.T) {
 	outputDir := filepath.Join(curDir, downloadToDir)
 	fmt.Println("download to " + outputDir + "\\" + "Silhouette Eurobeat Remix")
 	if err := y.StartDownload(outputDir, "", "", 0); err != nil {
+		t.Error("Failed in downloading")
+		return
+	}
+}
+
+func TestDownloadFromYT_HighQuality(t *testing.T) {
+	y := NewYoutube(false)
+	if y == nil {
+		t.Error("Cannot init object.")
+		return
+	}
+
+	// url from issue #21
+	testVideoId := "n3kPvBCYT3E"
+	if err := y.DecodeURL(testVideoId); err != nil {
+		t.Error("Cannot decode download url")
+		return
+	}
+	curDir, _ := os.Getwd()
+	outputDir := filepath.Join(curDir, downloadToDir)
+	fmt.Println("download to " + outputDir + "\\" + "Silhouette Eurobeat Remix")
+	if err := y.StartDownloadWithHighQuality(outputDir, "", "hd1080"); err != nil {
 		t.Error("Failed in downloading")
 		return
 	}

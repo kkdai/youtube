@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"golang.org/x/net/proxy"
 )
 
@@ -126,6 +127,76 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo in
 	y.log(fmt.Sprintln("Download url=", streamURL))
 	y.log(fmt.Sprintln("Download to file=", destFile))
 	return y.videoDLWorker(destFile, streamURL)
+}
+
+//StartDownloadWithHighQuality : Starting downloading video with high quality (>720p)
+func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile string, quality string) error {
+	if len(y.StreamList) == 0 {
+		return ErrEmptyStreamList
+	}
+
+	qualityitagMap := map[string]struct {
+		videoItag int
+		audioItag int
+	}{
+		"hd1080": {137, 140},
+	}
+	videoItag := qualityitagMap[quality].videoItag
+	audioItag := qualityitagMap[quality].audioItag
+
+	var videoStream, audioStream stream
+
+	for _, stream := range y.StreamList {
+		switch stream.ItagNo {
+		case videoItag:
+			videoStream = stream
+		case audioItag:
+			audioStream = stream
+		}
+	}
+
+	if outputDir == "" {
+		usr, _ := user.Current()
+		outputDir = filepath.Join(usr.HomeDir, "Movies", "youtubedr")
+	}
+
+	outputFile = SanitizeFilename(outputFile)
+	stream := videoStream
+	if outputFile == "" {
+		outputFile = SanitizeFilename(stream.Title)
+		outputFile += pickIdealFileExtension(stream.Type)
+	}
+	uid := uuid.New()
+	tempFileName := "temp_" + uid.String()
+	videoFile := filepath.Join(outputDir, tempFileName+".m4v")
+	audioFile := filepath.Join(outputDir, tempFileName+".m4a")
+	defer func() {
+		os.Remove(videoFile)
+		os.Remove(audioFile)
+	}()
+	var err error
+	err = y.videoDLWorker(videoFile, videoStream.URL)
+	if err != nil {
+		return err
+	}
+	err = y.videoDLWorker(audioFile, audioStream.URL)
+	if err != nil {
+		return err
+	}
+
+	destFile := filepath.Join(outputDir, outputFile)
+	y.log(fmt.Sprintln("Download url=", stream.URL))
+	y.log(fmt.Sprintln("Download to file=", destFile))
+	ffmpegVersionCmd := exec.Command("ffmpeg", "-y", "-i", videoFile, "-i", audioFile, "-shortest", destFile, "-loglevel", "warning")
+	ffmpegVersionCmd.Stderr = os.Stderr
+	ffmpegVersionCmd.Stdout = os.Stdout
+	y.log("merging video and audio.....")
+	if err := ffmpegVersionCmd.Run(); err != nil {
+		fmt.Println("err:", err)
+		os.Exit(1)
+	}
+	y.log("Done")
+	return err
 }
 
 func pickIdealFileExtension(mediaType string) string {
@@ -453,72 +524,6 @@ func (y *Youtube) GetItagInfo() *ItagInfo {
 		model.Itags = append(model.Itags, Itag{ItagNo: stream.ItagNo, Quality: stream.Quality, Type: stream.Type})
 	}
 	return &model
-}
-
-func (y *Youtube) StartDownloadWithHighResolution(outputDir string, outputFile string, quality string) error {
-	if len(y.StreamList) == 0 {
-		return ErrEmptyStreamList
-	}
-
-	qualityitagMap := map[string][]int{
-		"hd1080": {137, 140},
-	}
-	videoItag := qualityitagMap[quality][0]
-	audioItag := qualityitagMap[quality][1]
-
-	var videoStream, audioStream stream
-
-	for _, stream := range y.StreamList {
-		switch stream.ItagNo {
-		case videoItag:
-			videoStream = stream
-		case audioItag:
-			audioStream = stream
-		}
-	}
-
-	if outputDir == "" {
-		usr, _ := user.Current()
-		outputDir = filepath.Join(usr.HomeDir, "Movies", "youtubedr")
-	}
-
-	stream := videoStream
-	outputFile = SanitizeFilename(outputFile)
-	if outputFile == "" {
-		outputFile = SanitizeFilename(stream.Title)
-		outputFile += pickIdealFileExtension(stream.Type)
-	}
-	uid := uuid.New()
-	tempFileName := "temp_" + uid.String()
-	videoFile := filepath.Join(outputDir, tempFileName+".m4v")
-	audioFile := filepath.Join(outputDir, tempFileName+".m4a")
-	defer func() {
-		os.Remove(videoFile)
-		os.Remove(audioFile)
-	}()
-	var err error
-	err = y.videoDLWorker(videoFile, videoStream.URL)
-	if err != nil {
-		return err
-	}
-	err = y.videoDLWorker(audioFile, audioStream.URL)
-	if err != nil {
-		return err
-	}
-
-	destFile := filepath.Join(outputDir, outputFile)
-	y.log(fmt.Sprintln("Download url=", stream.URL))
-	y.log(fmt.Sprintln("Download to file=", destFile))
-	ffmpegVersionCmd := exec.Command("ffmpeg", "-y", "-i", videoFile, "-i", audioFile, "-shortest", destFile, "-loglevel", "warning")
-	ffmpegVersionCmd.Stderr = os.Stderr
-	ffmpegVersionCmd.Stdout = os.Stdout
-	y.log("merging video and audio.....")
-	if err := ffmpegVersionCmd.Run(); err != nil {
-		fmt.Println("err:", err)
-		os.Exit(1)
-	}
-	y.log("Done")
-	return err
 }
 
 func getVideoTitleAuthor(in url.Values) (string, string) {
