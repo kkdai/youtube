@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/vbauerster/mpb/v5"
+	"github.com/vbauerster/mpb/v5/decor"
 
 	"golang.org/x/net/proxy"
 )
@@ -427,6 +429,7 @@ func (y *Youtube) getVideoInfo() error {
 	if resp.StatusCode != 200 {
 		return err
 	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -486,6 +489,24 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 	defer resp.Body.Close()
 	y.contentLength = float64(resp.ContentLength)
 
+	// create progress bar
+	progress := mpb.New(mpb.WithWidth(64))
+	bar := progress.AddBar(
+		int64(y.contentLength),
+
+		mpb.PrependDecorators(
+			decor.CountersKibiByte("% .2f / % .2f"),
+			decor.Percentage(decor.WCSyncSpace),
+		),
+		mpb.AppendDecorators(
+			decor.EwmaETA(decor.ET_STYLE_GO, 90),
+			decor.Name(" ] "),
+			decor.EwmaSpeed(decor.UnitKiB, "% .2f", 60),
+		),
+	)
+	reader := bar.ProxyReader(resp.Body)
+	defer reader.Close()
+
 	if resp.StatusCode != 200 {
 		y.log(fmt.Sprintf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err))
 		return errors.New("non 200 status code received")
@@ -499,7 +520,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		return err
 	}
 	mw := io.MultiWriter(out, y)
-	_, err = io.Copy(mw, resp.Body)
+	_, err = io.Copy(mw, reader)
 	if err != nil {
 		y.log(fmt.Sprintln("download video err=", err))
 		return err
