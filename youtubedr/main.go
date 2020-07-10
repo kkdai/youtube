@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
 
@@ -70,10 +71,23 @@ func main() {
 		for _, itag := range info.Itags {
 			fmt.Printf("itag: %2d , quality: %6s , type: %10s\n", itag.ItagNo, itag.Quality, itag.Type)
 		}
-	} else {
-		err := y.StartDownload(outputDir, outputFile, outputQuality, itag)
-		if err != nil {
+		return
+	}
+
+	var err error
+	if outputQuality == "hd1080" {
+		fmt.Println("check ffmpeg is installed....")
+		ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
+		if err := ffmpegVersionCmd.Run(); err != nil {
 			fmt.Println("err:", err)
+			fmt.Println("please check ffmpeg is installed correctly")
+			os.Exit(1)
 		}
+		err = y.StartDownloadWithHighQuality(outputDir, outputFile, outputQuality)
+	} else {
+		err = y.StartDownload(outputDir, outputFile, outputQuality, itag)
+	}
+	if err != nil {
+		fmt.Println("err:", err)
 	}
 }
