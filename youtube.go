@@ -525,6 +525,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		y.log(fmt.Sprintln("download video err=", err))
 		return err
 	}
+	progress.Wait()
 	return nil
 }
 
