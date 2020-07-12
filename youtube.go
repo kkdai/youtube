@@ -157,6 +157,13 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 		}
 	}
 
+	if videoStream.ItagNo == 0 {
+		return errors.New("no stream video/mp4 for hd1080 found")
+	}
+	if audioStream.ItagNo == 0 {
+		return errors.New("no stream audio/mp4 for hd1080 found")
+	}
+
 	if outputDir == "" {
 		usr, _ := user.Current()
 		outputDir = filepath.Join(usr.HomeDir, "Movies", "youtubedr")

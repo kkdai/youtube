@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -355,6 +356,37 @@ func TestYoutube_findVideoID(t *testing.T) {
 			y := NewYoutube(false)
 			if err := y.findVideoID(tt.args.url); (err != nil) != tt.wantErr || err != tt.expectedErr {
 				t.Errorf("findVideoID() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestYoutube_StartDownloadWithHighQuality(t *testing.T) {
+	tests := []struct {
+		name    string
+		stream  []stream
+		wantErr bool
+		message string
+	}{
+		{
+			name:    "video stream not found",
+			stream:  []stream{},
+			wantErr: true,
+			message: "no stream video/mp4",
+		},
+		{
+			name:    "audio stream not found",
+			stream:  []stream{{ItagNo: 137}},
+			wantErr: true,
+			message: "no stream audio/mp4",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := NewYoutube(false)
+
+			if err := y.StartDownloadWithHighQuality("", "", "hd1080"); (err != nil) != tt.wantErr && !strings.Contains(err.Error(), tt.message) {
+				t.Errorf("StartDownloadWithHighQuality() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
