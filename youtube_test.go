@@ -273,6 +273,7 @@ func TestYoutube_parseStream(t *testing.T) {
 				ItagNo:  0,
 				Title:   "test",
 				Author:  "test",
+				Cipher:  "test",
 			},
 			wantErr:   false,
 			expectErr: nil,

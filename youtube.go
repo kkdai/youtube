@@ -39,6 +39,7 @@ type stream struct {
 	ItagNo  int
 	Title   string
 	Author  string
+	Cipher  string
 }
 
 // Youtube implements the downloader to download youtube videos.
@@ -125,10 +126,41 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo in
 		outputFile += pickIdealFileExtension(stream.Type)
 	}
 	destFile := filepath.Join(outputDir, outputFile)
-	streamURL := stream.URL
+	//streamUrl := formatBase.URL
+	//if streamUrl == "" {
+	//	cipher := formatBase.Cipher
+	//	if cipher == "" {
+	//		return stream{}, ErrCipherNotFound
+	//	}
+	//	decipheredUrl, err := y.decipher(cipher)
+	//	if err != nil {
+	//		return stream{}, err
+	//	}
+	//	streamUrl = decipheredUrl
+	//}
+	streamURL, err := y.getStreamUrl(stream)
+	if err != nil {
+		return err
+	}
 	y.log(fmt.Sprintln("Download url=", streamURL))
 	y.log(fmt.Sprintln("Download to file=", destFile))
 	return y.videoDLWorker(destFile, streamURL)
+}
+
+func (y *Youtube) getStreamUrl(stream stream) (string, error) {
+	streamURL := stream.URL
+	if streamURL == "" {
+		cipher := stream.Cipher
+		if cipher == "" {
+			return "", ErrCipherNotFound
+		}
+		decipherUrl, err := y.decipher(cipher)
+		if err != nil {
+			return "", err
+		}
+		streamURL = decipherUrl
+	}
+	return streamURL, nil
 }
 
 //StartDownloadWithHighQuality : Starting downloading video with high quality (>720p)
@@ -183,15 +215,20 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 		os.Remove(videoFile)
 		os.Remove(audioFile)
 	}()
-	y.log(fmt.Sprintln("Download url=", stream.URL))
+	//y.log(fmt.Sprintln("Download url=", stream.URL))
 	var err error
 	y.log("Downloading video file...")
-	err = y.videoDLWorker(videoFile, videoStream.URL)
+	videoStreamUrl, err := y.getStreamUrl(videoStream)
+	if err != nil {
+		return err
+	}
+	err = y.videoDLWorker(videoFile, videoStreamUrl)
 	if err != nil {
 		return err
 	}
 	y.log("Downloading audio file...")
-	err = y.videoDLWorker(audioFile, audioStream.URL)
+	audioStreamUrl, err := y.getStreamUrl(audioStream)
+	err = y.videoDLWorker(audioFile, audioStreamUrl)
 	if err != nil {
 		return err
 	}
@@ -360,25 +397,26 @@ func (y Youtube) parseStream(title, author string, streamPos int, formatBase For
 			streamPos: streamPos,
 		}
 	}
-	streamUrl := formatBase.URL
-	if streamUrl == "" {
-		cipher := formatBase.Cipher
-		if cipher == "" {
-			return stream{}, ErrCipherNotFound
-		}
-		decipheredUrl, err := y.decipher(cipher)
-		if err != nil {
-			return stream{}, err
-		}
-		streamUrl = decipheredUrl
-	}
+	//streamUrl := formatBase.URL
+	//if streamUrl == "" {
+	//	cipher := formatBase.Cipher
+	//	if cipher == "" {
+	//		return stream{}, ErrCipherNotFound
+	//	}
+	//	decipheredUrl, err := y.decipher(cipher)
+	//	if err != nil {
+	//		return stream{}, err
+	//	}
+	//	streamUrl = decipheredUrl
+	//}
 
 	stream := stream{
 		Quality: formatBase.Quality,
 		Type:    formatBase.MimeType,
-		URL:     streamUrl,
-		ItagNo:  formatBase.ItagNo,
-
+		URL:     formatBase.URL,
+		//URL:     streamUrl,
+		ItagNo: formatBase.ItagNo,
+		Cipher: formatBase.Cipher,
 		Title:  title,
 		Author: author,
 	}
