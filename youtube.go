@@ -32,13 +32,13 @@ func SetLogOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
-type Stream struct {
-	Quality string
-	Type    string
-	URL     string
-	ItagNo  int
-	Cipher  string
-}
+//type Stream struct {
+//	Quality string
+//	Type    string
+//	URL     string
+//	ItagNo  int
+//	Cipher  string
+//}
 
 // Youtube implements the downloader to download youtube videos.
 type Youtube struct {
@@ -123,7 +123,7 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo in
 	outputFile = SanitizeFilename(outputFile)
 	if outputFile == "" {
 		outputFile = SanitizeFilename(y.Title)
-		outputFile += pickIdealFileExtension(stream.Type)
+		outputFile += pickIdealFileExtension(stream.MimeType)
 	}
 	destFile := filepath.Join(outputDir, outputFile)
 	streamURL, err := y.getStreamUrl(stream)
@@ -193,7 +193,7 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 	stream := videoStream
 	if outputFile == "" {
 		outputFile = SanitizeFilename(y.Title)
-		outputFile += pickIdealFileExtension(stream.Type)
+		outputFile += pickIdealFileExtension(stream.MimeType)
 	}
 	uid := uuid.New()
 	tempFileName := "temp_" + uid.String()
@@ -355,36 +355,23 @@ func (y *Youtube) parseVideoInfo() error {
 
 func (y Youtube) getStreams(prData PlayerResponseData, title string, author string) ([]Stream, error) {
 	size := len(prData.StreamingData.Formats) + len(prData.StreamingData.AdaptiveFormats)
-	formatBases := make([]FormatBase, 0, size)
-	streamPositions := make([]int, 0, size)
+	streams := make([]Stream, 0, size)
 
-	for muxedStreamPos, muxedStreamRaw := range prData.StreamingData.Formats {
-		formatBases = append(formatBases, muxedStreamRaw.FormatBase)
-		streamPositions = append(streamPositions, muxedStreamPos)
-	}
-	for adaptiveStreamPos, adaptiveStreamRaw := range prData.StreamingData.AdaptiveFormats {
-		formatBases = append(formatBases, adaptiveStreamRaw.FormatBase)
-		streamPositions = append(streamPositions, adaptiveStreamPos)
-	}
-	var streams []Stream
-	for idx, formatBase := range formatBases {
-		if formatBase.MimeType == "" {
-			streamPos := streamPositions[idx]
-			y.log(fmt.Sprintf("An error occurred while decoding one of the video's Stream's information: Stream %d.\n", streamPos))
-			continue
+	filterFormat := func(stream Stream) {
+		if stream.MimeType == "" {
+			y.log(fmt.Sprintf("An error occurred while decoding one of the video's Stream's information: Stream %+v.\n", stream))
+			return
 		}
-
-		stream := Stream{
-			Quality: formatBase.Quality,
-			Type:    formatBase.MimeType,
-			URL:     formatBase.URL,
-			ItagNo:  formatBase.ItagNo,
-			Cipher:  formatBase.Cipher,
-		}
-
 		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
-			title, author, stream.Quality, stream.Type, stream.ItagNo))
+			title, author, stream.Quality, stream.MimeType, stream.ItagNo))
 		streams = append(streams, stream)
+	}
+
+	for _, format := range prData.StreamingData.Formats {
+		filterFormat(format.Stream)
+	}
+	for _, format := range prData.StreamingData.AdaptiveFormats {
+		filterFormat(format.Stream)
 	}
 	return streams, nil
 }
@@ -553,7 +540,7 @@ func (y *Youtube) GetItagInfo() *ItagInfo {
 	model := ItagInfo{Title: y.Title, Author: y.Author}
 
 	for _, stream := range y.StreamList {
-		model.Itags = append(model.Itags, Itag{ItagNo: stream.ItagNo, Quality: stream.Quality, Type: stream.Type})
+		model.Itags = append(model.Itags, Itag{ItagNo: stream.ItagNo, Quality: stream.Quality, Type: stream.MimeType})
 	}
 	return &model
 }

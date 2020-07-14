@@ -148,10 +148,10 @@ func TestGetItagInfo(t *testing.T) {
 			args: args{
 				StreamList: []Stream{
 					{
-						Quality: videoQuality,
-						Type:    videoType,
-						URL:     "",
-						ItagNo:  0,
+						Quality:  videoQuality,
+						MimeType: videoType,
+						URL:      "",
+						ItagNo:   0,
 					},
 				},
 			},
@@ -170,16 +170,16 @@ func TestGetItagInfo(t *testing.T) {
 			args: args{
 				StreamList: []Stream{
 					{
-						Quality: videoQuality,
-						Type:    videoType,
-						URL:     "",
-						ItagNo:  0,
+						Quality:  videoQuality,
+						MimeType: videoType,
+						URL:      "",
+						ItagNo:   0,
 					},
 					{
-						Quality: videoQuality,
-						Type:    videoType,
-						URL:     "",
-						ItagNo:  0,
+						Quality:  videoQuality,
+						MimeType: videoType,
+						URL:      "",
+						ItagNo:   0,
 					},
 				},
 			},

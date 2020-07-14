@@ -1,6 +1,6 @@
 package youtube
 
-type FormatBase struct {
+type Stream struct {
 	ItagNo   int    `json:"itag"`
 	URL      string `json:"url"`
 	MimeType string `json:"mimeType"`
@@ -17,7 +17,7 @@ type PlayerResponseData struct {
 	StreamingData struct {
 		ExpiresInSeconds string `json:"expiresInSeconds"`
 		Formats          []struct {
-			FormatBase
+			Stream
 			Bitrate          int    `json:"bitrate"`
 			Width            int    `json:"width"`
 			Height           int    `json:"height"`
@@ -32,7 +32,7 @@ type PlayerResponseData struct {
 			AudioChannels    int    `json:"audioChannels"`
 		} `json:"formats"`
 		AdaptiveFormats []struct {
-			FormatBase
+			Stream
 			Bitrate   int `json:"bitrate"`
 			Width     int `json:"width,omitempty"`
 			Height    int `json:"height,omitempty"`
