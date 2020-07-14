@@ -215,19 +215,23 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 		os.Remove(videoFile)
 		os.Remove(audioFile)
 	}()
-	//y.log(fmt.Sprintln("Download url=", stream.URL))
 	var err error
-	y.log("Downloading video file...")
 	videoStreamUrl, err := y.getStreamUrl(videoStream)
 	if err != nil {
 		return err
 	}
+	y.log(fmt.Sprintln("Download url=", videoStreamUrl))
+	y.log("Downloading video file...")
 	err = y.videoDLWorker(videoFile, videoStreamUrl)
 	if err != nil {
 		return err
 	}
-	y.log("Downloading audio file...")
 	audioStreamUrl, err := y.getStreamUrl(audioStream)
+	if err != nil {
+		return err
+	}
+	y.log(fmt.Sprintln("Download url=", audioStreamUrl))
+	y.log("Downloading audio file...")
 	err = y.videoDLWorker(audioFile, audioStreamUrl)
 	if err != nil {
 		return err

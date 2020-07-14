@@ -278,20 +278,6 @@ func TestYoutube_parseStream(t *testing.T) {
 			wantErr:   false,
 			expectErr: nil,
 		},
-		{
-			name: "stream download url and cipher are empty",
-			args: args{
-				formatBase: FormatBase{
-					ItagNo:   0,
-					URL:      "",
-					MimeType: "test",
-					Cipher:   "",
-				},
-			},
-			want:      stream{},
-			wantErr:   true,
-			expectErr: ErrCipherNotFound,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -388,6 +374,53 @@ func TestYoutube_StartDownloadWithHighQuality(t *testing.T) {
 
 			if err := y.StartDownloadWithHighQuality("", "", "hd1080"); (err != nil) != tt.wantErr && !strings.Contains(err.Error(), tt.message) {
 				t.Errorf("StartDownloadWithHighQuality() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestYoutube_getStreamUrl(t *testing.T) {
+	type args struct {
+		stream stream
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr error
+	}{
+		{
+			name: "url is not empty",
+			args: args{
+				stream: stream{
+					URL: "test",
+				},
+			},
+			want:    "test",
+			wantErr: nil,
+		},
+		{
+			name: "url and cipher is empty",
+			args: args{
+				stream: stream{
+					URL:    "",
+					Cipher: "",
+				},
+			},
+			want:    "",
+			wantErr: ErrCipherNotFound,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			got, err := y.getStreamUrl(tt.args.stream)
+			if err != tt.wantErr {
+				t.Errorf("getStreamUrl() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getStreamUrl() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
