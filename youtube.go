@@ -528,16 +528,11 @@ func (y *Youtube) log(logText string) {
 	}
 }
 
-func (y *Youtube) GetItagInfo() *ItagInfo {
+func (y *Youtube) GetStreamInfo() *StreamInfo {
 	if len(y.StreamList) == 0 {
 		return nil
 	}
-	model := ItagInfo{Title: y.Title, Author: y.Author}
-
-	for _, stream := range y.StreamList {
-		model.Itags = append(model.Itags, Itag{ItagNo: stream.ItagNo, Quality: stream.Quality, Type: stream.MimeType})
-	}
-	return &model
+	return &StreamInfo{Title: y.Title, Author: y.Author, Streams: y.StreamList}
 }
 
 func getVideoTitleAuthor(in url.Values) (string, string) {

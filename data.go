@@ -311,10 +311,10 @@ type PlayerResponseData struct {
 	} `json:"messages"`
 }
 
-type ItagInfo struct {
-	Title  string
-	Author string
-	Itags  []Itag
+type StreamInfo struct {
+	Title   string
+	Author  string
+	Streams []Stream
 }
 
 type Itag struct {

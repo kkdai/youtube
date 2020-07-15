@@ -23,7 +23,7 @@ var (
 	outputQuality string
 	socks5Proxy   string
 	itag          int
-	itags         bool
+	info          bool
 )
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
 	flag.StringVar(&socks5Proxy, "p", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
-	flag.BoolVar(&itags, "itags", false, "list available itags of video")
+	flag.BoolVar(&info, "info", false, "show info of video")
 
 	flag.Parse()
 
@@ -59,17 +59,17 @@ func main() {
 		return
 	}
 
-	if itags {
-		info := y.GetItagInfo()
+	if info {
+		info := y.GetStreamInfo()
 		if info == nil {
-			fmt.Println("-----no available itag-----")
+			fmt.Println("-----no available stream-----")
 			return
 		}
 		fmt.Printf("Title: %s\n", info.Title)
 		fmt.Printf("Author: %s\n", info.Author)
-		fmt.Println("-----available itag-----")
-		for _, itag := range info.Itags {
-			fmt.Printf("itag: %2d , quality: %6s , type: %10s\n", itag.ItagNo, itag.Quality, itag.Type)
+		fmt.Println("-----available streams-----")
+		for _, itag := range info.Streams {
+			fmt.Printf("itag: %3d , quality: %6s , type: %10s\n", itag.ItagNo, itag.Quality, itag.MimeType)
 		}
 		return
 	}

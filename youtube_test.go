@@ -134,7 +134,7 @@ func TestGetItagInfo(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *ItagInfo
+		want *StreamInfo
 	}{
 		{
 			name: "no itag",
@@ -155,13 +155,13 @@ func TestGetItagInfo(t *testing.T) {
 					},
 				},
 			},
-			want: &ItagInfo{
+			want: &StreamInfo{
 				Title:  videoTitle,
 				Author: videoAuthor,
-				Itags: []Itag{{
-					ItagNo:  0,
-					Quality: videoQuality,
-					Type:    videoType,
+				Streams: []Stream{{
+					ItagNo:   0,
+					Quality:  videoQuality,
+					MimeType: videoType,
 				}},
 			},
 		},
@@ -183,19 +183,19 @@ func TestGetItagInfo(t *testing.T) {
 					},
 				},
 			},
-			want: &ItagInfo{
+			want: &StreamInfo{
 				Title:  videoTitle,
 				Author: videoAuthor,
-				Itags: []Itag{
+				Streams: []Stream{
 					{
-						ItagNo:  0,
-						Quality: videoQuality,
-						Type:    videoType,
+						ItagNo:   0,
+						Quality:  videoQuality,
+						MimeType: videoType,
 					},
 					{
-						ItagNo:  0,
-						Quality: videoQuality,
-						Type:    videoType,
+						ItagNo:   0,
+						Quality:  videoQuality,
+						MimeType: videoType,
 					},
 				},
 			},
@@ -208,8 +208,8 @@ func TestGetItagInfo(t *testing.T) {
 				Author:     videoAuthor,
 				Title:      videoTitle,
 			}
-			if got := y.GetItagInfo(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetItagInfo() = %v, want %v", got, tt.want)
+			if got := y.GetStreamInfo(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetStreamInfo() = %v, want %v", got, tt.want)
 			}
 		})
 	}
