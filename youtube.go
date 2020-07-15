@@ -32,14 +32,6 @@ func SetLogOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
-//type Stream struct {
-//	Quality string
-//	Type    string
-//	URL     string
-//	ItagNo  int
-//	Cipher  string
-//}
-
 // Youtube implements the downloader to download youtube videos.
 type Youtube struct {
 	DebugMode         bool
@@ -55,7 +47,7 @@ type Youtube struct {
 	Author            string
 }
 
-//NewYoutube :Initialize youtube package object
+//NewYoutube :Initialize youtube package object.
 func NewYoutube(debug bool) *Youtube {
 	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
 }
@@ -84,7 +76,7 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
-//StartDownload : Starting download video by arguments
+//StartDownload : Starting download video by arguments.
 func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo int) error {
 	if len(y.StreamList) == 0 {
 		return ErrEmptyStreamList
@@ -151,7 +143,7 @@ func (y *Youtube) getStreamUrl(stream Stream) (string, error) {
 	return streamURL, nil
 }
 
-//StartDownloadWithHighQuality : Starting downloading video with high quality (>720p)
+//StartDownloadWithHighQuality : Starting downloading video with high quality (>720p).
 func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile string, quality string) error {
 	if len(y.StreamList) == 0 {
 		return ErrEmptyStreamList
@@ -340,7 +332,7 @@ func (y *Youtube) parseVideoInfo() error {
 	y.Title, y.Author = getVideoTitleAuthor(answer)
 
 	// Get video download link
-	streams, err := y.getStreams(prData, y.Title, y.Author)
+	streams, err := y.getStreams(prData)
 	if err != nil {
 		return err
 	}
@@ -353,7 +345,7 @@ func (y *Youtube) parseVideoInfo() error {
 	return nil
 }
 
-func (y Youtube) getStreams(prData PlayerResponseData, title string, author string) ([]Stream, error) {
+func (y Youtube) getStreams(prData PlayerResponseData) ([]Stream, error) {
 	size := len(prData.StreamingData.Formats) + len(prData.StreamingData.AdaptiveFormats)
 	streams := make([]Stream, 0, size)
 
@@ -362,8 +354,6 @@ func (y Youtube) getStreams(prData PlayerResponseData, title string, author stri
 			y.log(fmt.Sprintf("An error occurred while decoding one of the video's Stream's information: Stream %+v.\n", stream))
 			return
 		}
-		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
-			title, author, stream.Quality, stream.MimeType, stream.ItagNo))
 		streams = append(streams, stream)
 	}
 
@@ -409,7 +399,7 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 	return httpClient, nil
 }
 
-func (y *Youtube) getVideoInfo() error {
+func (y *Youtube) getVideoInfo() (err error) {
 	eurl := "https://youtube.googleapis.com/v/" + y.VideoID
 	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID + "&eurl=" + eurl
 	y.log(fmt.Sprintf("url: %s", url))
@@ -423,7 +413,9 @@ func (y *Youtube) getVideoInfo() error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err = resp.Body.Close()
+	}()
 	if resp.StatusCode != 200 {
 		return err
 	}
@@ -472,8 +464,7 @@ func (y *Youtube) Write(p []byte) (n int, err error) {
 	}
 	return
 }
-func (y *Youtube) videoDLWorker(destFile string, target string) error {
-
+func (y *Youtube) videoDLWorker(destFile string, target string) (err error) {
 	httpClient, err := y.getHTTPClient()
 	if err != nil {
 		return err
@@ -484,7 +475,9 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		y.log(fmt.Sprintf("Http.Get\nerror: %s\ntarget: %s\n", err, target))
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err = resp.Body.Close()
+	}()
 	y.contentLength = float64(resp.ContentLength)
 
 	// create progress bar
@@ -503,7 +496,9 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		),
 	)
 	reader := bar.ProxyReader(resp.Body)
-	defer reader.Close()
+	defer func() {
+		err = reader.Close()
+	}()
 
 	if resp.StatusCode != 200 {
 		y.log(fmt.Sprintf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err))
