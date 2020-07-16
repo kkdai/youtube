@@ -432,7 +432,7 @@ func (y *Youtube) getVideoInfo() (err error) {
 
 func (y Youtube) Close(r io.ReadCloser, op string) {
 	_, err := io.Copy(ioutil.Discard, r)
-	if err != nil {
+	if err != nil && err.Error() != ErrReadOnClosedResBody.Error() {
 		y.log(fmt.Sprintf("failed to exhaust reader: %s in %s", err, op))
 	}
 	err = r.Close()

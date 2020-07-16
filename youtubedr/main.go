@@ -27,6 +27,13 @@ var (
 )
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	flag.Usage = func() {
 		fmt.Println(usageString)
 		flag.PrintDefaults()
@@ -45,7 +52,7 @@ func main() {
 
 	if len(flag.Args()) == 0 {
 		flag.PrintDefaults()
-		os.Exit(1)
+		return nil
 	}
 
 	log.Println("download to dir=", outputDir)
@@ -55,15 +62,14 @@ func main() {
 	}
 	arg := flag.Arg(0)
 	if err := y.DecodeURL(arg); err != nil {
-		fmt.Println("err:", err)
-		return
+		return err
 	}
 
 	if info {
 		info := y.GetStreamInfo()
 		if info == nil {
 			fmt.Println("-----no available stream-----")
-			return
+			return nil
 		}
 		fmt.Printf("Title: %s\n", info.Title)
 		fmt.Printf("Author: %s\n", info.Author)
@@ -71,23 +77,16 @@ func main() {
 		for _, itag := range info.Streams {
 			fmt.Printf("itag: %3d , quality: %6s , type: %10s\n", itag.ItagNo, itag.Quality, itag.MimeType)
 		}
-		return
+		return nil
 	}
 
-	var err error
 	if outputQuality == "hd1080" {
 		fmt.Println("check ffmpeg is installed....")
 		ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
 		if err := ffmpegVersionCmd.Run(); err != nil {
-			fmt.Println("err:", err)
-			fmt.Println("please check ffmpeg is installed correctly")
-			os.Exit(1)
+			return fmt.Errorf("please check ffmpeg is installed correctly, err: %w", err)
 		}
-		err = y.StartDownloadWithHighQuality(outputDir, outputFile, outputQuality)
-	} else {
-		err = y.StartDownload(outputDir, outputFile, outputQuality, itag)
+		return y.StartDownloadWithHighQuality(outputDir, outputFile, outputQuality)
 	}
-	if err != nil {
-		fmt.Println("err:", err)
-	}
+	return y.StartDownload(outputDir, outputFile, outputQuality, itag)
 }
