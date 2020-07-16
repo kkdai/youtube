@@ -192,8 +192,12 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 	videoFile := filepath.Join(outputDir, tempFileName+".m4v")
 	audioFile := filepath.Join(outputDir, tempFileName+".m4a")
 	defer func() {
-		os.Remove(videoFile)
-		os.Remove(audioFile)
+		if err := os.Remove(videoFile); err != nil {
+			y.log(fmt.Sprintf("err to remove file: %s", err))
+		}
+		if err := os.Remove(audioFile); err != nil {
+			y.log(fmt.Sprintf("err to remove file: %s", err))
+		}
 	}()
 	var err error
 	videoStreamUrl, err := y.getStreamUrl(videoStream)
@@ -413,9 +417,7 @@ func (y *Youtube) getVideoInfo() (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = resp.Body.Close()
-	}()
+	defer y.Close(resp.Body, "getVideoInfo")
 	if resp.StatusCode != 200 {
 		return err
 	}
@@ -426,6 +428,17 @@ func (y *Youtube) getVideoInfo() (err error) {
 	}
 	y.videoInfo = string(body)
 	return nil
+}
+
+func (y Youtube) Close(r io.ReadCloser, op string) {
+	_, err := io.Copy(ioutil.Discard, r)
+	if err != nil {
+		y.log(fmt.Sprintf("failed to exhaust reader: %s in %s", err, op))
+	}
+	err = r.Close()
+	if err != nil {
+		y.log(fmt.Sprintf("response close err %s in %s", err, op))
+	}
 }
 
 func (y *Youtube) findVideoID(url string) error {
@@ -475,9 +488,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) (err error) {
 		y.log(fmt.Sprintf("Http.Get\nerror: %s\ntarget: %s\n", err, target))
 		return err
 	}
-	defer func() {
-		err = resp.Body.Close()
-	}()
+	defer y.Close(resp.Body, "videoDLWorker")
 	y.contentLength = float64(resp.ContentLength)
 
 	// create progress bar
@@ -496,9 +507,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) (err error) {
 		),
 	)
 	reader := bar.ProxyReader(resp.Body)
-	defer func() {
-		err = reader.Close()
-	}()
+	defer y.Close(reader, "progress bar")
 
 	if resp.StatusCode != 200 {
 		y.log(fmt.Sprintf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err))
