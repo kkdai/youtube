@@ -1,7 +1,6 @@
 package youtube
 
 import (
-	"errors"
 	"log"
 	"os"
 	"os/user"
@@ -72,14 +71,14 @@ func TestDownloadError(t *testing.T) {
 		t.Error("Cannot init object.")
 		return
 	}
-	t.Run("empty stream list error", func(t *testing.T) {
+	t.Run("empty Stream list error", func(t *testing.T) {
 		if err := y.StartDownload("", "", "", 0); err != ErrEmptyStreamList {
-			t.Error("no err returned for empty stream list")
+			t.Error("no err returned for empty Stream list")
 		}
 	})
 
 	t.Run("itag not found error", func(t *testing.T) {
-		y.StreamList = append(y.StreamList, stream{})
+		y.StreamList = append(y.StreamList, Stream{})
 		if err := y.StartDownload("", "", "", 18); err != ErrItagNotFound {
 			t.Error("no error returned for itag not found")
 		}
@@ -126,7 +125,7 @@ func TestSanitizeFilename(t *testing.T) {
 
 func TestGetItagInfo(t *testing.T) {
 	type args struct {
-		StreamList []stream
+		StreamList []Stream
 	}
 	videoQuality := "TestQuality"
 	videoType := "TestType"
@@ -135,7 +134,7 @@ func TestGetItagInfo(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *ItagInfo
+		want *StreamInfo
 	}{
 		{
 			name: "no itag",
@@ -147,62 +146,56 @@ func TestGetItagInfo(t *testing.T) {
 		{
 			name: "one itag",
 			args: args{
-				StreamList: []stream{
+				StreamList: []Stream{
 					{
-						Quality: videoQuality,
-						Type:    videoType,
-						URL:     "",
-						ItagNo:  0,
-						Title:   videoTitle,
-						Author:  videoAuthor,
+						Quality:  videoQuality,
+						MimeType: videoType,
+						URL:      "",
+						ItagNo:   0,
 					},
 				},
 			},
-			want: &ItagInfo{
+			want: &StreamInfo{
 				Title:  videoTitle,
 				Author: videoAuthor,
-				Itags: []Itag{{
-					ItagNo:  0,
-					Quality: videoQuality,
-					Type:    videoType,
+				Streams: []Stream{{
+					ItagNo:   0,
+					Quality:  videoQuality,
+					MimeType: videoType,
 				}},
 			},
 		},
 		{
 			name: "two itags",
 			args: args{
-				StreamList: []stream{
+				StreamList: []Stream{
 					{
-						Quality: videoQuality,
-						Type:    videoType,
-						URL:     "",
-						ItagNo:  0,
-						Title:   videoTitle,
-						Author:  videoAuthor,
+						Quality:  videoQuality,
+						MimeType: videoType,
+						URL:      "",
+						ItagNo:   0,
 					},
 					{
-						Quality: videoQuality,
-						Type:    videoType,
-						URL:     "",
-						ItagNo:  0,
-						Title:   videoTitle,
-						Author:  videoAuthor,
+						Quality:  videoQuality,
+						MimeType: videoType,
+						URL:      "",
+						ItagNo:   0,
 					},
 				},
 			},
-			want: &ItagInfo{
+			want: &StreamInfo{
 				Title:  videoTitle,
 				Author: videoAuthor,
-				Itags: []Itag{
+				Streams: []Stream{
 					{
-						ItagNo:  0,
-						Quality: videoQuality,
-						Type:    videoType,
+						ItagNo:   0,
+						Quality:  videoQuality,
+						MimeType: videoType,
 					},
 					{
-						ItagNo:  0,
-						Quality: videoQuality,
-						Type:    videoType,
+						ItagNo:   0,
+						Quality:  videoQuality,
+						MimeType: videoType,
 					},
 				},
 			},
@@ -212,97 +205,11 @@ func TestGetItagInfo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			y := &Youtube{
 				StreamList: tt.args.StreamList,
+				Author:     videoAuthor,
+				Title:      videoTitle,
 			}
-			if got := y.GetItagInfo(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetItagInfo() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestYoutube_parseStream(t *testing.T) {
-	type args struct {
-		title      string
-		author     string
-		streamPos  int
-		formatBase FormatBase
-	}
-	tests := []struct {
-		name      string
-		args      args
-		want      stream
-		wantErr   bool
-		expectErr error
-	}{
-		{
-			name: "MimeType is empty",
-			args: args{
-				title:     "",
-				author:    "",
-				streamPos: 0,
-				formatBase: FormatBase{
-					ItagNo:   0,
-					URL:      "",
-					MimeType: "",
-					Quality:  "",
-					Cipher:   "",
-				},
-			},
-			want:      stream{},
-			wantErr:   true,
-			expectErr: ErrDecodingStreamInfo{0},
-		},
-		{
-			name: "parse stream correctly",
-			args: args{
-				title:     "test",
-				author:    "test",
-				streamPos: 0,
-				formatBase: FormatBase{
-					ItagNo:   0,
-					URL:      "test",
-					MimeType: "test",
-					Quality:  "test",
-					Cipher:   "test",
-				},
-			},
-			want: stream{
-				Quality: "test",
-				Type:    "test",
-				URL:     "test",
-				ItagNo:  0,
-				Title:   "test",
-				Author:  "test",
-			},
-			wantErr:   false,
-			expectErr: nil,
-		},
-		{
-			name: "stream download url and cipher are empty",
-			args: args{
-				formatBase: FormatBase{
-					ItagNo:   0,
-					URL:      "",
-					MimeType: "test",
-					Cipher:   "",
-				},
-			},
-			want:      stream{},
-			wantErr:   true,
-			expectErr: ErrCipherNotFound,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			y := NewYoutube(false)
-			got, err := y.parseStream(tt.args.title, tt.args.author, tt.args.streamPos, tt.args.formatBase)
-			if tt.wantErr && !errors.Is(err, tt.expectErr) {
-				t.Errorf("parseStream() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("get stream failed, want %v, but got %v", tt.want, got)
+			if got := y.GetStreamInfo(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetStreamInfo() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -364,21 +271,21 @@ func TestYoutube_findVideoID(t *testing.T) {
 func TestYoutube_StartDownloadWithHighQuality(t *testing.T) {
 	tests := []struct {
 		name    string
-		stream  []stream
+		stream  []Stream
 		wantErr bool
 		message string
 	}{
 		{
-			name:    "video stream not found",
-			stream:  []stream{},
+			name:    "video Stream not found",
+			stream:  []Stream{},
 			wantErr: true,
-			message: "no stream video/mp4",
+			message: "no Stream video/mp4",
 		},
 		{
-			name:    "audio stream not found",
-			stream:  []stream{{ItagNo: 137}},
+			name:    "audio Stream not found",
+			stream:  []Stream{{ItagNo: 137}},
 			wantErr: true,
-			message: "no stream audio/mp4",
+			message: "no Stream audio/mp4",
 		},
 	}
 	for _, tt := range tests {
@@ -387,6 +294,53 @@ func TestYoutube_StartDownloadWithHighQuality(t *testing.T) {
 
 			if err := y.StartDownloadWithHighQuality("", "", "hd1080"); (err != nil) != tt.wantErr && !strings.Contains(err.Error(), tt.message) {
 				t.Errorf("StartDownloadWithHighQuality() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestYoutube_getStreamUrl(t *testing.T) {
+	type args struct {
+		stream Stream
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr error
+	}{
+		{
+			name: "url is not empty",
+			args: args{
+				stream: Stream{
+					URL: "test",
+				},
+			},
+			want:    "test",
+			wantErr: nil,
+		},
+		{
+			name: "url and cipher is empty",
+			args: args{
+				stream: Stream{
+					URL:    "",
+					Cipher: "",
+				},
+			},
+			want:    "",
+			wantErr: ErrCipherNotFound,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			y := NewYoutube(false)
+			got, err := y.getStreamUrl(tt.args.stream)
+			if err != tt.wantErr {
+				t.Errorf("getStreamUrl() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getStreamUrl() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

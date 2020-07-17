@@ -19,9 +19,9 @@ func TestYoutube_GetItagInfo(t *testing.T) {
 		t.Error("Cannot decode download url")
 		return
 	}
-	itagInfo := y.GetItagInfo()
+	itagInfo := y.GetStreamInfo()
 	itagsCount := 18
-	gotCnt := len(itagInfo.Itags)
+	gotCnt := len(itagInfo.Streams)
 	if gotCnt != itagsCount {
 		t.Errorf("get ItagNo info failed, want %v itag items, but get %v itag items", itagsCount, gotCnt)
 	}

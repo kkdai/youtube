@@ -32,19 +32,10 @@ func SetLogOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
-type stream struct {
-	Quality string
-	Type    string
-	URL     string
-	ItagNo  int
-	Title   string
-	Author  string
-}
-
 // Youtube implements the downloader to download youtube videos.
 type Youtube struct {
 	DebugMode         bool
-	StreamList        []stream
+	StreamList        []Stream
 	VideoID           string
 	videoInfo         string
 	DownloadPercent   chan int64
@@ -52,9 +43,11 @@ type Youtube struct {
 	contentLength     float64
 	totalWrittenBytes float64
 	downloadLevel     float64
+	Title             string
+	Author            string
 }
 
-//NewYoutube :Initialize youtube package object
+//NewYoutube :Initialize youtube package object.
 func NewYoutube(debug bool) *Youtube {
 	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
 }
@@ -83,7 +76,7 @@ func (y *Youtube) DecodeURL(url string) error {
 	return nil
 }
 
-//StartDownload : Starting download video by arguments
+//StartDownload : Starting download video by arguments.
 func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo int) error {
 	if len(y.StreamList) == 0 {
 		return ErrEmptyStreamList
@@ -121,17 +114,36 @@ func (y *Youtube) StartDownload(outputDir, outputFile, quality string, itagNo in
 
 	outputFile = SanitizeFilename(outputFile)
 	if outputFile == "" {
-		outputFile = SanitizeFilename(stream.Title)
-		outputFile += pickIdealFileExtension(stream.Type)
+		outputFile = SanitizeFilename(y.Title)
+		outputFile += pickIdealFileExtension(stream.MimeType)
 	}
 	destFile := filepath.Join(outputDir, outputFile)
-	streamURL := stream.URL
+	streamURL, err := y.getStreamUrl(stream)
+	if err != nil {
+		return err
+	}
 	y.log(fmt.Sprintln("Download url=", streamURL))
 	y.log(fmt.Sprintln("Download to file=", destFile))
 	return y.videoDLWorker(destFile, streamURL)
 }
 
-//StartDownloadWithHighQuality : Starting downloading video with high quality (>720p)
+func (y *Youtube) getStreamUrl(stream Stream) (string, error) {
+	streamURL := stream.URL
+	if streamURL == "" {
+		cipher := stream.Cipher
+		if cipher == "" {
+			return "", ErrCipherNotFound
+		}
+		decipherUrl, err := y.decipher(cipher)
+		if err != nil {
+			return "", err
+		}
+		streamURL = decipherUrl
+	}
+	return streamURL, nil
+}
+
+//StartDownloadWithHighQuality : Starting downloading video with high quality (>720p).
 func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile string, quality string) error {
 	if len(y.StreamList) == 0 {
 		return ErrEmptyStreamList
@@ -146,7 +158,7 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 	videoItag := qualityitagMap[quality].videoItag
 	audioItag := qualityitagMap[quality].audioItag
 
-	var videoStream, audioStream stream
+	var videoStream, audioStream Stream
 
 	for _, stream := range y.StreamList {
 		switch stream.ItagNo {
@@ -158,10 +170,10 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 	}
 
 	if videoStream.ItagNo == 0 {
-		return errors.New("no stream video/mp4 for hd1080 found")
+		return errors.New("no Stream video/mp4 for hd1080 found")
 	}
 	if audioStream.ItagNo == 0 {
-		return errors.New("no stream audio/mp4 for hd1080 found")
+		return errors.New("no Stream audio/mp4 for hd1080 found")
 	}
 
 	if outputDir == "" {
@@ -172,26 +184,39 @@ func (y *Youtube) StartDownloadWithHighQuality(outputDir string, outputFile stri
 	outputFile = SanitizeFilename(outputFile)
 	stream := videoStream
 	if outputFile == "" {
-		outputFile = SanitizeFilename(stream.Title)
-		outputFile += pickIdealFileExtension(stream.Type)
+		outputFile = SanitizeFilename(y.Title)
+		outputFile += pickIdealFileExtension(stream.MimeType)
 	}
 	uid := uuid.New()
 	tempFileName := "temp_" + uid.String()
 	videoFile := filepath.Join(outputDir, tempFileName+".m4v")
 	audioFile := filepath.Join(outputDir, tempFileName+".m4a")
 	defer func() {
-		os.Remove(videoFile)
-		os.Remove(audioFile)
+		if err := os.Remove(videoFile); err != nil {
+			y.log(fmt.Sprintf("err to remove file: %s", err))
+		}
+		if err := os.Remove(audioFile); err != nil {
+			y.log(fmt.Sprintf("err to remove file: %s", err))
+		}
 	}()
-	y.log(fmt.Sprintln("Download url=", stream.URL))
 	var err error
-	y.log("Downloading video file...")
-	err = y.videoDLWorker(videoFile, videoStream.URL)
+	videoStreamUrl, err := y.getStreamUrl(videoStream)
 	if err != nil {
 		return err
 	}
+	y.log(fmt.Sprintln("Download url=", videoStreamUrl))
+	y.log("Downloading video file...")
+	err = y.videoDLWorker(videoFile, videoStreamUrl)
+	if err != nil {
+		return err
+	}
+	audioStreamUrl, err := y.getStreamUrl(audioStream)
+	if err != nil {
+		return err
+	}
+	y.log(fmt.Sprintln("Download url=", audioStreamUrl))
 	y.log("Downloading audio file...")
-	err = y.videoDLWorker(audioFile, audioStream.URL)
+	err = y.videoDLWorker(audioFile, audioStreamUrl)
 	if err != nil {
 		return err
 	}
@@ -293,7 +318,7 @@ func (y *Youtube) parseVideoInfo() error {
 	// read the streams map
 	streamMap, ok := answer["player_response"]
 	if !ok {
-		return errors.New("no stream map found in the server's answer")
+		return errors.New("no Stream map found in the server's answer")
 	}
 
 	var prData PlayerResponseData
@@ -308,81 +333,41 @@ func (y *Youtube) parseVideoInfo() error {
 	}
 
 	// Get video title and author.
-	title, author := getVideoTitleAuthor(answer)
+	y.Title, y.Author = getVideoTitleAuthor(answer)
 
 	// Get video download link
-	streams, err := y.getStreams(prData, title, author)
+	streams, err := y.getStreams(prData)
 	if err != nil {
 		return err
 	}
 
 	y.StreamList = streams
 	if len(y.StreamList) == 0 {
-		return errors.New("no stream list found in the server's answer")
+		return errors.New("no Stream list found in the server's answer")
 	}
 
 	return nil
 }
 
-func (y Youtube) getStreams(prData PlayerResponseData, title string, author string) ([]stream, error) {
+func (y Youtube) getStreams(prData PlayerResponseData) ([]Stream, error) {
 	size := len(prData.StreamingData.Formats) + len(prData.StreamingData.AdaptiveFormats)
-	formatBases := make([]FormatBase, 0, size)
-	streamPositions := make([]int, 0, size)
+	streams := make([]Stream, 0, size)
 
-	for muxedStreamPos, muxedStreamRaw := range prData.StreamingData.Formats {
-		formatBases = append(formatBases, muxedStreamRaw.FormatBase)
-		streamPositions = append(streamPositions, muxedStreamPos)
-	}
-	for adaptiveStreamPos, adaptiveStreamRaw := range prData.StreamingData.AdaptiveFormats {
-		formatBases = append(formatBases, adaptiveStreamRaw.FormatBase)
-		streamPositions = append(streamPositions, adaptiveStreamPos)
-	}
-	var streams []stream
-	for idx, formatBase := range formatBases {
-		stream, err := y.parseStream(title, author, streamPositions[idx], formatBase)
-		if err != nil {
-			if errors.Is(err, ErrDecodingStreamInfo{}) {
-				y.log(err.Error())
-				continue
-			}
-			return nil, err
+	filterFormat := func(stream Stream) {
+		if stream.MimeType == "" {
+			y.log(fmt.Sprintf("An error occurred while decoding one of the video's Stream's information: Stream %+v.\n", stream))
+			return
 		}
-		y.log(fmt.Sprintf("Title: %s Author: %s Stream found: quality '%s', format '%s', itag '%d'",
-			title, author, stream.Quality, stream.Type, stream.ItagNo))
 		streams = append(streams, stream)
 	}
+
+	for _, format := range prData.StreamingData.Formats {
+		filterFormat(format.Stream)
+	}
+	for _, format := range prData.StreamingData.AdaptiveFormats {
+		filterFormat(format.Stream)
+	}
 	return streams, nil
-}
-
-func (y Youtube) parseStream(title, author string, streamPos int, formatBase FormatBase) (stream, error) {
-	if formatBase.MimeType == "" {
-		return stream{}, ErrDecodingStreamInfo{
-			streamPos: streamPos,
-		}
-	}
-	streamUrl := formatBase.URL
-	if streamUrl == "" {
-		cipher := formatBase.Cipher
-		if cipher == "" {
-			return stream{}, ErrCipherNotFound
-		}
-		decipheredUrl, err := y.decipher(cipher)
-		if err != nil {
-			return stream{}, err
-		}
-		streamUrl = decipheredUrl
-	}
-
-	stream := stream{
-		Quality: formatBase.Quality,
-		Type:    formatBase.MimeType,
-		URL:     streamUrl,
-		ItagNo:  formatBase.ItagNo,
-
-		Title:  title,
-		Author: author,
-	}
-	return stream, nil
 }
 
 func (y *Youtube) getHTTPClient() (*http.Client, error) {
@@ -418,7 +403,7 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 	return httpClient, nil
 }
 
-func (y *Youtube) getVideoInfo() error {
+func (y *Youtube) getVideoInfo() (err error) {
 	eurl := "https://youtube.googleapis.com/v/" + y.VideoID
 	url := "https://youtube.com/get_video_info?video_id=" + y.VideoID + "&eurl=" + eurl
 	y.log(fmt.Sprintf("url: %s", url))
@@ -432,7 +417,7 @@ func (y *Youtube) getVideoInfo() error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer y.Close(resp.Body, "getVideoInfo")
 	if resp.StatusCode != 200 {
 		return err
 	}
@@ -443,6 +428,17 @@ func (y *Youtube) getVideoInfo() error {
 	}
 	y.videoInfo = string(body)
 	return nil
+}
+
+func (y Youtube) Close(r io.ReadCloser, op string) {
+	_, err := io.Copy(ioutil.Discard, r)
+	if err != nil && err.Error() != ErrReadOnClosedResBody.Error() {
+		y.log(fmt.Sprintf("failed to exhaust reader: %s in %s", err, op))
+	}
+	err = r.Close()
+	if err != nil {
+		y.log(fmt.Sprintf("response close err %s in %s", err, op))
+	}
 }
 
 func (y *Youtube) findVideoID(url string) error {
@@ -481,8 +477,7 @@ func (y *Youtube) Write(p []byte) (n int, err error) {
 	}
 	return
 }
-func (y *Youtube) videoDLWorker(destFile string, target string) error {
-
+func (y *Youtube) videoDLWorker(destFile string, target string) (err error) {
 	httpClient, err := y.getHTTPClient()
 	if err != nil {
 		return err
@@ -493,7 +488,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		y.log(fmt.Sprintf("Http.Get\nerror: %s\ntarget: %s\n", err, target))
 		return err
 	}
-	defer resp.Body.Close()
+	defer y.Close(resp.Body, "videoDLWorker")
 	y.contentLength = float64(resp.ContentLength)
 
 	// create progress bar
@@ -512,7 +507,7 @@ func (y *Youtube) videoDLWorker(destFile string, target string) error {
 		),
 	)
 	reader := bar.ProxyReader(resp.Body)
-	defer reader.Close()
+	defer y.Close(reader, "progress bar")
 
 	if resp.StatusCode != 200 {
 		y.log(fmt.Sprintf("reading answer: non 200[code=%v] status code received: '%v'", resp.StatusCode, err))
@@ -542,16 +537,11 @@ func (y *Youtube) log(logText string) {
 	}
 }
 
-func (y *Youtube) GetItagInfo() *ItagInfo {
+func (y *Youtube) GetStreamInfo() *StreamInfo {
 	if len(y.StreamList) == 0 {
 		return nil
 	}
-	model := ItagInfo{Title: y.StreamList[0].Title, Author: y.StreamList[0].Author}
-
-	for _, stream := range y.StreamList {
-		model.Itags = append(model.Itags, Itag{ItagNo: stream.ItagNo, Quality: stream.Quality, Type: stream.Type})
-	}
-	return &model
+	return &StreamInfo{Title: y.Title, Author: y.Author, Streams: y.StreamList}
 }
 
 func getVideoTitleAuthor(in url.Values) (string, string) {
