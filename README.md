@@ -75,6 +75,7 @@ func main() {
 | `-o`   | string | the output file name ( ext will auto detect on default value ) | [video's title].ext    |
 | `-d`   | string | the Socks 5 proxy (e.g. 10.10.10.10:7878)                      |                        |
 | `-q`   | string | the output file quality (medium, hd720)                        |                        |
+| `-i`   | string | the output file itag (13, 17 etc..)                             | 0                    |
 | `-info`| bool   | show information of available streams (quality, itag, MIMEtype)                        |                        |
 
 ## Example:
@@ -133,6 +134,16 @@ func main() {
    youtubedr -q hd1080 https://www.youtube.com/watch?v=rFejpH_tAHM
    ```
 
+
+ * ### Download video with specific itag
+
+    `go get github.com/kkdai/youtube/youtubedr`
+
+    Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
+
+    ```
+    youtubedr -i 18 https://www.youtube.com/watch?v=rFejpH_tAHM
+    ```
 
 ## How it works
 
