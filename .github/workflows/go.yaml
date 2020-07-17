@@ -1,0 +1,61 @@
+name: go
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+  pull_request:
+
+jobs:
+  lint:
+    strategy:
+      matrix:
+        platform: [ubuntu-18.04]
+        go-version: [1.13.x]
+    runs-on: ${{ matrix.platform }}
+    name: Linters (Static Analysis) for Go
+    steps:
+      - name: Checkout code into the Go module directory.
+        uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Linting & vetting.
+        run: make lint
+  test:
+    strategy:
+      matrix:
+        platform: [ubuntu-18.04]
+        go-version: [1.13.x]
+    runs-on: ${{ matrix.platform }}
+    name: Thanos end-to-end tests
+    env:
+      GOBIN: /tmp/.bin
+    steps:
+      - name: Install Go.
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Check out code into the Go module directory.
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Install ffmpeg && Run tests.
+        run: |
+            sudo apt-get update
+            sudo apt-get install ffmpeg
+            make test-integration
