@@ -61,7 +61,7 @@ func main() {
 	if err := y.DecodeURL(arg); err != nil {
 		fmt.Println("err:", err)
 	}
-	if err := y.StartDownload(filepath.Join(currentDir, "dl.mp4")); err != nil {
+	if err := y.StartDownload(currentDir, "dl.mp4", "medium",0); err != nil {
 		fmt.Println("err:", err)
 	}
 }
@@ -75,9 +75,28 @@ func main() {
 | `-o`   | string | the output file name ( ext will auto detect on default value ) | [video's title].ext    |
 | `-d`   | string | the Socks 5 proxy (e.g. 10.10.10.10:7878)                      |                        |
 | `-q`   | string | the output file quality (medium, hd720)                        |                        |
+| `-info`| bool   | show information of available streams (quality, itag, MIMEtype)                        |                        |
 
 ## Example:
- * ### download-dotGo-2015-rob-pike-video
+ * ### Get information of dotGo-2015-rob-pike video for downloading
+
+    `go get github.com/kkdai/youtube/youtubedr`
+
+    Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
+
+    ```
+    youtubedr -info https://www.youtube.com/watch?v=rFejpH_tAHM
+   
+   Title: dotGo 2015 - Rob Pike - Simplicity is Complicated
+   Author: dotconferences
+   -----available streams-----
+   itag:  18 , quality: medium , type: video/mp4; codecs="avc1.42001E, mp4a.40.2"
+   itag:  22 , quality:  hd720 , type: video/mp4; codecs="avc1.64001F, mp4a.40.2"
+   itag: 137 , quality: hd1080 , type: video/mp4; codecs="avc1.640028"
+   itag: 248 , quality: hd1080 , type: video/webm; codecs="vp9"
+   ........
+    ```
+ * ### Download dotGo-2015-rob-pike-video
 
     `go get github.com/kkdai/youtube/youtubedr`
 
@@ -106,6 +125,13 @@ func main() {
 	```
 	youtubedr -q medium https://www.youtube.com/watch?v=rFejpH_tAHM
 	```
+    
+   #### Special case by quality hd1080:
+   Installation of ffmpeg is necessary for hd1080   
+   ```
+   ffmpeg   //check ffmpeg is installed, if not please download ffmpeg and set to your PATH.
+   youtubedr -q hd1080 https://www.youtube.com/watch?v=rFejpH_tAHM
+   ```
 
 
 ## How it works
