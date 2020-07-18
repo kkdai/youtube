@@ -37,7 +37,7 @@ jobs:
         platform: [ubuntu-18.04]
         go-version: [1.13.x]
     runs-on: ${{ matrix.platform }}
-    name: Thanos end-to-end tests
+    name: integration tests
     env:
       GOBIN: /tmp/.bin
     steps:
