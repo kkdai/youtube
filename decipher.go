@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -67,11 +68,17 @@ func (y *Youtube) parseDecipherOpsAndArgs() (operations []string, args []int, er
 
 	// Ft=function(a){a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")} => get Ft
 	arr = decipherFuncNamePattern.FindStringSubmatch(basejs)
+	if len(arr) < 2 {
+		return nil, nil, errors.New("decipher function names not found")
+	}
 	funcName := arr[1]
 	decipherFuncBodyPattern := regexp.MustCompile(fmt.Sprintf(`[^h\.]%s=function\(\w+\)\{(.*?)\}`, funcName))
 
 	// eg: get a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")
 	arr = decipherFuncBodyPattern.FindStringSubmatch(basejs)
+	if len(arr) < 2 {
+		return nil, nil, errors.New("decipher function bodies not found")
+	}
 	decipherFuncBody := arr[1]
 
 	// FuncName in Body => get Et
