@@ -16,15 +16,28 @@ LDFLAGS += -X $(PKG)/version.version=$(VERSION)
 LDFLAGS += -X $(PKG)/version.commit=$(GITSHA)
 LDFLAGS += -X $(PKG)/version.buildTime=$(BUILDTIME)
 
+## help: Show makefile commands
+.PHONY: help
+help: Makefile
+	@echo "---- Project: kkdai/youtube ----"
+	@echo " Usage: make COMMAND"
+	@echo
+	@echo " Management Commands:"
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+	@echo
+
+## build: Build project
 .PHONY: build
 build:
 	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o ./bin ./...
 
+## deps: Ensures fresh go.mod and go.sum
 .PHONY: deps
-deps: ## Ensures fresh go.mod and go.sum.
+deps:
 	@go mod tidy
 	@go mod verify
 
+## lint: Run golangci-lint check
 .PHONY: lint
 lint:
 	@if [ ! -f ./bin/golangci-lint ]; then \
@@ -34,17 +47,19 @@ lint:
 	@./bin/golangci-lint run --deadline=30m --enable=misspell --enable=gosec --enable=gofmt --enable=goimports ./cmd/... ./...
 	@go vet ./...
 
+## format: Formats Go code
 .PHONY: format
-format: ## Formats Go code
+format:
 	@echo ">> formatting code"
 	@gofmt -s -w $(FILES_TO_FMT)
 
+## test-unit: Run all Youtube Go unit tests
 .PHONY: test-unit
-test-unit: ## Runs all Youtube Go unit tests
 test-unit:
-	@go test -v -cover
+	@go test -v -cover . ./pkg/...
 
+
+## test-integration: Run all Youtube Go integration tests
 .PHONY: test-integration
-test-integration: ## Runs all Youtube Go integration tests
 test-integration:
-	@go test -v -tags="integration" -coverprofile=coverage.out
+	@go test -v -tags="integration" -coverprofile=coverage.out . ./pkg/...

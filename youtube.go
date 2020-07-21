@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kkdai/youtube/pkg/decipher"
+
 	"github.com/google/uuid"
 	"github.com/vbauerster/mpb/v5"
 	"github.com/vbauerster/mpb/v5/decor"
@@ -138,7 +140,12 @@ func (y *Youtube) getStreamUrl(stream Stream) (string, error) {
 		if cipher == "" {
 			return "", ErrCipherNotFound
 		}
-		decipherUrl, err := y.decipher(cipher)
+		client, err := y.getHTTPClient()
+		if err != nil {
+			return "", fmt.Errorf("get http client error=%s", err)
+		}
+		decipher := decipher.NewDecipher(client)
+		decipherUrl, err := decipher.Url(y.VideoID, cipher)
 		if err != nil {
 			return "", err
 		}
