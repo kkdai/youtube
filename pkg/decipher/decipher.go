@@ -164,11 +164,13 @@ func (d Decipher) parseDecipherOpsAndArgs(videoId string) (operations []string, 
 		return nil, nil, errors.New("decipher: function name from body not found")
 	}
 	funcNameInBody := arr[1]
-	decipherDefBodyRegex := regexp.MustCompile(fmt.Sprintf(`var\s+%s=\{(\w+:function\(\w+(,\w+)?\)\{(.*?)\}),?\};`, funcNameInBody))
+	decipherDefBodyRegex := regexp.MustCompile(fmt.Sprintf(`%s=\{(\w+:function\(\w+(,\w+)?\)\{(.*?)\}),?\};`, funcNameInBody))
 	re := regexp.MustCompile(`\r?\n`)
 	basejs = re.ReplaceAllString(basejs, "")
 	arr1 := decipherDefBodyRegex.FindStringSubmatch(basejs)
-
+	if len(arr) < 2 {
+		return nil, nil, errors.New("decipher: function def body not found")
+	}
 	// eg:  vw:function(a,b){a.splice(0,b)},cn:function(a){a.reverse()},Zm:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}
 	decipherDefBody := arr1[1]
 	// eq:  [ a=a.split("") , Et.vw(a,2) , Et.Zm(a,4) , Et.Zm(a,46) , Et.vw(a,2) , Et.Zm(a,34), Et.Zm(a,59) , Et.cn(a,42) , return a.join("") ]
