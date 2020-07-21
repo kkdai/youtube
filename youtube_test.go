@@ -51,7 +51,7 @@ func TestDownload(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			y := NewYoutube(false)
+			y := NewYoutube(false, false)
 			if y == nil {
 				t.Error("Cannot init object.")
 				return
@@ -66,7 +66,7 @@ func TestDownload(t *testing.T) {
 }
 
 func TestDownloadError(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
@@ -86,7 +86,7 @@ func TestDownloadError(t *testing.T) {
 }
 
 func TestParseVideo(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
@@ -260,7 +260,7 @@ func TestYoutube_findVideoID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			y := NewYoutube(false)
+			y := NewYoutube(false, false)
 			if err := y.findVideoID(tt.args.url); (err != nil) != tt.wantErr || err != tt.expectedErr {
 				t.Errorf("findVideoID() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -290,7 +290,7 @@ func TestYoutube_StartDownloadWithHighQuality(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			y := NewYoutube(false)
+			y := NewYoutube(false, false)
 
 			if err := y.StartDownloadWithHighQuality("", "", "hd1080"); (err != nil) != tt.wantErr && !strings.Contains(err.Error(), tt.message) {
 				t.Errorf("StartDownloadWithHighQuality() error = %v, wantErr %v", err, tt.wantErr)
@@ -333,7 +333,7 @@ func TestYoutube_getStreamUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			y := NewYoutube(false)
+			y := NewYoutube(false, false)
 			got, err := y.getStreamUrl(tt.args.stream)
 			if err != tt.wantErr {
 				t.Errorf("getStreamUrl() error = %v, wantErr %v", err, tt.wantErr)
