@@ -16,7 +16,7 @@ func ExampleNewYoutube() {
 	usr, _ := user.Current()
 	currentDir := fmt.Sprintf("%v/Movies/youtubedr", usr.HomeDir)
 	log.Println("download to dir=", currentDir)
-	y := youtube.NewYoutube(true)
+	y := youtube.NewYoutube(true, false)
 	arg := flag.Arg(0)
 	if err := y.DecodeURL(arg); err != nil {
 		fmt.Println("err:", err)

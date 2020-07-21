@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -45,15 +46,18 @@ type Youtube struct {
 	downloadLevel     float64
 	Title             string
 	Author            string
+
+	// Disable SSL certificate verification
+	InsecureSkipVerify bool
 }
 
 //NewYoutube :Initialize youtube package object.
-func NewYoutube(debug bool) *Youtube {
-	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100)}
+func NewYoutube(debug bool, insecureSkipVerify bool) *Youtube {
+	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100), InsecureSkipVerify: insecureSkipVerify}
 }
 
-func NewYoutubeWithSocks5Proxy(debug bool, socks5Proxy string) *Youtube {
-	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100), Socks5Proxy: socks5Proxy}
+func NewYoutubeWithSocks5Proxy(debug bool, socks5Proxy string, insecureSkipVerify bool) *Youtube {
+	return &Youtube{DebugMode: debug, DownloadPercent: make(chan int64, 100), Socks5Proxy: socks5Proxy, InsecureSkipVerify: insecureSkipVerify}
 }
 
 //DecodeURL : Decode youtube URL to retrieval video information.
@@ -380,6 +384,9 @@ func (y *Youtube) getHTTPClient() (*http.Client, error) {
 		IdleConnTimeout:       60 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+	}
+	if y.InsecureSkipVerify {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // nolint
 	}
 	httpClient := &http.Client{Transport: httpTransport}
 

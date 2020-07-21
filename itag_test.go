@@ -7,7 +7,7 @@ import (
 )
 
 func TestYoutube_GetItagInfo(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return

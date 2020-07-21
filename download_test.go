@@ -10,7 +10,7 @@ import (
 )
 
 func TestDownloadFromYT_AssignOutputFileName(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
@@ -54,7 +54,7 @@ func TestDownloadFromYT_AssignOutputFileName(t *testing.T) {
 }
 
 func TestDownloadFromYT_NoOutputFileName(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
@@ -76,7 +76,7 @@ func TestDownloadFromYT_NoOutputFileName(t *testing.T) {
 }
 
 func TestDownloadFromYT_HighQuality(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
@@ -98,7 +98,7 @@ func TestDownloadFromYT_HighQuality(t *testing.T) {
 }
 
 func TestDownloadFromYT_WithItag(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return
@@ -146,7 +146,7 @@ func TestDownloadFromYT_WithItag(t *testing.T) {
 }
 
 func TestDownloadFromYT_WhenPlayabilityStatusIsNotOK(t *testing.T) {
-	y := NewYoutube(false)
+	y := NewYoutube(false, false)
 	if y == nil {
 		t.Error("Cannot init object.")
 		return

@@ -18,12 +18,13 @@ Example: youtubedr -o "Campaign Diary".mp4 https://www.youtube.com/watch\?v\=XbN
 `
 
 var (
-	outputFile    string
-	outputDir     string
-	outputQuality string
-	socks5Proxy   string
-	itag          int
-	info          bool
+	outputFile         string
+	outputDir          string
+	outputQuality      string
+	socks5Proxy        string
+	itag               int
+	info               bool
+	insecureSkipVerify bool
 )
 
 func main() {
@@ -47,6 +48,7 @@ func run() error {
 	flag.StringVar(&socks5Proxy, "p", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
 	flag.BoolVar(&info, "info", false, "show info of video")
+	flag.BoolVar(&insecureSkipVerify, "insecure-skip-tls-verify", false, "skip server certificate verification")
 
 	flag.Parse()
 
@@ -56,9 +58,12 @@ func run() error {
 	}
 
 	log.Println("download to dir=", outputDir)
-	y := youtube.NewYoutubeWithSocks5Proxy(true, socks5Proxy)
+	y := youtube.NewYoutubeWithSocks5Proxy(true, socks5Proxy, insecureSkipVerify)
 	if len(y.Socks5Proxy) == 0 {
 		log.Println("Using http without proxy.")
+	}
+	if y.InsecureSkipVerify {
+		log.Println("Skip server certificate verification")
 	}
 	arg := flag.Arg(0)
 	if err := y.DecodeURL(arg); err != nil {
