@@ -24,6 +24,10 @@ OR
 git clone https://github.com/kkdai/youtube.git
 go run youtubedr/main.go
 ```
+## Install in Termux
+```shell
+pkg install youtubedr
+```
 
 ## Usage
 
