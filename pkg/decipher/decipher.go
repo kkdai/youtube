@@ -94,7 +94,7 @@ func (d Decipher) parseDecipherOpsAndArgs(videoId string) (operations []string, 
 	//}
 
 	if videoId == "" {
-		return nil, nil, fmt.Errorf("video id is empty , err=%s", err)
+		return nil, nil, errors.New("video id is empty")
 	}
 	embedUrl := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoId)
 
