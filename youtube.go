@@ -66,17 +66,17 @@ func NewYoutubeWithSocks5Proxy(debug bool, socks5Proxy string, insecureSkipVerif
 func (y *Youtube) DecodeURL(url string) error {
 	err := y.findVideoID(url)
 	if err != nil {
-		return fmt.Errorf("findVideoID error=%s", err)
+		return fmt.Errorf("findVideoID failed: %w", err)
 	}
 
 	err = y.getVideoInfo()
 	if err != nil {
-		return fmt.Errorf("getVideoInfo error=%s", err)
+		return fmt.Errorf("getVideoInfo failed: %w", err)
 	}
 
 	err = y.parseVideoInfo()
 	if err != nil {
-		return fmt.Errorf("parse video info failed, err=%s", err)
+		return fmt.Errorf("parse video info failed: %w", err)
 	}
 
 	return nil
@@ -142,7 +142,7 @@ func (y *Youtube) getStreamUrl(stream Stream) (string, error) {
 		}
 		client, err := y.getHTTPClient()
 		if err != nil {
-			return "", fmt.Errorf("get http client error=%s", err)
+			return "", fmt.Errorf("get http client failed: %w", err)
 		}
 		decipher := decipher.NewDecipher(client)
 		decipherUrl, err := decipher.Url(y.VideoID, cipher)
