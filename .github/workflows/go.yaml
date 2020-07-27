@@ -59,3 +59,8 @@ jobs:
             sudo apt-get update
             sudo apt-get install ffmpeg
             make test-integration
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          file: coverage.out
