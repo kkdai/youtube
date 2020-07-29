@@ -1,7 +1,11 @@
 Download Youtube Video in Golang
 ==================
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/kkdai/youtube/master/LICENSE)  [![GoDoc](https://godoc.org/github.com/kkdai/youtube?status.svg)](https://godoc.org/github.com/kkdai/youtube)  [![Build Status](https://travis-ci.org/kkdai/youtube.svg?branch=master)](https://travis-ci.org/kkdai/youtube) [![](https://goreportcard.com/badge/github.com/kkdai/youtube)](https://goreportcard.com/badge/github.com/kkdai/youtube)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/kkdai/youtube/master/LICENSE)
+[![GoDoc](https://godoc.org/github.com/kkdai/youtube?status.svg)](https://godoc.org/github.com/kkdai/youtube)
+[![Build Status](https://travis-ci.org/kkdai/youtube.svg?branch=master)](https://travis-ci.org/kkdai/youtube)
+[![Coverage](https://codecov.io/gh/kkdai/youtube/branch/master/graph/badge.svg)](https://codecov.io/gh/kkdai/youtube)
+[![](https://goreportcard.com/badge/github.com/kkdai/youtube)](https://goreportcard.com/badge/github.com/kkdai/youtube)
 
 
 This package is a Youtube video download package, for more detail refer [https://github.com/rg3/youtube-dl](https://github.com/rg3/youtube-dl) for more download options.
@@ -91,7 +95,7 @@ func main() {
 
     ```
     youtubedr -info https://www.youtube.com/watch?v=rFejpH_tAHM
-   
+
    Title: dotGo 2015 - Rob Pike - Simplicity is Complicated
    Author: dotconferences
    -----available streams-----
@@ -130,9 +134,9 @@ func main() {
 	```
 	youtubedr -q medium https://www.youtube.com/watch?v=rFejpH_tAHM
 	```
-    
+
    #### Special case by quality hd1080:
-   Installation of ffmpeg is necessary for hd1080   
+   Installation of ffmpeg is necessary for hd1080
    ```
    ffmpeg   //check ffmpeg is installed, if not please download ffmpeg and set to your PATH.
    youtubedr -q hd1080 https://www.youtube.com/watch?v=rFejpH_tAHM
