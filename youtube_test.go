@@ -67,10 +67,7 @@ func TestDownload(t *testing.T) {
 
 func TestDownloadError(t *testing.T) {
 	y := NewYoutube(false, false)
-	if y == nil {
-		t.Error("Cannot init object.")
-		return
-	}
+
 	t.Run("empty Stream list error", func(t *testing.T) {
 		if err := y.StartDownload("", "", "", 0); err != ErrEmptyStreamList {
 			t.Error("no err returned for empty Stream list")
@@ -87,10 +84,6 @@ func TestDownloadError(t *testing.T) {
 
 func TestParseVideo(t *testing.T) {
 	y := NewYoutube(false, false)
-	if y == nil {
-		t.Error("Cannot init object.")
-		return
-	}
 
 	if err := y.DecodeURL(dwlURL); err != nil {
 		t.Error("This video parsing should work well.")
