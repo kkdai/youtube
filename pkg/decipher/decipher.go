@@ -24,10 +24,7 @@ func (d Decipher) Url(videoId string, cipher string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cipherMap := make(map[string]string)
-	for key, value := range queryParams {
-		cipherMap[key] = strings.Join(value, "")
-	}
+
 	/* eg:
 	    extract decipher from  https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
 
@@ -49,189 +46,128 @@ func (d Decipher) Url(videoId string, cipher string) (string, error) {
 		return a.join("")
 	*/
 
-	s := cipherMap["s"]
-	bs := []byte(s)
-	splice := func(b int) {
-		bs = bs[b:]
-	}
-	swap := func(b int) {
-		pos := b % len(bs)
-		bs[0], bs[pos] = bs[pos], bs[0]
-	}
-	reverse := func(options ...interface{}) {
-		l, r := 0, len(bs)-1
-		for l < r {
-			bs[l], bs[r] = bs[r], bs[l]
-			l++
-			r--
-		}
-	}
-	operations, args, err := d.parseDecipherOpsAndArgs(videoId)
+	operations, err := d.parseDecipherOpsAndArgs(videoId)
 	if err != nil {
 		return "", err
 	}
-	for i, op := range operations {
-		switch op {
-		case "splice":
-			splice(args[i])
-		case "swap":
-			swap(args[i])
-		case "reverse":
-			reverse(args[i])
-		}
-	}
-	cipherMap["s"] = string(bs)
 
-	decipheredUrl := fmt.Sprintf("%s&%s=%s", cipherMap["url"], cipherMap["sp"], cipherMap["s"])
+	// apply operations
+	bs := []byte(queryParams.Get("s"))
+	for _, op := range operations {
+		bs = op(bs)
+	}
+
+	decipheredUrl := fmt.Sprintf("%s&%s=%s", queryParams.Get("url"), queryParams.Get("sp"), string(bs))
 	return decipheredUrl, nil
 }
-func (d Decipher) parseDecipherOpsAndArgs(videoId string) (operations []string, args []int, err error) {
-	// try to get whole page
-	//client, err := y.getHTTPClient()
-	//if err != nil {
-	//	return nil, nil, fmt.Errorf("get http client error=%s", err)
-	//}
 
+const (
+	jsvarStr   = "[a-zA-Z_\\$][a-zA-Z_0-9]*"
+	reverseStr = ":function\\(a\\)\\{" +
+		"(?:return )?a\\.reverse\\(\\)" +
+		"\\}"
+	spliceStr = ":function\\(a,b\\)\\{" +
+		"a\\.splice\\(0,b\\)" +
+		"\\}"
+	swapStr = ":function\\(a,b\\)\\{" +
+		"var c=a\\[0\\];a\\[0\\]=a\\[b(?:%a\\.length)?\\];a\\[b(?:%a\\.length)?\\]=c(?:;return a)?" +
+		"\\}"
+)
+
+var (
+	playerConfigPattern = regexp.MustCompile(`yt\.setConfig\({'PLAYER_CONFIG':(.*)}\);`)
+	basejsPattern       = regexp.MustCompile(`"js":"\\/s\\/player(.*)base\.js`)
+
+	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
+		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
+
+	actionsFuncRegexp = regexp.MustCompile(fmt.Sprintf(
+		"function(?: %s)?\\(a\\)\\{"+
+			"a=a\\.split\\(\"\"\\);\\s*"+
+			"((?:(?:a=)?%s\\.%s\\(a,\\d+\\);)+)"+
+			"return a\\.join\\(\"\"\\)"+
+			"\\}", jsvarStr, jsvarStr, jsvarStr))
+
+	reverseRegexp = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, reverseStr))
+	spliceRegexp  = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, spliceStr))
+	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
+)
+
+func (d Decipher) parseDecipherOpsAndArgs(videoId string) (operations []operation, err error) {
 	if videoId == "" {
-		return nil, nil, errors.New("video id is empty")
+		return nil, errors.New("video id is empty")
 	}
-	embedUrl := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoId)
 
-	embeddedPageResp, err := d.client.Get(embedUrl)
+	embedUrl := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoId)
+	embeddedPageResp, err := d.httpGet(embedUrl)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer embeddedPageResp.Body.Close()
 
-	if embeddedPageResp.StatusCode != 200 {
-		return nil, nil, err
-	}
-
 	embeddedPageBodyBytes, err := ioutil.ReadAll(embeddedPageResp.Body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	embeddedPage := string(embeddedPageBodyBytes)
 
-	playerConfigPattern := regexp.MustCompile(`yt\.setConfig\({'PLAYER_CONFIG':(.*)}\);`)
-	playerConfig := playerConfigPattern.FindString(embeddedPage)
+	playerConfig := playerConfigPattern.Find(embeddedPageBodyBytes)
 
-	basejsPattern := regexp.MustCompile(`"js":"\\/s\\/player(.*)base\.js`)
 	// eg: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
-	escapedBasejsUrl := basejsPattern.FindString(playerConfig)
+	escapedBasejsUrl := string(basejsPattern.Find(playerConfig))
 	// eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
 	arr := strings.Split(escapedBasejsUrl, ":\"")
 	basejsUrl := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
-	basejsUrlResp, err := d.client.Get(basejsUrl)
+	basejsUrlResp, err := d.httpGet(basejsUrl)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
 	defer basejsUrlResp.Body.Close()
-	if basejsUrlResp.StatusCode != 200 {
-		return nil, nil, err
-	}
 
 	basejsBodyBytes, err := ioutil.ReadAll(basejsUrlResp.Body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	basejs := string(basejsBodyBytes)
 
-	// regex to get name of decipher function
-	decipherFuncNamePattern := regexp.MustCompile(`(\w+)=function\(\w+\){(\w+)=(\w+)\.split\(\x22{2}\);.*?return\s+(\w+)\.join\(\x22{2}\)}`)
-
-	// Ft=function(a){a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")} => get Ft
-	arr = decipherFuncNamePattern.FindStringSubmatch(basejs)
-	if len(arr) < 2 {
-		return nil, nil, errors.New("decipher: function names not found")
+	bodyString := string(basejsBodyBytes)
+	objResult := actionsObjRegexp.FindStringSubmatch(bodyString)
+	funcResult := actionsFuncRegexp.FindStringSubmatch(bodyString)
+	if len(objResult) < 3 || len(funcResult) < 2 {
+		return nil, errors.New("error parsing signature tokens")
 	}
-	funcName := arr[1]
-	decipherFuncBodyPattern := regexp.MustCompile(fmt.Sprintf(`[^h\.]%s=function\(\w+\)\{(.*?)\}`, funcName))
 
-	// eg: get a=a.split("");Et.vw(a,2);Et.Zm(a,4);Et.Zm(a,46);Et.vw(a,2);Et.Zm(a,34);Et.Zm(a,59);Et.cn(a,42);return a.join("")
-	arr = decipherFuncBodyPattern.FindStringSubmatch(basejs)
-	if len(arr) < 2 {
-		return nil, nil, errors.New("decipher: function bodies not found")
+	obj := objResult[1]
+	objBody := objResult[2]
+	funcBody := funcResult[1]
+
+	var reverseKey, spliceKey, swapKey string
+
+	if result := reverseRegexp.FindStringSubmatch(objBody); len(result) > 1 {
+		reverseKey = result[1]
 	}
-	decipherFuncBody := arr[1]
-
-	// FuncName in Body => get Et
-	funcNameInBodyRegex := regexp.MustCompile(`(\w+).\w+\(\w+,\d+\);`)
-	arr = funcNameInBodyRegex.FindStringSubmatch(decipherFuncBody)
-	if len(arr) < 2 {
-		return nil, nil, errors.New("decipher: function name from body not found")
+	if result := spliceRegexp.FindStringSubmatch(objBody); len(result) > 1 {
+		spliceKey = result[1]
 	}
-	funcNameInBody := arr[1]
-	decipherDefBodyRegex := regexp.MustCompile(fmt.Sprintf(`%s=\{(\w+:function\(\w+(,\w+)?\)\{(.*?)\}),?\};`, funcNameInBody))
-	re := regexp.MustCompile(`\r?\n`)
-	basejs = re.ReplaceAllString(basejs, "")
-	arr1 := decipherDefBodyRegex.FindStringSubmatch(basejs)
-	if len(arr) < 2 {
-		return nil, nil, errors.New("decipher: function def body not found")
+	if result := swapRegexp.FindStringSubmatch(objBody); len(result) > 1 {
+		swapKey = result[1]
 	}
-	// eg:  vw:function(a,b){a.splice(0,b)},cn:function(a){a.reverse()},Zm:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}
-	decipherDefBody := arr1[1]
-	// eq:  [ a=a.split("") , Et.vw(a,2) , Et.Zm(a,4) , Et.Zm(a,46) , Et.vw(a,2) , Et.Zm(a,34), Et.Zm(a,59) , Et.cn(a,42) , return a.join("") ]
-	decipherFuncs := strings.Split(decipherFuncBody, ";")
 
-	var funcSeq []string
-	var funcArgs []int
+	regex, err := regexp.Compile(fmt.Sprintf("(?:a=)?%s\\.(%s|%s|%s)\\(a,(\\d+)\\)", obj, reverseKey, spliceKey, swapKey))
+	if err != nil {
+		return nil, err
+	}
 
-	for _, v := range decipherFuncs {
-		// calledFuncNameRegex \w+(?:.|\[)("?\w+(?:")?)\]?\(
-		// eg: Et.vw(a,2) => vw
-		calledFuncNameRegex, err := regexp.Compile(`\w+(?:.|\[)("?\w+(?:")?)\]?\(`)
-		if err != nil {
-			return nil, nil, err
-		}
-		arr := calledFuncNameRegex.FindStringSubmatch(v)
-		if len(arr) < 1 || arr[1] == "" {
-			continue
-		}
-		calledFuncName := arr[1]
-
-		// Et.vw(a,2) => [a, 2]
-		funcArgRegex := regexp.MustCompile(`\(\w+,(\d+)\)`)
-
-		// splice
-		spliceFuncPattern := fmt.Sprintf(`%s:\bfunction\b\([a],b\).(\breturn\b)?.?\w+\.splice`, calledFuncName)
-		if regexp.MustCompile(spliceFuncPattern).MatchString(decipherDefBody) {
-			arr := funcArgRegex.FindStringSubmatch(v)
-			arg, err := strconv.Atoi(arr[1])
-			if err != nil {
-				return nil, nil, err
-			}
-			funcSeq = append(funcSeq, "splice")
-			funcArgs = append(funcArgs, arg)
-			continue
-		}
-
-		// Swap
-		swapFuncPattern := fmt.Sprintf(`%s:\bfunction\b\(\w+\,\w\).\bvar\b.\bc=a\b`, calledFuncName)
-		if regexp.MustCompile(swapFuncPattern).MatchString(decipherDefBody) {
-			arr := funcArgRegex.FindStringSubmatch(v)
-			arg, err := strconv.Atoi(arr[1])
-			if err != nil {
-				return nil, nil, err
-			}
-			funcSeq = append(funcSeq, "swap")
-			funcArgs = append(funcArgs, arg)
-			continue
-		}
-
-		// Reverse
-		reverseFuncPattern := fmt.Sprintf(`%s:\bfunction\b\(\w+\)`, calledFuncName)
-		if regexp.MustCompile(reverseFuncPattern).MatchString(decipherDefBody) {
-			arr := funcArgRegex.FindStringSubmatch(v)
-			arg, err := strconv.Atoi(arr[1])
-			if err != nil {
-				return nil, nil, err
-			}
-			funcSeq = append(funcSeq, "reverse")
-			funcArgs = append(funcArgs, arg)
-			continue
+	var ops []operation
+	for _, s := range regex.FindAllStringSubmatch(funcBody, -1) {
+		switch s[1] {
+		case reverseKey:
+			ops = append(ops, reverseFunc)
+		case swapKey:
+			arg, _ := strconv.Atoi(s[2])
+			ops = append(ops, newSwapFunc(arg))
+		case spliceKey:
+			arg, _ := strconv.Atoi(s[2])
+			ops = append(ops, newSpliceFunc(arg))
 		}
 	}
-	return funcSeq, funcArgs, nil
+	return ops, nil
 }
