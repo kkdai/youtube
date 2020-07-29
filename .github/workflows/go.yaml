@@ -1,11 +1,8 @@
 name: go
 
 on:
-  push:
-    branches:
-      - master
-    tags:
-  pull_request:
+- push
+- pull_request
 
 jobs:
   lint:
