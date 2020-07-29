@@ -1,6 +1,7 @@
 package decipher
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -8,8 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type Decipher struct {
