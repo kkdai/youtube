@@ -1,5 +1,3 @@
-// +build integration
-
 package youtube
 
 import (
@@ -10,13 +8,11 @@ import (
 
 func TestYoutube_GetItagInfo(t *testing.T) {
 	require := require.New(t)
-	y := NewYoutube(false, false)
+	client := Client{}
 
 	// url from issue #25
-	testVideoUrl := "https://www.youtube.com/watch?v=rFejpH_tAHM"
-	require.NoError(y.DecodeURL(testVideoUrl))
-
-	itagInfo := y.GetStreamInfo()
-
-	require.Len(itagInfo.Streams, 18)
+	url := "https://www.youtube.com/watch?v=rFejpH_tAHM"
+	video, err := client.GetVideo(url)
+	require.NoError(err)
+	require.Len(video.Streams, 18)
 }

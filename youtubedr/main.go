@@ -1,15 +1,23 @@
 package main
 
 import (
+	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strconv"
+	"time"
 
-	"github.com/kkdai/youtube"
+	ytdl "github.com/kkdai/youtube/downloader"
+	"github.com/olekukonko/tablewriter"
+	"golang.org/x/net/proxy"
 )
 
 const usageString string = `Usage: youtubedr [OPTION] [URL]
@@ -57,33 +65,68 @@ func run() error {
 		return nil
 	}
 
-	log.Println("download to dir=", outputDir)
-	y := youtube.NewYoutubeWithSocks5Proxy(true, socks5Proxy, insecureSkipVerify)
-	if len(y.Socks5Proxy) == 0 {
-		log.Println("Using http without proxy.")
+	httpTransport := &http.Transport{
+		IdleConnTimeout:       60 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
-	if y.InsecureSkipVerify {
+
+	if socks5Proxy != "" {
+		log.Println("Using SOCKS5 proxy", socks5Proxy)
+		dialer, err := proxy.SOCKS5("tcp", socks5Proxy, nil, proxy.Direct)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
+			os.Exit(1)
+		}
+
+		// set our socks5 as the dialer
+		dc := dialer.(interface {
+			DialContext(ctx context.Context, network, addr string) (net.Conn, error)
+		})
+		httpTransport.DialContext = dc.DialContext
+	} else {
+		httpTransport.DialContext = (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext
+	}
+
+	if insecureSkipVerify {
 		log.Println("Skip server certificate verification")
+		httpTransport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
 	}
+
+	dl := ytdl.Downloader{
+		OutputDir: outputDir,
+	}
+	dl.Client.HTTPClient = &http.Client{Transport: httpTransport}
+
 	arg := flag.Arg(0)
-	if err := y.DecodeURL(arg); err != nil {
+
+	video, err := dl.Client.GetVideo(arg)
+	if err != nil {
 		return err
 	}
 
 	if info {
-		info := y.GetStreamInfo()
-		if info == nil {
-			fmt.Println("-----no available stream-----")
-			return nil
+		fmt.Printf("Title:    %s\n", video.Title)
+		fmt.Printf("Author:   %s\n", video.Author)
+		fmt.Printf("Duration: %v\n", video.Duration)
+
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetAutoWrapText(false)
+		table.SetHeader([]string{"itag", "quality", "MimeType"})
+
+		for _, itag := range video.Streams {
+			table.Append([]string{strconv.Itoa(itag.ItagNo), itag.Quality, itag.MimeType})
 		}
-		fmt.Printf("Title: %s\n", info.Title)
-		fmt.Printf("Author: %s\n", info.Author)
-		fmt.Println("-----available streams-----")
-		for _, itag := range info.Streams {
-			fmt.Printf("itag: %3d , quality: %6s , type: %10s\n", itag.ItagNo, itag.Quality, itag.MimeType)
-		}
+		table.Render()
 		return nil
 	}
+
+	fmt.Println("download to directory", outputDir)
 
 	if outputQuality == "hd1080" {
 		fmt.Println("check ffmpeg is installed....")
@@ -91,7 +134,8 @@ func run() error {
 		if err := ffmpegVersionCmd.Run(); err != nil {
 			return fmt.Errorf("please check ffmpeg is installed correctly, err: %w", err)
 		}
-		return y.StartDownloadWithHighQuality(outputDir, outputFile, outputQuality)
+		return dl.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
 	}
-	return y.StartDownload(outputDir, outputFile, outputQuality, itag)
+
+	return dl.Download(context.Background(), outputFile, video, &video.Streams[0])
 }

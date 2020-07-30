@@ -1,20 +1,15 @@
-// +build integration
-
 package youtube
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
+	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDownload_Regular(t *testing.T) {
-	curDir, _ := os.Getwd()
-	outputDir := filepath.Join(curDir, downloadToDir)
+	ctx := context.Background()
+
 	testcases := []struct {
 		name       string
 		url        string
@@ -27,7 +22,6 @@ func TestDownload_Regular(t *testing.T) {
 			name:       "default",
 			url:        "https://www.youtube.com/watch?v=54e6lBE3BoQ",
 			outputFile: "default_test.mp4",
-			itagNo:     0,
 			quality:    "",
 		},
 		{
@@ -35,7 +29,6 @@ func TestDownload_Regular(t *testing.T) {
 			name:       "quality:medium",
 			url:        "https://www.youtube.com/watch?v=54e6lBE3BoQ",
 			outputFile: "medium_test.mp4",
-			itagNo:     0,
 			quality:    "medium",
 		},
 		{
@@ -62,51 +55,50 @@ func TestDownload_Regular(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		fmt.Println("download to " + outputDir + "\\" + tc.outputFile)
 		t.Run(tc.name, func(t *testing.T) {
 			require := require.New(t)
 
-			y := NewYoutube(true, false)
-			require.NoError(y.DecodeURL(tc.url))
-			require.NoError(y.StartDownload(outputDir, tc.outputFile, tc.quality, tc.itagNo))
+			video, err := testClient.GetVideoContext(ctx, tc.url)
+			require.NoError(err)
+
+			var stream *Stream
+			if tc.itagNo > 0 {
+				stream = video.FindStreamByItag(tc.itagNo)
+				require.NotNil(stream)
+			} else {
+				stream = &video.Streams[0]
+			}
+
+			url, err := testClient.getStreamUrl(ctx, video, stream)
+			require.NoError(err)
+			require.NotEmpty(url)
 		})
 	}
 }
 
-func TestDownload_HighQuality(t *testing.T) {
-	require := require.New(t)
-	y := NewYoutube(false, false)
-
-	// url from issue #21
-	testVideoId := "n3kPvBCYT3E"
-	require.NoError(y.DecodeURL(testVideoId))
-
-	curDir, _ := os.Getwd()
-	outputDir := filepath.Join(curDir, downloadToDir)
-	fmt.Println("download to " + outputDir + "\\" + "Silhouette Eurobeat Remix")
-	require.NoError(y.StartDownloadWithHighQuality(outputDir, "", "hd1080"))
-}
-
 func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
-	y := NewYoutube(false, false)
-
 	testcases := []struct {
 		issue   string
 		videoId string
+		err     string
 	}{
 		{
 			issue:   "issue#65",
 			videoId: "9ja-K2FslBU",
+			err:     `status: ERROR`,
 		},
 		{
 			issue:   "issue#59",
 			videoId: "nINQjT7Zr9w",
+			err:     `status: LOGIN_REQUIRED`,
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.issue, func(t *testing.T) {
-			assert.Error(t, y.DecodeURL(tc.videoId))
+			_, err := testClient.GetVideo(tc.videoId)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.err)
 		})
 	}
 }

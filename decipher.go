@@ -1,25 +1,17 @@
-package decipher
+package youtube
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-type Decipher struct {
-	client *http.Client
-}
-
-func NewDecipher(client *http.Client) *Decipher {
-	return &Decipher{client: client}
-}
-
-func (d Decipher) Url(videoId string, cipher string) (string, error) {
+func (y *Client) decipherURL(ctx context.Context, videoId string, cipher string) (string, error) {
 	queryParams, err := url.ParseQuery(cipher)
 	if err != nil {
 		return "", err
@@ -46,7 +38,7 @@ func (d Decipher) Url(videoId string, cipher string) (string, error) {
 		return a.join("")
 	*/
 
-	operations, err := d.parseDecipherOpsAndArgs(videoId)
+	operations, err := y.parseDecipherOps(ctx, videoId)
 	if err != nil {
 		return "", err
 	}
@@ -93,13 +85,13 @@ var (
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
 
-func (d Decipher) parseDecipherOpsAndArgs(videoId string) (operations []operation, err error) {
+func (y *Client) parseDecipherOps(ctx context.Context, videoId string) (operations []operation, err error) {
 	if videoId == "" {
 		return nil, errors.New("video id is empty")
 	}
 
 	embedUrl := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoId)
-	embeddedPageResp, err := d.httpGet(embedUrl)
+	embeddedPageResp, err := y.httpGet(ctx, embedUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +109,7 @@ func (d Decipher) parseDecipherOpsAndArgs(videoId string) (operations []operatio
 	// eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
 	arr := strings.Split(escapedBasejsUrl, ":\"")
 	basejsUrl := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
-	basejsUrlResp, err := d.httpGet(basejsUrl)
+	basejsUrlResp, err := y.httpGet(ctx, basejsUrl)
 	if err != nil {
 		return nil, err
 	}

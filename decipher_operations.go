@@ -1,4 +1,4 @@
-package decipher
+package youtube
 
 type operation func([]byte) []byte
 

@@ -43,37 +43,9 @@ $ youtubedr QAGDGja7kbs
 $ youtubedr https://www.youtube.com/watch?v=rFejpH_tAHM
 ```
 
-### Import this package in your golang program
+### Use this package in your golang program
 
-```go
-package main
-
-import (
-	"flag"
-	"fmt"
-	"log"
-	"os/user"
-	"path/filepath"
-
-	. "github.com/kkdai/youtube"
-)
-
-func main() {
-	flag.Parse()
-	log.Println(flag.Args())
-	usr, _ := user.Current()
-	currentDir := fmt.Sprintf("%v/Movies/youtubedr", usr.HomeDir)
-	log.Println("download to dir=", currentDir)
-	y := NewYoutube(true)
-	arg := flag.Arg(0)
-	if err := y.DecodeURL(arg); err != nil {
-		fmt.Println("err:", err)
-	}
-	if err := y.StartDownload(currentDir, "dl.mp4", "medium",0); err != nil {
-		fmt.Println("err:", err)
-	}
-}
-```
+Please check out the [example_test.go](example_test.go) for example code.
 
 ## Options:
 
