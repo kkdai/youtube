@@ -2,10 +2,86 @@ package youtube
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
+	"log"
+	"os"
+	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type YoutubeTest struct {
+	Note         string `json:"note"`
+	URL          string `json:"url"`
+	OnlyMatching bool   `json:"only_matching"`
+	InfoDict     struct {
+		ID           string      `json:"id"`
+		Ext          string      `json:"ext"`
+		Title        string      `json:"title"`
+		Uploader     string      `json:"uploader"`
+		UploaderID   string      `json:"uploader_id"`
+		UploaderURL  string      `json:"uploader_url"`
+		ChannelID    string      `json:"channel_id"`
+		ChannelURL   string      `json:"channel_url"`
+		UploadDate   string      `json:"upload_date"`
+		Description  string      `json:"description"`
+		Categories   []string    `json:"categories"`
+		Tags         []string    `json:"tags"`
+		Duration     *int        `json:"duration"`
+		ViewCount    interface{} `json:"view_count"`
+		LikeCount    interface{} `json:"like_count"`
+		DislikeCount interface{} `json:"dislike_count"`
+		StartTime    int         `json:"start_time"`
+		EndTime      int         `json:"end_time"`
+	} `json:"info_dict"`
+}
+
+func TestYoutubeDL(t *testing.T) {
+
+	jsonFile, err := os.Open("testdata/tests.json")
+	require.NoError(t, err)
+	defer jsonFile.Close()
+
+	var tests []YoutubeTest
+	require.NoError(t, json.NewDecoder(jsonFile).Decode(&tests))
+
+	for _, tc := range tests {
+		if tc.OnlyMatching {
+			continue
+		}
+
+		t.Run(tc.URL, func(t *testing.T) {
+			require := require.New(t)
+			assert := assert.New(t)
+
+			if tc.Note != "" {
+				log.Println(tc.Note)
+			}
+
+			video, err := testClient.GetVideo(tc.URL)
+			require.NoError(err)
+			require.NotNil(video)
+			assert.Equal(tc.InfoDict.ID, video.ID)
+			assert.Equal(tc.InfoDict.Uploader, video.Uploader)
+
+			if title := tc.InfoDict.Title; strings.HasPrefix(title, "md5:") {
+				md5Sum := md5.Sum([]byte(video.Title))
+				hexSum := hex.EncodeToString(md5Sum[:])
+				assert.Equal(title[4:], hexSum, "title: %v", video.Title)
+			} else {
+				assert.Equal(tc.InfoDict.Title, video.Title)
+			}
+
+			if tc.InfoDict.Duration != nil {
+				assert.EqualValues(*tc.InfoDict.Duration, video.Duration.Seconds())
+			}
+		})
+	}
+}
 
 func TestDownload_Regular(t *testing.T) {
 	ctx := context.Background()

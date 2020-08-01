@@ -1,0 +1,500 @@
+[
+    {
+        "url": "https://www.youtube.com/watch?v=BaW_jenozKc&t=1s&end=9",
+        "info_dict": {
+            "id": "BaW_jenozKc",
+            "ext": "mp4",
+            "title": "youtube-dl test video \"'/\\\u00e4\u21ad\ud835\udd50",
+            "uploader": "Philipp Hagemeister",
+            "uploader_id": "phihag",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/phihag",
+            "channel_id": "UCLqxVugv74EIW3VWh2NOa3Q",
+            "channel_url": "re:https?://(?:www\\.)?youtube\\.com/channel/UCLqxVugv74EIW3VWh2NOa3Q",
+            "upload_date": "20121002",
+            "description": "test chars:  \"'/\\\u00e4\u21ad\ud835\udd50\ntest URL: https://github.com/rg3/youtube-dl/issues/1892\n\nThis is a test video for youtube-dl.\n\nFor more information, contact phihag@phihag.de .",
+            "categories": [
+                "Science & Technology"
+            ],
+            "tags": [
+                "youtube-dl"
+            ],
+            "duration": 10,
+            "view_count": null,
+            "like_count": null,
+            "dislike_count": null,
+            "start_time": 1,
+            "end_time": 9
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=UxxajLWwzqY",
+        "note": "Test generic use_cipher_signature video (#897)",
+        "info_dict": {
+            "id": "UxxajLWwzqY",
+            "ext": "mp4",
+            "upload_date": "20120506",
+            "title": "Icona Pop - I Love It (feat. Charli XCX) [OFFICIAL VIDEO]",
+            "alt_title": "I Love It (feat. Charli XCX)",
+            "description": "md5:19a2f98d9032b9311e686ed039564f63",
+            "tags": [
+                "Icona Pop i love it",
+                "sweden",
+                "pop music",
+                "big beat records",
+                "big beat",
+                "charli",
+                "xcx",
+                "charli xcx",
+                "girls",
+                "hbo",
+                "i love it",
+                "i don't care",
+                "icona",
+                "pop",
+                "iconic ep",
+                "iconic",
+                "love",
+                "it"
+            ],
+            "duration": 180,
+            "uploader": "Icona Pop",
+            "uploader_id": "IconaPop",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/IconaPop",
+            "creator": "Icona Pop",
+            "track": "I Love It (feat. Charli XCX)",
+            "artist": "Icona Pop"
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=07FYdnEawAQ",
+        "note": "Test VEVO video with age protection (#956)",
+        "info_dict": {
+            "id": "07FYdnEawAQ",
+            "ext": "mp4",
+            "upload_date": "20130703",
+            "title": "Justin Timberlake - Tunnel Vision (Official Music Video) (Explicit)",
+            "alt_title": "Tunnel Vision",
+            "description": "md5:07dab3356cde4199048e4c7cd93471e1",
+            "duration": 419,
+            "uploader": "justintimberlakeVEVO",
+            "uploader_id": "justintimberlakeVEVO",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/justintimberlakeVEVO",
+            "creator": "Justin Timberlake",
+            "track": "Tunnel Vision",
+            "artist": "Justin Timberlake",
+            "age_limit": 18
+        }
+    },
+    {
+        "url": "//www.YouTube.com/watch?v=yZIXLfi8CZQ",
+        "note": "Embed-only video (#1746)",
+        "info_dict": {
+            "id": "yZIXLfi8CZQ",
+            "ext": "mp4",
+            "upload_date": "20120608",
+            "title": "Principal Sexually Assaults A Teacher - Episode 117 - 8th June 2012",
+            "description": "md5:09b78bd971f1e3e289601dfba15ca4f7",
+            "uploader": "SET India",
+            "uploader_id": "setindia",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/setindia",
+            "age_limit": 18
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=BaW_jenozKc&v=UxxajLWwzqY",
+        "note": "Use the first video ID in the URL",
+        "info_dict": {
+            "id": "BaW_jenozKc",
+            "ext": "mp4",
+            "title": "youtube-dl test video \"'/\\\u00e4\u21ad\ud835\udd50",
+            "uploader": "Philipp Hagemeister",
+            "uploader_id": "phihag",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/phihag",
+            "upload_date": "20121002",
+            "description": "test chars:  \"'/\\\u00e4\u21ad\ud835\udd50\ntest URL: https://github.com/rg3/youtube-dl/issues/1892\n\nThis is a test video for youtube-dl.\n\nFor more information, contact phihag@phihag.de .",
+            "categories": [
+                "Science & Technology"
+            ],
+            "tags": [
+                "youtube-dl"
+            ],
+            "duration": 10,
+            "view_count": null,
+            "like_count": null,
+            "dislike_count": null
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=IB3lcPjvWLA",
+        "info_dict": {
+            "id": "IB3lcPjvWLA",
+            "ext": "m4a",
+            "title": "Afrojack, Spree Wilson - The Spark (Official Music Video) ft. Spree Wilson",
+            "description": "md5:8f5e2b82460520b619ccac1f509d43bf",
+            "duration": 244,
+            "uploader": "AfrojackVEVO",
+            "uploader_id": "AfrojackVEVO",
+            "upload_date": "20131011"
+        },
+        "params": {
+            "youtube_include_dash_manifest": true,
+            "format": "141/bestaudio[ext=m4a]"
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=nfWlot6h_JM",
+        "info_dict": {
+            "id": "nfWlot6h_JM",
+            "ext": "m4a",
+            "title": "Taylor Swift - Shake It Off",
+            "description": "md5:307195cd21ff7fa352270fe884570ef0",
+            "duration": 242,
+            "uploader": "TaylorSwiftVEVO",
+            "uploader_id": "TaylorSwiftVEVO",
+            "upload_date": "20140818"
+        },
+        "params": {
+            "youtube_include_dash_manifest": true,
+            "format": "141/bestaudio[ext=m4a]"
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=T4XJQO3qol8",
+        "info_dict": {
+            "id": "T4XJQO3qol8",
+            "ext": "mp4",
+            "duration": 219,
+            "upload_date": "20100909",
+            "uploader": "Amazing Atheist",
+            "uploader_id": "TheAmazingAtheist",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/TheAmazingAtheist",
+            "title": "Burning Everyone's Koran",
+            "description": "SUBSCRIBE: http://www.youtube.com/saturninefilms\n\nEven Obama has taken a stand against freedom on this issue: http://www.huffingtonpost.com/2010/09/09/obama-gma-interview-quran_n_710282.html"
+        }
+    },
+    {
+        "url": "https://youtube.com/watch?v=HtVdAasjOgU",
+        "info_dict": {
+            "id": "HtVdAasjOgU",
+            "ext": "mp4",
+            "title": "The Witcher 3: Wild Hunt - The Sword Of Destiny Trailer",
+            "description": "re:(?s).{100,}About the Game\\n.*?The Witcher 3: Wild Hunt.{100,}",
+            "duration": 142,
+            "uploader": "The Witcher",
+            "uploader_id": "WitcherGame",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/WitcherGame",
+            "upload_date": "20140605",
+            "age_limit": 18
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=6kLq3WMV1nU",
+        "info_dict": {
+            "id": "6kLq3WMV1nU",
+            "ext": "mp4",
+            "title": "Dedication To My Ex (Miss That) (Lyric Video)",
+            "description": "md5:33765bb339e1b47e7e72b5490139bb41",
+            "duration": 246,
+            "uploader": "LloydVEVO",
+            "uploader_id": "LloydVEVO",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/LloydVEVO",
+            "upload_date": "20110629",
+            "age_limit": 18
+        }
+    },
+    {
+        "url": "__2ABJjxzNo",
+        "info_dict": {
+            "id": "__2ABJjxzNo",
+            "ext": "mp4",
+            "duration": 266,
+            "upload_date": "20100430",
+            "uploader_id": "deadmau5",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/deadmau5",
+            "creator": "Dada Life, deadmau5",
+            "description": "md5:12c56784b8032162bb936a5f76d55360",
+            "uploader": "deadmau5",
+            "title": "Deadmau5 - Some Chords (HD)",
+            "alt_title": "This Machine Kills Some Chords"
+        },
+        "expected_warnings": [
+            "DASH manifest missing"
+        ]
+    },
+    {
+        "url": "lqQg6PlCWgI",
+        "info_dict": {
+            "id": "lqQg6PlCWgI",
+            "ext": "mp4",
+            "duration": 6085,
+            "upload_date": "20150827",
+            "uploader_id": "olympic",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/olympic",
+            "description": "HO09  - Women -  GER-AUS - Hockey - 31 July 2012 - London 2012 Olympic Games",
+            "uploader": "Olympic",
+            "title": "Hockey - Women -  GER-AUS - London 2012 Olympic Games"
+        },
+        "params": {
+            "skip_download": "requires avconv"
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=_b-2C3KPAM0",
+        "info_dict": {
+            "id": "_b-2C3KPAM0",
+            "ext": "mp4",
+            "stretched_ratio": 1.7777777777777777,
+            "duration": 85,
+            "upload_date": "20110310",
+            "uploader_id": "AllenMeow",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/AllenMeow",
+            "description": "made by Wacom from Korea | \u5b57\u5e55&\u52a0\u6cb9\u6dfb\u918b by TY's Allen | \u611f\u8b1dheylisa00cavey1001\u540c\u5b78\u71b1\u60c5\u63d0\u4f9b\u6897\u53ca\u7ffb\u8b6f",
+            "uploader": "\u5b6b\u110b\u1105",
+            "title": "[A-made] \u8b8a\u614b\u598d\u5b57\u5e55\u7248 \u592a\u598d \u6211\u5c31\u662f\u9019\u6a23\u7684\u4eba"
+        }
+    },
+    {
+        "url": "https://vid.plus/FlRa-iH7PGw",
+        "only_matching": true
+    },
+    {
+        "url": "https://zwearz.com/watch/9lWxNJF-ufM/electra-woman-dyna-girl-official-trailer-grace-helbig.html",
+        "only_matching": true
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=lsguqyKfVQg",
+        "info_dict": {
+            "id": "lsguqyKfVQg",
+            "ext": "mp4",
+            "title": "{dark walk}; Loki/AC/Dishonored; collab w/Elflover21",
+            "alt_title": "Dark Walk - Position Music",
+            "description": "md5:8085699c11dc3f597ce0410b0dcbb34a",
+            "duration": 133,
+            "upload_date": "20151119",
+            "uploader_id": "IronSoulElf",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/IronSoulElf",
+            "uploader": "IronSoulElf",
+            "creator": "Todd Haberman,  Daniel Law Heath and Aaron Kaplan",
+            "track": "Dark Walk - Position Music",
+            "artist": "Todd Haberman,  Daniel Law Heath and Aaron Kaplan",
+            "album": "Position Music - Production Music Vol. 143 - Dark Walk"
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=Ms7iBXnlUO8",
+        "only_matching": true
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=M4gD1WSo5mA",
+        "info_dict": {
+            "id": "M4gD1WSo5mA",
+            "ext": "mp4",
+            "title": "md5:e41008789470fc2533a3252216f1c1d1",
+            "description": "md5:a677553cf0840649b731a3024aeff4cc",
+            "duration": 721,
+            "upload_date": "20150127",
+            "uploader_id": "BerkmanCenter",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/BerkmanCenter",
+            "uploader": "The Berkman Klein Center for Internet & Society",
+            "license": "Creative Commons Attribution license (reuse allowed)"
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=eQcmzGIKrzg",
+        "info_dict": {
+            "id": "eQcmzGIKrzg",
+            "ext": "mp4",
+            "title": "Democratic Socialism and Foreign Policy | Bernie Sanders",
+            "description": "md5:dda0d780d5a6e120758d1711d062a867",
+            "duration": 4060,
+            "upload_date": "20151119",
+            "uploader": "Bernie Sanders",
+            "uploader_id": "UCH1dpzjCEiGAt8CXkryhkZg",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/channel/UCH1dpzjCEiGAt8CXkryhkZg",
+            "license": "Creative Commons Attribution license (reuse allowed)"
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?feature=player_embedded&amp;amp;v=V36LpHqtcDY",
+        "only_matching": true
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=i1Ko8UG-Tdo",
+        "only_matching": true
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=iqKdEhx-dD4",
+        "info_dict": {
+            "id": "iqKdEhx-dD4",
+            "ext": "mp4",
+            "title": "Isolation - Mind Field (Ep 1)",
+            "description": "md5:46a29be4ceffa65b92d277b93f463c0f",
+            "duration": 2085,
+            "upload_date": "20170118",
+            "uploader": "Vsauce",
+            "uploader_id": "Vsauce",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/Vsauce",
+            "series": "Mind Field",
+            "season_number": 1,
+            "episode_number": 1
+        },
+        "params": {
+            "skip_download": true
+        },
+        "expected_warnings": [
+            "Skipping DASH manifest"
+        ]
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=6SJNVb0GnPI",
+        "info_dict": {
+            "id": "6SJNVb0GnPI",
+            "ext": "mp4",
+            "title": "Race Differences in Intelligence",
+            "description": "md5:5d161533167390427a1f8ee89a1fc6f1",
+            "duration": 965,
+            "upload_date": "20140124",
+            "uploader": "New Century Foundation",
+            "uploader_id": "UCEJYpZGqgUob0zVVEaLhvVg",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/channel/UCEJYpZGqgUob0zVVEaLhvVg"
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "1t24XAntNCY",
+        "only_matching": true
+    },
+    {
+        "url": "sJL6WA-aGkQ",
+        "only_matching": true
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=MuAGGZNfUkU&list=RDMM",
+        "only_matching": true
+    },
+    {
+        "url": "https://invidio.us/watch?v=BaW_jenozKc",
+        "only_matching": true
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=s7_qI6_mIXc",
+        "only_matching": true
+    },
+    {
+        "url": "https://music.youtube.com/watch?v=MgNrAu2pzNs",
+        "info_dict": {
+            "id": "MgNrAu2pzNs",
+            "ext": "mp4",
+            "title": "Voyeur Girl",
+            "description": "md5:7ae382a65843d6df2685993e90a8628f",
+            "upload_date": "20190312",
+            "uploader": "Stephen - Topic",
+            "uploader_id": "UC-pWHpBjdGG69N9mM2auIAA",
+            "artist": "Stephen",
+            "track": "Voyeur Girl",
+            "album": "it's too much love to know my dear",
+            "release_date": "20190313",
+            "release_year": 2019
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=k0jLE7tTwjY",
+        "info_dict": {
+            "id": "k0jLE7tTwjY",
+            "ext": "mp4",
+            "title": "Latch Feat. Sam Smith",
+            "description": "md5:3cb1e8101a7c85fcba9b4fb41b951335",
+            "upload_date": "20150110",
+            "uploader": "Various Artists - Topic",
+            "uploader_id": "UCNkEcmYdjrH4RqtNgh7BZ9w",
+            "artist": "Disclosure",
+            "track": "Latch Feat. Sam Smith",
+            "album": "Latch Featuring Sam Smith",
+            "release_date": "20121008",
+            "release_year": 2012
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=74qn0eJSjpA",
+        "info_dict": {
+            "id": "74qn0eJSjpA",
+            "ext": "mp4",
+            "title": "Eastside",
+            "description": "md5:290516bb73dcbfab0dcc4efe6c3de5f2",
+            "upload_date": "20180710",
+            "uploader": "Benny Blanco - Topic",
+            "uploader_id": "UCzqz_ksRu_WkIzmivMdIS7A",
+            "artist": "benny blanco, Halsey, Khalid",
+            "track": "Eastside",
+            "album": "Eastside",
+            "release_date": "20180713",
+            "release_year": 2018
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtube.com/watch?v=-hcAI0g-f5M",
+        "info_dict": {
+            "id": "-hcAI0g-f5M",
+            "ext": "mp4",
+            "title": "Put It On Me",
+            "description": "md5:f6422397c07c4c907c6638e1fee380a5",
+            "upload_date": "20180426",
+            "uploader": "Matt Maeson - Topic",
+            "uploader_id": "UCnEkIGqtGcQMLk73Kp-Q5LQ",
+            "artist": "Matt Maeson",
+            "track": "Put It On Me",
+            "album": "The Hearse",
+            "release_date": null,
+            "release_year": 2018
+        },
+        "params": {
+            "skip_download": true
+        }
+    },
+    {
+        "url": "https://www.youtubekids.com/watch?v=3b8nCWDgZ6Q",
+        "only_matching": true
+    },
+    {
+        "url": "DJztXj2GPfl",
+        "info_dict": {
+            "id": "DJztXj2GPfk",
+            "ext": "mp4",
+            "title": "Panjabi MC - Mundian To Bach Ke (The Dictator Soundtrack)",
+            "description": "md5:bf577a41da97918e94fa9798d9228825",
+            "upload_date": "20090125",
+            "uploader": "Prochorowka",
+            "uploader_id": "Prochorowka",
+            "uploader_url": "re:https?://(?:www\\.)?youtube\\.com/user/Prochorowka",
+            "artist": "Panjabi MC",
+            "track": "Beware of the Boys (Mundian to Bach Ke) - Motivo Hi-Lectro Remix",
+            "album": "Beware of the Boys (Mundian To Bach Ke)"
+        },
+        "params": {
+            "skip_download": true
+        }
+    }
+]
