@@ -26,7 +26,8 @@ OR
 
 ```shell
 git clone https://github.com/kkdai/youtube.git
-go run youtubedr/main.go
+cd youtube
+go run ./cmd/youtubedr
 ```
 ## Install in Termux
 ```shell

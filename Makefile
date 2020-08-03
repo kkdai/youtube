@@ -29,7 +29,7 @@ help: Makefile
 ## build: Build project
 .PHONY: build
 build:
-	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o ./bin ./...
+	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o ./bin ./cmd/youtubedr
 
 ## deps: Ensures fresh go.mod and go.sum
 .PHONY: deps

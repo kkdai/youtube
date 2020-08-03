@@ -1,6 +1,5 @@
 /.idea
 /.vscode
-youtubedr
 download_test
-bin
+/bin
 *.out
