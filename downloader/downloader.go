@@ -124,7 +124,7 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 }
 
 func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *youtube.Video, stream *youtube.Stream) error {
-	resp, err := dl.Client.Download(ctx, video, stream)
+	resp, err := dl.Client.GetStreamContext(ctx, video, stream)
 	if err != nil {
 		return err
 	}

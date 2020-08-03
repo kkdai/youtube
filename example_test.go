@@ -1,7 +1,6 @@
 package youtube_test
 
 import (
-	"context"
 	"io"
 	"os"
 
@@ -11,15 +10,14 @@ import (
 //ExampleDownload : Example code for how to use this package for download video.
 func ExampleClient() {
 	videoID := "BaW_jenozKc"
-	ctx := context.Background()
 	client := youtube.Client{}
 
-	video, err := client.GetVideoContext(ctx, videoID)
+	video, err := client.GetVideo(videoID)
 	if err != nil {
 		panic(err)
 	}
 
-	resp, err := client.Download(ctx, video, &video.Streams[0])
+	resp, err := client.GetStream(video, &video.Streams[0])
 	if err != nil {
 		panic(err)
 	}

@@ -49,9 +49,14 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	return v, v.parseVideoInfo(string(body))
 }
 
-// Downloads returns the HTTP response for a specific video stream
-func (c *Client) Download(ctx context.Context, v *Video, stream *Stream) (*http.Response, error) {
-	url, err := c.getStreamUrl(ctx, v, stream)
+// GetStream returns the HTTP response for a specific stream
+func (c *Client) GetStream(video *Video, stream *Stream) (*http.Response, error) {
+	return c.GetStreamContext(context.Background(), video, stream)
+}
+
+// GetStreamContext returns the HTTP response for a specific stream with a context
+func (c *Client) GetStreamContext(ctx context.Context, video *Video, stream *Stream) (*http.Response, error) {
+	url, err := c.getStreamUrl(ctx, video, stream)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +64,7 @@ func (c *Client) Download(ctx context.Context, v *Video, stream *Stream) (*http.
 	return c.httpGet(ctx, url)
 }
 
-func (c *Client) getStreamUrl(ctx context.Context, v *Video, stream *Stream) (string, error) {
+func (c *Client) getStreamUrl(ctx context.Context, video *Video, stream *Stream) (string, error) {
 	if stream.URL != "" {
 		return stream.URL, nil
 	}
@@ -69,7 +74,7 @@ func (c *Client) getStreamUrl(ctx context.Context, v *Video, stream *Stream) (st
 		return "", ErrCipherNotFound
 	}
 
-	return c.decipherURL(ctx, v.ID, cipher)
+	return c.decipherURL(ctx, video.ID, cipher)
 }
 
 func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, err error) {
