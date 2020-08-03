@@ -39,7 +39,7 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, stream *youtube.Stream, ou
 }
 
 //Download : Starting download video by arguments.
-func (dl *Downloader) Download(ctx context.Context, outputFile string, v *youtube.Video, stream *youtube.Stream) error {
+func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, stream *youtube.Stream, outputFile string) error {
 	destFile, err := dl.getOutputFile(v, stream, outputFile)
 	if err != nil {
 		return err

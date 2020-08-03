@@ -137,5 +137,5 @@ func run() error {
 		return dl.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
 	}
 
-	return dl.Download(context.Background(), outputFile, video, &video.Streams[0])
+	return dl.Download(context.Background(), video, &video.Streams[0], outputFile)
 }

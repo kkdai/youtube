@@ -47,7 +47,7 @@ func TestDownload_FirstStream(t *testing.T) {
 	assert.Len(video.Streams, 18)
 
 	if assert.Greater(len(video.Streams), 0) {
-		assert.NoError(testDownloader.Download(ctx, "", video, &video.Streams[0]))
+		assert.NoError(testDownloader.Download(ctx, video, &video.Streams[0], ""))
 	}
 }
 
