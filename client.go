@@ -35,9 +35,9 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
