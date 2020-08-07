@@ -17,7 +17,7 @@ import (
 
 // Downloader offers high level functions to download videos into files
 type Downloader struct {
-	Client    youtube.Client
+	youtube.Client
 	OutputDir string // optional directory to store the files
 }
 
@@ -124,7 +124,7 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 }
 
 func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *youtube.Video, stream *youtube.Stream) error {
-	resp, err := dl.Client.GetStreamContext(ctx, video, stream)
+	resp, err := dl.GetStreamContext(ctx, video, stream)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (dl *Downloader) close(r io.ReadCloser) {
 }
 
 func (dl *Downloader) logf(format string, v ...interface{}) {
-	if dl.Client.Debug {
+	if dl.Debug {
 		log.Printf(format, v...)
 	}
 }

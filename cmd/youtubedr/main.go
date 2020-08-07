@@ -101,11 +101,11 @@ func run() error {
 	dl := ytdl.Downloader{
 		OutputDir: outputDir,
 	}
-	dl.Client.HTTPClient = &http.Client{Transport: httpTransport}
+	dl.HTTPClient = &http.Client{Transport: httpTransport}
 
 	arg := flag.Arg(0)
 
-	video, err := dl.Client.GetVideo(arg)
+	video, err := dl.GetVideo(arg)
 	if err != nil {
 		return err
 	}

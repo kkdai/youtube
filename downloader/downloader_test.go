@@ -12,15 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	testClient = youtube.Client{Debug: true}
-
-	testDownloader = func() (dl Downloader) {
-		dl.OutputDir = "download_test"
-		dl.Client = testClient
-		return
-	}()
-)
+var testDownloader = func() (dl Downloader) {
+	dl.OutputDir = "download_test"
+	dl.Debug = true
+	return
+}()
 
 func TestMain(m *testing.M) {
 
