@@ -149,27 +149,16 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 			decor.EwmaSpeed(decor.UnitKiB, "% .2f", 60),
 		),
 	)
-	reader := bar.ProxyReader(resp.Body)
-	defer dl.close(reader)
 
+	reader := bar.ProxyReader(resp.Body)
 	mw := io.MultiWriter(out, prog)
 	_, err = io.Copy(mw, reader)
 	if err != nil {
 		return err
 	}
+
 	progress.Wait()
 	return nil
-}
-
-func (dl *Downloader) close(r io.ReadCloser) {
-	_, err := io.Copy(ioutil.Discard, r)
-	if err != nil && err.Error() != youtube.ErrReadOnClosedResBody.Error() {
-		dl.logf("failed to exhaust reader: %s", err)
-	}
-	err = r.Close()
-	if err != nil {
-		dl.logf("response close err %s", err)
-	}
 }
 
 func (dl *Downloader) logf(format string, v ...interface{}) {
