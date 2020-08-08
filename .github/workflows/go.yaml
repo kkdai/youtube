@@ -51,11 +51,13 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
 
-      - name: Install ffmpeg && Run tests.
+      - name: Install ffmpeg
         run: |
             sudo apt-get update
             sudo apt-get install ffmpeg
-            make test-integration
+
+      - name: Run tests
+        run: make test-integration
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v1

@@ -29,7 +29,7 @@ help: Makefile
 ## build: Build project
 .PHONY: build
 build:
-	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o ./bin ./...
+	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o ./bin ./cmd/youtubedr
 
 ## deps: Ensures fresh go.mod and go.sum
 .PHONY: deps
@@ -62,4 +62,6 @@ test-unit:
 ## test-integration: Run all Youtube Go integration tests
 .PHONY: test-integration
 test-integration:
-	@go test -v -tags="integration" -coverprofile=coverage.out . ./pkg/...
+	echo 'mode: atomic' > coverage.out
+	go list ./... | xargs -n1 -I{} sh -c 'go test -race -tags=integration -covermode=atomic -coverprofile=coverage.tmp -coverpkg $(go list ./... | tr "\n" ",") {} && tail -n +2 coverage.tmp >> coverage.out || exit 255'
+	rm coverage.tmp

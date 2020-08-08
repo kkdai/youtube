@@ -1,12 +1,5 @@
 package youtube
 
-type Stream struct {
-	ItagNo   int    `json:"itag"`
-	URL      string `json:"url"`
-	MimeType string `json:"mimeType"`
-	Quality  string `json:"quality"`
-	Cipher   string `json:"signatureCipher"`
-}
 type PlayerResponseData struct {
 	PlayabilityStatus struct {
 		Status          string `json:"status"`
@@ -62,31 +55,6 @@ type PlayerResponseData struct {
 			AudioChannels   int    `json:"audioChannels,omitempty"`
 		} `json:"adaptiveFormats"`
 	} `json:"streamingData"`
-	PlaybackTracking struct {
-		VideostatsPlaybackURL struct {
-			BaseURL string `json:"baseUrl"`
-		} `json:"videostatsPlaybackUrl"`
-		VideostatsDelayplayURL struct {
-			BaseURL string `json:"baseUrl"`
-		} `json:"videostatsDelayplayUrl"`
-		VideostatsWatchtimeURL struct {
-			BaseURL string `json:"baseUrl"`
-		} `json:"videostatsWatchtimeUrl"`
-		PtrackingURL struct {
-			BaseURL string `json:"baseUrl"`
-		} `json:"ptrackingUrl"`
-		QoeURL struct {
-			BaseURL string `json:"baseUrl"`
-		} `json:"qoeUrl"`
-		SetAwesomeURL struct {
-			BaseURL                 string `json:"baseUrl"`
-			ElapsedMediaTimeSeconds int    `json:"elapsedMediaTimeSeconds"`
-		} `json:"setAwesomeUrl"`
-		AtrURL struct {
-			BaseURL                 string `json:"baseUrl"`
-			ElapsedMediaTimeSeconds int    `json:"elapsedMediaTimeSeconds"`
-		} `json:"atrUrl"`
-	} `json:"playbackTracking"`
 	Captions struct {
 		PlayerCaptionsRenderer struct {
 			BaseURL    string `json:"baseUrl"`
@@ -195,130 +163,4 @@ type PlayerResponseData struct {
 			UploadDate         string   `json:"uploadDate"`
 		} `json:"playerMicroformatRenderer"`
 	} `json:"microformat"`
-	TrackingParams string `json:"trackingParams"`
-	Attestation    struct {
-		PlayerAttestationRenderer struct {
-			Challenge    string `json:"challenge"`
-			BotguardData struct {
-				Program        string `json:"program"`
-				InterpreterURL string `json:"interpreterUrl"`
-			} `json:"botguardData"`
-		} `json:"playerAttestationRenderer"`
-	} `json:"attestation"`
-	Messages []struct {
-		MealbarPromoRenderer struct {
-			MessageTexts []struct {
-				Runs []struct {
-					Text string `json:"text"`
-				} `json:"runs"`
-			} `json:"messageTexts"`
-			ActionButton struct {
-				ButtonRenderer struct {
-					Style string `json:"style"`
-					Size  string `json:"size"`
-					Text  struct {
-						Runs []struct {
-							Text string `json:"text"`
-						} `json:"runs"`
-					} `json:"text"`
-					ServiceEndpoint struct {
-						ClickTrackingParams string `json:"clickTrackingParams"`
-						CommandMetadata     struct {
-							WebCommandMetadata struct {
-								URL      string `json:"url"`
-								SendPost bool   `json:"sendPost"`
-								APIURL   string `json:"apiUrl"`
-							} `json:"webCommandMetadata"`
-						} `json:"commandMetadata"`
-						FeedbackEndpoint struct {
-							FeedbackToken string `json:"feedbackToken"`
-							UIActions     struct {
-								HideEnclosingContainer bool `json:"hideEnclosingContainer"`
-							} `json:"uiActions"`
-						} `json:"feedbackEndpoint"`
-					} `json:"serviceEndpoint"`
-					NavigationEndpoint struct {
-						ClickTrackingParams string `json:"clickTrackingParams"`
-						CommandMetadata     struct {
-							WebCommandMetadata struct {
-								URL         string `json:"url"`
-								WebPageType string `json:"webPageType"`
-								RootVe      int    `json:"rootVe"`
-							} `json:"webCommandMetadata"`
-						} `json:"commandMetadata"`
-						BrowseEndpoint struct {
-							BrowseID string `json:"browseId"`
-							Params   string `json:"params"`
-						} `json:"browseEndpoint"`
-					} `json:"navigationEndpoint"`
-					TrackingParams string `json:"trackingParams"`
-				} `json:"buttonRenderer"`
-			} `json:"actionButton"`
-			DismissButton struct {
-				ButtonRenderer struct {
-					Style string `json:"style"`
-					Size  string `json:"size"`
-					Text  struct {
-						Runs []struct {
-							Text string `json:"text"`
-						} `json:"runs"`
-					} `json:"text"`
-					ServiceEndpoint struct {
-						ClickTrackingParams string `json:"clickTrackingParams"`
-						CommandMetadata     struct {
-							WebCommandMetadata struct {
-								URL      string `json:"url"`
-								SendPost bool   `json:"sendPost"`
-								APIURL   string `json:"apiUrl"`
-							} `json:"webCommandMetadata"`
-						} `json:"commandMetadata"`
-						FeedbackEndpoint struct {
-							FeedbackToken string `json:"feedbackToken"`
-							UIActions     struct {
-								HideEnclosingContainer bool `json:"hideEnclosingContainer"`
-							} `json:"uiActions"`
-						} `json:"feedbackEndpoint"`
-					} `json:"serviceEndpoint"`
-					TrackingParams string `json:"trackingParams"`
-				} `json:"buttonRenderer"`
-			} `json:"dismissButton"`
-			TriggerCondition    string `json:"triggerCondition"`
-			Style               string `json:"style"`
-			TrackingParams      string `json:"trackingParams"`
-			ImpressionEndpoints []struct {
-				ClickTrackingParams string `json:"clickTrackingParams"`
-				CommandMetadata     struct {
-					WebCommandMetadata struct {
-						URL      string `json:"url"`
-						SendPost bool   `json:"sendPost"`
-						APIURL   string `json:"apiUrl"`
-					} `json:"webCommandMetadata"`
-				} `json:"commandMetadata"`
-				FeedbackEndpoint struct {
-					FeedbackToken string `json:"feedbackToken"`
-					UIActions     struct {
-						HideEnclosingContainer bool `json:"hideEnclosingContainer"`
-					} `json:"uiActions"`
-				} `json:"feedbackEndpoint"`
-			} `json:"impressionEndpoints"`
-			IsVisible    bool `json:"isVisible"`
-			MessageTitle struct {
-				Runs []struct {
-					Text string `json:"text"`
-				} `json:"runs"`
-			} `json:"messageTitle"`
-		} `json:"mealbarPromoRenderer"`
-	} `json:"messages"`
-}
-
-type StreamInfo struct {
-	Title   string
-	Author  string
-	Streams []Stream
-}
-
-type Itag struct {
-	ItagNo  int
-	Quality string
-	Type    string
 }
