@@ -11,11 +11,13 @@ import (
 )
 
 type Video struct {
-	ID       string
-	Streams  []Stream
-	Title    string
-	Author   string
-	Duration time.Duration
+	ID              string
+	Streams         []Stream
+	Formats         []Format
+	AdaptiveFormats []AdaptiveFormat
+	Title           string
+	Author          string
+	Duration        time.Duration
 }
 
 type Stream struct {
@@ -133,12 +135,10 @@ func (v *Video) parseVideoInfo(info string) error {
 	}
 
 	// Get video download link
-	streams, err := parseStreams(prData)
-	if err != nil {
+	if err := v.parseStreams(prData); err != nil {
 		return err
 	}
 
-	v.Streams = streams
 	if len(v.Streams) == 0 {
 		return errors.New("no Stream list found in the server's answer")
 	}
@@ -146,8 +146,10 @@ func (v *Video) parseVideoInfo(info string) error {
 	return nil
 }
 
-func parseStreams(prData PlayerResponseData) ([]Stream, error) {
-	size := len(prData.StreamingData.Formats) + len(prData.StreamingData.AdaptiveFormats)
+func (v *Video) parseStreams(prData PlayerResponseData) error {
+	v.Formats = prData.StreamingData.Formats
+	v.AdaptiveFormats = prData.StreamingData.AdaptiveFormats
+	size := len(v.Formats) + len(v.AdaptiveFormats)
 	streams := make([]Stream, 0, size)
 
 	filterFormat := func(stream Stream) {
@@ -159,11 +161,12 @@ func parseStreams(prData PlayerResponseData) ([]Stream, error) {
 		streams = append(streams, stream)
 	}
 
-	for _, format := range prData.StreamingData.Formats {
+	for _, format := range v.Formats {
 		filterFormat(format.Stream)
 	}
-	for _, format := range prData.StreamingData.AdaptiveFormats {
+	for _, format := range v.AdaptiveFormats {
 		filterFormat(format.Stream)
 	}
-	return streams, nil
+	v.Streams = streams
+	return nil
 }
