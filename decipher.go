@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (y *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
+func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
 	queryParams, err := url.ParseQuery(cipher)
 	if err != nil {
 		return "", err
@@ -38,7 +38,7 @@ func (y *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 		return a.join("")
 	*/
 
-	operations, err := y.parseDecipherOps(ctx, videoID)
+	operations, err := c.parseDecipherOps(ctx, videoID)
 	if err != nil {
 		return "", err
 	}
@@ -85,13 +85,13 @@ var (
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
 
-func (y *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []operation, err error) {
+func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []operation, err error) {
 	if videoID == "" {
 		return nil, errors.New("video id is empty")
 	}
 
 	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
-	embeddedPageResp, err := y.httpGet(ctx, embedURL)
+	embeddedPageResp, err := c.httpGet(ctx, embedURL)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (y *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 	// eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
 	arr := strings.Split(escapedBasejsURL, ":\"")
 	basejsURL := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
-	basejsURLResp, err := y.httpGet(ctx, basejsURL)
+	basejsURLResp, err := c.httpGet(ctx, basejsURL)
 	if err != nil {
 		return nil, err
 	}
