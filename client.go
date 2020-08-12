@@ -57,7 +57,7 @@ func (c *Client) GetStream(video *Video, stream *Stream) (*http.Response, error)
 
 // GetStreamContext returns the HTTP response for a specific stream with a context
 func (c *Client) GetStreamContext(ctx context.Context, video *Video, stream *Stream) (*http.Response, error) {
-	url, err := c.getStreamUrl(ctx, video, stream)
+	url, err := c.getStreamURL(ctx, video, stream)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, stream *Str
 	return c.httpGet(ctx, url)
 }
 
-func (c *Client) getStreamUrl(ctx context.Context, video *Video, stream *Stream) (string, error) {
+func (c *Client) getStreamURL(ctx context.Context, video *Video, stream *Stream) (string, error) {
 	if stream.URL != "" {
 		return stream.URL, nil
 	}
