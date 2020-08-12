@@ -55,7 +55,7 @@ func TestYoutube_findVideoID(t *testing.T) {
 				"<M13",
 			},
 			wantErr:     true,
-			expectedErr: ErrInvalidCharactersInVideoId,
+			expectedErr: ErrInvalidCharactersInVideoID,
 		},
 		{
 			name: "video id is less than 10 characters",
@@ -63,7 +63,7 @@ func TestYoutube_findVideoID(t *testing.T) {
 				"rFejpH",
 			},
 			wantErr:     true,
-			expectedErr: ErrVideoIdMinLength,
+			expectedErr: ErrVideoIDMinLength,
 		},
 	}
 	for _, tt := range tests {

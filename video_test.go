@@ -69,7 +69,7 @@ func TestDownload_Regular(t *testing.T) {
 				stream = &video.Streams[0]
 			}
 
-			url, err := testClient.getStreamUrl(ctx, video, stream)
+			url, err := testClient.getStreamURL(ctx, video, stream)
 			require.NoError(err)
 			require.NotEmpty(url)
 		})
@@ -79,24 +79,24 @@ func TestDownload_Regular(t *testing.T) {
 func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 	testcases := []struct {
 		issue   string
-		videoId string
+		videoID string
 		err     string
 	}{
 		{
 			issue:   "issue#65",
-			videoId: "9ja-K2FslBU",
+			videoID: "9ja-K2FslBU",
 			err:     `status: ERROR`,
 		},
 		{
 			issue:   "issue#59",
-			videoId: "nINQjT7Zr9w",
+			videoID: "nINQjT7Zr9w",
 			err:     `status: LOGIN_REQUIRED`,
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.issue, func(t *testing.T) {
-			_, err := testClient.GetVideo(tc.videoId)
+			_, err := testClient.GetVideo(tc.videoID)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.err)
 		})

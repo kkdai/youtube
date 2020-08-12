@@ -22,10 +22,10 @@ func extractVideoID(videoID string) (string, error) {
 	}
 
 	if strings.ContainsAny(videoID, "?&/<%=") {
-		return "", ErrInvalidCharactersInVideoId
+		return "", ErrInvalidCharactersInVideoID
 	}
 	if len(videoID) < 10 {
-		return "", ErrVideoIdMinLength
+		return "", ErrVideoIDMinLength
 	}
 
 	return videoID, nil

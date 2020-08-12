@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (y *Client) decipherURL(ctx context.Context, videoId string, cipher string) (string, error) {
+func (y *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
 	queryParams, err := url.ParseQuery(cipher)
 	if err != nil {
 		return "", err
@@ -38,7 +38,7 @@ func (y *Client) decipherURL(ctx context.Context, videoId string, cipher string)
 		return a.join("")
 	*/
 
-	operations, err := y.parseDecipherOps(ctx, videoId)
+	operations, err := y.parseDecipherOps(ctx, videoID)
 	if err != nil {
 		return "", err
 	}
@@ -49,8 +49,8 @@ func (y *Client) decipherURL(ctx context.Context, videoId string, cipher string)
 		bs = op(bs)
 	}
 
-	decipheredUrl := fmt.Sprintf("%s&%s=%s", queryParams.Get("url"), queryParams.Get("sp"), string(bs))
-	return decipheredUrl, nil
+	decipheredURL := fmt.Sprintf("%s&%s=%s", queryParams.Get("url"), queryParams.Get("sp"), string(bs))
+	return decipheredURL, nil
 }
 
 const (
@@ -85,13 +85,13 @@ var (
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
 
-func (y *Client) parseDecipherOps(ctx context.Context, videoId string) (operations []operation, err error) {
-	if videoId == "" {
+func (y *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []operation, err error) {
+	if videoID == "" {
 		return nil, errors.New("video id is empty")
 	}
 
-	embedUrl := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoId)
-	embeddedPageResp, err := y.httpGet(ctx, embedUrl)
+	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
+	embeddedPageResp, err := y.httpGet(ctx, embedURL)
 	if err != nil {
 		return nil, err
 	}
@@ -105,17 +105,17 @@ func (y *Client) parseDecipherOps(ctx context.Context, videoId string) (operatio
 	playerConfig := playerConfigPattern.Find(embeddedPageBodyBytes)
 
 	// eg: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
-	escapedBasejsUrl := string(basejsPattern.Find(playerConfig))
+	escapedBasejsURL := string(basejsPattern.Find(playerConfig))
 	// eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
-	arr := strings.Split(escapedBasejsUrl, ":\"")
-	basejsUrl := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
-	basejsUrlResp, err := y.httpGet(ctx, basejsUrl)
+	arr := strings.Split(escapedBasejsURL, ":\"")
+	basejsURL := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
+	basejsURLResp, err := y.httpGet(ctx, basejsURL)
 	if err != nil {
 		return nil, err
 	}
-	defer basejsUrlResp.Body.Close()
+	defer basejsURLResp.Body.Close()
 
-	basejsBodyBytes, err := ioutil.ReadAll(basejsUrlResp.Body)
+	basejsBodyBytes, err := ioutil.ReadAll(basejsURLResp.Body)
 	if err != nil {
 		return nil, err
 	}
