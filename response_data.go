@@ -8,9 +8,9 @@ type PlayerResponseData struct {
 		ContextParams   string `json:"contextParams"`
 	} `json:"playabilityStatus"`
 	StreamingData struct {
-		ExpiresInSeconds string           `json:"expiresInSeconds"`
-		Formats          []Format         `json:"formats"`
-		AdaptiveFormats  []AdaptiveFormat `json:"adaptiveFormats"`
+		ExpiresInSeconds string   `json:"expiresInSeconds"`
+		Formats          []Format `json:"formats"`
+		AdaptiveFormats  []Format `json:"adaptiveFormats"`
 	} `json:"streamingData"`
 	Captions struct {
 		PlayerCaptionsRenderer struct {
@@ -120,4 +120,37 @@ type PlayerResponseData struct {
 			UploadDate         string   `json:"uploadDate"`
 		} `json:"playerMicroformatRenderer"`
 	} `json:"microformat"`
+}
+
+type Format struct {
+	ItagNo           int    `json:"itag"`
+	URL              string `json:"url"`
+	MimeType         string `json:"mimeType"`
+	Quality          string `json:"quality"`
+	Cipher           string `json:"signatureCipher"`
+	Bitrate          int    `json:"bitrate"`
+	FPS              int    `json:"fps"`
+	Width            int    `json:"width"`
+	Height           int    `json:"height"`
+	LastModified     string `json:"lastModified"`
+	ContentLength    string `json:"contentLength"`
+	QualityLabel     string `json:"qualityLabel"`
+	ProjectionType   string `json:"projectionType"`
+	AverageBitrate   int    `json:"averageBitrate"`
+	AudioQuality     string `json:"audioQuality"`
+	ApproxDurationMs string `json:"approxDurationMs"`
+	AudioSampleRate  string `json:"audioSampleRate"`
+	AudioChannels    int    `json:"audioChannels"`
+
+	// InitRange is only available for adaptive formats
+	InitRange *struct {
+		Start string `json:"start"`
+		End   string `json:"end"`
+	} `json:"initRange"`
+
+	// IndexRange is only available for adaptive formats
+	IndexRange *struct {
+		Start string `json:"start"`
+		End   string `json:"end"`
+	} `json:"indexRange"`
 }

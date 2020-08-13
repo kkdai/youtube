@@ -17,7 +17,7 @@ func ExampleClient() {
 		panic(err)
 	}
 
-	resp, err := client.GetStream(video, &video.Streams[0])
+	resp, err := client.GetStream(video, &video.Formats[0])
 	if err != nil {
 		panic(err)
 	}

@@ -40,34 +40,34 @@ func TestDownload_FirstStream(t *testing.T) {
 	assert.Equal(`youtube-dl test video "'/\ä↭𝕐`, video.Title)
 	assert.Equal(`Philipp Hagemeister`, video.Author)
 	assert.Equal(10*time.Second, video.Duration)
-	assert.Len(video.Streams, 18)
+	assert.Len(video.Formats, 18)
 
-	if assert.Greater(len(video.Streams), 0) {
-		assert.NoError(testDownloader.Download(ctx, video, &video.Streams[0], ""))
+	if assert.Greater(len(video.Formats), 0) {
+		assert.NoError(testDownloader.Download(ctx, video, &video.Formats[0], ""))
 	}
 }
 
 func TestYoutube_DownloadWithHighQualityFails(t *testing.T) {
 	tests := []struct {
 		name    string
-		streams []youtube.Stream
+		formats []youtube.Format
 		message string
 	}{
 		{
-			name:    "video Stream not found",
-			streams: []youtube.Stream{{ItagNo: 140}},
-			message: "no Stream video/mp4 for hd1080 found",
+			name:    "video format not found",
+			formats: []youtube.Format{{ItagNo: 140}},
+			message: "no format video/mp4 for hd1080 found",
 		},
 		{
-			name:    "audio Stream not found",
-			streams: []youtube.Stream{{ItagNo: 137}},
-			message: "no Stream audio/mp4 for hd1080 found",
+			name:    "audio format not found",
+			formats: []youtube.Format{{ItagNo: 137}},
+			message: "no format audio/mp4 for hd1080 found",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			video := &youtube.Video{
-				Streams: tt.streams,
+				Formats: tt.formats,
 			}
 
 			err := testDownloader.DownloadWithHighQuality(context.Background(), "", video, "hd1080")

@@ -50,14 +50,14 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	return v, v.parseVideoInfo(string(body))
 }
 
-// GetStream returns the HTTP response for a specific stream
-func (c *Client) GetStream(video *Video, stream *Stream) (*http.Response, error) {
-	return c.GetStreamContext(context.Background(), video, stream)
+// GetStream returns the HTTP response for a specific format
+func (c *Client) GetStream(video *Video, format *Format) (*http.Response, error) {
+	return c.GetStreamContext(context.Background(), video, format)
 }
 
-// GetStreamContext returns the HTTP response for a specific stream with a context
-func (c *Client) GetStreamContext(ctx context.Context, video *Video, stream *Stream) (*http.Response, error) {
-	url, err := c.getStreamURL(ctx, video, stream)
+// GetStreamContext returns the HTTP response for a specific format with a context
+func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (*http.Response, error) {
+	url, err := c.getStreamURL(ctx, video, format)
 	if err != nil {
 		return nil, err
 	}
@@ -65,12 +65,12 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, stream *Str
 	return c.httpGet(ctx, url)
 }
 
-func (c *Client) getStreamURL(ctx context.Context, video *Video, stream *Stream) (string, error) {
-	if stream.URL != "" {
-		return stream.URL, nil
+func (c *Client) getStreamURL(ctx context.Context, video *Video, format *Format) (string, error) {
+	if format.URL != "" {
+		return format.URL, nil
 	}
 
-	cipher := stream.Cipher
+	cipher := format.Cipher
 	if cipher == "" {
 		return "", ErrCipherNotFound
 	}

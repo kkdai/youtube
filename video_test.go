@@ -61,15 +61,15 @@ func TestDownload_Regular(t *testing.T) {
 			video, err := testClient.GetVideoContext(ctx, tc.url)
 			require.NoError(err)
 
-			var stream *Stream
+			var format *Format
 			if tc.itagNo > 0 {
-				stream = video.FindStreamByItag(tc.itagNo)
-				require.NotNil(stream)
+				format = video.Formats.FindByItag(tc.itagNo)
+				require.NotNil(format)
 			} else {
-				stream = &video.Streams[0]
+				format = &video.Formats[0]
 			}
 
-			url, err := testClient.getStreamURL(ctx, video, stream)
+			url, err := testClient.getStreamURL(ctx, video, format)
 			require.NoError(err)
 			require.NotEmpty(url)
 		})
