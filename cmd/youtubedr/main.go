@@ -119,7 +119,7 @@ func run() error {
 		table.SetAutoWrapText(false)
 		table.SetHeader([]string{"itag", "quality", "MimeType"})
 
-		for _, itag := range video.Streams {
+		for _, itag := range video.Formats {
 			table.Append([]string{strconv.Itoa(itag.ItagNo), itag.Quality, itag.MimeType})
 		}
 		table.Render()
@@ -137,5 +137,5 @@ func run() error {
 		return dl.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
 	}
 
-	return dl.Download(context.Background(), video, &video.Streams[0], outputFile)
+	return dl.Download(context.Background(), video, &video.Formats[0], outputFile)
 }

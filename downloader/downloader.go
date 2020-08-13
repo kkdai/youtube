@@ -21,11 +21,11 @@ type Downloader struct {
 	OutputDir string // optional directory to store the files
 }
 
-func (dl *Downloader) getOutputFile(v *youtube.Video, stream *youtube.Stream, outputFile string) (string, error) {
+func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, outputFile string) (string, error) {
 
 	if outputFile == "" {
 		outputFile = SanitizeFilename(v.Title)
-		outputFile += pickIdealFileExtension(stream.MimeType)
+		outputFile += pickIdealFileExtension(format.MimeType)
 	}
 
 	if dl.OutputDir != "" {
@@ -39,8 +39,8 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, stream *youtube.Stream, ou
 }
 
 //Download : Starting download video by arguments.
-func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, stream *youtube.Stream, outputFile string) error {
-	destFile, err := dl.getOutputFile(v, stream, outputFile)
+func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
+	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
 		return err
 	}
@@ -53,29 +53,29 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, stream *yo
 	defer out.Close()
 
 	dl.logf("Download to file=%s", destFile)
-	return dl.videoDLWorker(ctx, out, v, stream)
+	return dl.videoDLWorker(ctx, out, v, format)
 }
 
 //DownloadWithHighQuality : Starting downloading video with high quality (>720p).
 func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile string, v *youtube.Video, quality string) error {
-	var videoStream, audioStream *youtube.Stream
+	var videoFormat, audioFormat *youtube.Format
 
 	switch quality {
 	case "hd1080":
-		videoStream = v.FindStreamByItag(137)
-		audioStream = v.FindStreamByItag(140)
+		videoFormat = v.Formats.FindByItag(137)
+		audioFormat = v.Formats.FindByItag(140)
 	default:
 		return fmt.Errorf("unknown quality: %s", quality)
 	}
 
-	if videoStream == nil {
-		return fmt.Errorf("no Stream video/mp4 for %s found", quality)
+	if videoFormat == nil {
+		return fmt.Errorf("no format video/mp4 for %s found", quality)
 	}
-	if audioStream == nil {
-		return fmt.Errorf("no Stream audio/mp4 for %s found", quality)
+	if audioFormat == nil {
+		return fmt.Errorf("no format audio/mp4 for %s found", quality)
 	}
 
-	destFile, err := dl.getOutputFile(v, videoStream, outputFile)
+	destFile, err := dl.getOutputFile(v, videoFormat, outputFile)
 	if err != nil {
 		return err
 	}
@@ -96,13 +96,13 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 	defer os.Remove(audioFile.Name())
 
 	dl.logf("Downloading video file...")
-	err = dl.videoDLWorker(ctx, videoFile, v, videoStream)
+	err = dl.videoDLWorker(ctx, videoFile, v, videoFormat)
 	if err != nil {
 		return err
 	}
 
 	dl.logf("Downloading audio file...")
-	err = dl.videoDLWorker(ctx, audioFile, v, audioStream)
+	err = dl.videoDLWorker(ctx, audioFile, v, audioFormat)
 	if err != nil {
 		return err
 	}
@@ -123,8 +123,8 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 	return ffmpegVersionCmd.Run()
 }
 
-func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *youtube.Video, stream *youtube.Stream) error {
-	resp, err := dl.GetStreamContext(ctx, video, stream)
+func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *youtube.Video, format *youtube.Format) error {
+	resp, err := dl.GetStreamContext(ctx, video, format)
 	if err != nil {
 		return err
 	}
