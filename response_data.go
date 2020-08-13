@@ -1,6 +1,6 @@
 package youtube
 
-type PlayerResponseData struct {
+type playerResponseData struct {
 	PlayabilityStatus struct {
 		Status          string `json:"status"`
 		Reason          string `json:"reason"`

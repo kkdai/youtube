@@ -37,7 +37,7 @@ func (v *Video) parseVideoInfo(info string) error {
 		return errors.New("no player_response found in the server's answer")
 	}
 
-	var prData PlayerResponseData
+	var prData playerResponseData
 	if err := json.Unmarshal([]byte(playerResponse), &prData); err != nil {
 		return fmt.Errorf("unable to parse player response JSON: %w", err)
 	}
