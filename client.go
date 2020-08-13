@@ -78,6 +78,7 @@ func (c *Client) getStreamURL(ctx context.Context, video *Video, stream *Stream)
 	return c.decipherURL(ctx, video.ID, cipher)
 }
 
+// httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
 func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, err error) {
 	client := c.HTTPClient
 	if client == nil {
@@ -104,4 +105,15 @@ func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, 
 	}
 
 	return
+}
+
+// httpGetBodyBytes reads the whole HTTP body and returns it
+func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, error) {
+	resp, err := c.httpGet(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
 }

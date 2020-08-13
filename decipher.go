@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -91,36 +90,24 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 	}
 
 	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
-	embeddedPageResp, err := c.httpGet(ctx, embedURL)
-	if err != nil {
-		return nil, err
-	}
-	defer embeddedPageResp.Body.Close()
-
-	embeddedPageBodyBytes, err := ioutil.ReadAll(embeddedPageResp.Body)
+	embedBody, err := c.httpGetBodyBytes(ctx, embedURL)
 	if err != nil {
 		return nil, err
 	}
 
-	playerConfig := playerConfigPattern.Find(embeddedPageBodyBytes)
+	playerConfig := playerConfigPattern.Find(embedBody)
 
 	// eg: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
 	escapedBasejsURL := string(basejsPattern.Find(playerConfig))
 	// eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
 	arr := strings.Split(escapedBasejsURL, ":\"")
 	basejsURL := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
-	basejsURLResp, err := c.httpGet(ctx, basejsURL)
-	if err != nil {
-		return nil, err
-	}
-	defer basejsURLResp.Body.Close()
-
-	basejsBodyBytes, err := ioutil.ReadAll(basejsURLResp.Body)
+	basejsBody, err := c.httpGetBodyBytes(ctx, basejsURL)
 	if err != nil {
 		return nil, err
 	}
 
-	bodyString := string(basejsBodyBytes)
+	bodyString := string(basejsBody)
 	objResult := actionsObjRegexp.FindStringSubmatch(bodyString)
 	funcResult := actionsFuncRegexp.FindStringSubmatch(bodyString)
 	if len(objResult) < 3 || len(funcResult) < 2 {
