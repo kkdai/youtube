@@ -2,4 +2,5 @@
 /.vscode
 download_test
 /bin
+/dist
 *.out
