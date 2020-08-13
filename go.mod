@@ -1,6 +1,6 @@
 module github.com/kkdai/youtube
 
-go 1.14
+go 1.15
 
 require (
 	github.com/olekukonko/tablewriter v0.0.4
