@@ -1,4 +1,4 @@
-module github.com/kkdai/youtube
+module github.com/kkdai/youtube/v2
 
 go 1.15
 
