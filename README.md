@@ -19,7 +19,7 @@ This package is a Youtube video download package, for more detail refer [https:/
 
 ## Install:
 ```shell
-go get github.com/kkdai/youtube
+go get github.com/kkdai/youtube/v2
 ```
 
 OR
@@ -62,7 +62,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 ## Example:
  * ### Get information of dotGo-2015-rob-pike video for downloading
 
-    `go get github.com/kkdai/youtube/youtubedr`
+    `go get github.com/kkdai/youtube/v2/youtubedr`
 
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
@@ -80,7 +80,7 @@ Please check out the [example_test.go](example_test.go) for example code.
     ```
  * ### Download dotGo-2015-rob-pike-video
 
-    `go get github.com/kkdai/youtube/youtubedr`
+    `go get github.com/kkdai/youtube/v2/youtubedr`
 
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
@@ -90,7 +90,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 
  * ### Download video to specific folder and name
 
-	`go get github.com/kkdai/youtube/youtubedr`
+	`go get github.com/kkdai/youtube/v2/youtubedr`
 
 	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) to current directory and name the file to simplicity-is-complicated.mp4
 
@@ -100,7 +100,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 
  * ### Download video with specific quality
 
-	`go get github.com/kkdai/youtube/youtubedr`
+	`go get github.com/kkdai/youtube/v2/youtubedr`
 
 	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) with specific quality
 
@@ -118,7 +118,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 
  * ### Download video with specific itag
 
-    `go get github.com/kkdai/youtube/youtubedr`
+    `go get github.com/kkdai/youtube/v2/youtubedr`
 
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
