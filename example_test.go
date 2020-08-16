@@ -4,7 +4,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/kkdai/youtube"
+	"github.com/kkdai/youtube/v2"
 )
 
 //ExampleDownload : Example code for how to use this package for download video.

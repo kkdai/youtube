@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"time"
 
-	ytdl "github.com/kkdai/youtube/downloader"
+	ytdl "github.com/kkdai/youtube/v2/downloader"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/net/proxy"
 )
