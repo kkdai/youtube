@@ -3,7 +3,6 @@ package youtube
 import (
 	"encoding/json"
 	"regexp"
-	"strings"
 	"time"
 )
 
@@ -67,17 +66,13 @@ func extractPlaylistID(url string) (string, error) {
 	if len(url) == 34 {
 		id = url
 	} else {
-		matches := id_regex.FindStringSubmatch(id)
+		matches := id_regex.FindStringSubmatch(url)
 
 		if len(matches) == 2 {
 			id = matches[1]
 		} else {
 			return "", ErrPlaylistIDMinLength
 		}
-	}
-
-	if strings.Count(id, " ")+strings.Count(id, "\t") == len(id) {
-		return "", ErrPlaylistIDEmpty
 	}
 
 	return id, nil

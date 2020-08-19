@@ -11,7 +11,6 @@ var (
 	ErrVideoIDMinLength           = errors.New("the video id must be at least 10 characters long")
 	ErrReadOnClosedResBody        = errors.New("http: read on closed response body")
 	ErrPlaylistIDMinLength        = errors.New("playlist ids must be 34 characters")
-	ErrPlaylistIDEmpty            = errors.New("playlist ids cannot be tabs and spaces")
 )
 
 type ErrResponseStatus struct {
