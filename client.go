@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // Client offers methods to download video metadata and video streams.
@@ -42,6 +43,38 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	}
 
 	return v, v.parseVideoInfo(string(body))
+}
+
+// Fetch playlist metadata
+func (c *Client) GetPlaylist(url string) (*Playlist, error) {
+	return c.GetPlaylistContext(context.Background(), url)
+}
+
+// Fetch playlist metadata, with a context, along with a list of Videos, and some basic information
+// for these videos. These videos cannot be downloaded, as they lack all the required metadata, but
+// can be used to enumerate all IDs, Authors, Titles, etc.
+func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist, error) {
+	id, err := extractPlaylistID(url)
+	if err != nil {
+		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
+	}
+
+	requestUrl := strings.Replace(playlist_fetch_url, "{playlist}", id, 1)
+	resp, err := c.httpGet(ctx, requestUrl)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	p := &Playlist{ID: id}
+	return p, p.parsePlaylistResponse(body)
 }
 
 // GetStream returns the HTTP response for a specific format
