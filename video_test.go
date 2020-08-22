@@ -69,7 +69,7 @@ func TestDownload_Regular(t *testing.T) {
 				format = &video.Formats[0]
 			}
 
-			url, err := testClient.getStreamURL(ctx, video, format)
+			url, err := testClient.GetStreamURLContext(ctx, video, format)
 			require.NoError(err)
 			require.NotEmpty(url)
 		})
