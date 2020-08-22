@@ -1,8 +1,11 @@
 package youtube_test
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/kkdai/youtube/v2"
 )
@@ -33,4 +36,59 @@ func ExampleClient() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// Example usage for playlists: downloading and checking information.
+func ExamplePlaylist() {
+	playlistID := "PLQZgI7en5XEgM0L1_ZcKmEzxW1sCOVZwP"
+	client := youtube.Client{}
+
+	playlist, err := client.GetPlaylist(playlistID)
+	if err != nil {
+		panic(err)
+	}
+
+	/* ----- Enumerating playlist videos ----- */
+	header := fmt.Sprintf("Playlist %s by %s", playlist.Title, playlist.Author)
+	println(header)
+	println(strings.Repeat("=", len(header)) + "\n")
+
+	for k, v := range playlist.Videos {
+		fmt.Printf("(%d) %s - '%s'\n", k+1, v.Author, v.Title)
+	}
+
+	/* ----- Downloading the 1st video ----- */
+	video := playlist.Videos[0]
+
+	// Videos must be FullyLoaded to be downloaded, as we loaded this through a playlist it will not
+	// be, but for demonstration purposes we can check first.
+	if video.Loaded != youtube.FullyLoaded {
+		if err := video.LoadInfo(context.Background(), &client); err != nil {
+			panic(err)
+		}
+		// Now it's fully loaded.
+	}
+
+	fmt.Printf("Downloading %s by '%s'!\n", video.Title, video.Author)
+
+	resp, err := client.GetStream(video, &video.Formats[0])
+	if err != nil {
+		panic(err)
+	}
+
+	defer resp.Body.Close()
+	file, err := os.Create("video.mp4")
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer file.Close()
+	_, err = io.Copy(file, resp.Body)
+
+	if err != nil {
+		panic(err)
+	}
+
+	println("Downloaded /video.mp4")
 }

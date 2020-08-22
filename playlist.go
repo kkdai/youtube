@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	playlist_fetch_url string = "https://youtube.com/list_ajax?style=json&action_get_list=1" +
+	playlistFetchURL string = "https://youtube.com/list_ajax?style=json&action_get_list=1" +
 		"&list={playlist}&hl=en"
 )
 
 var (
-	id_regex *regexp.Regexp = regexp.MustCompile("[&?]list=([^&]{34})")
+	idRegex *regexp.Regexp = regexp.MustCompile("[&?]list=([^&]{34})")
 )
 
 type playlistResponse struct {
@@ -69,8 +69,8 @@ func (p *Playlist) parsePlaylistResponse(info string) error {
 // with a list of videos and their basic information, such as ID, Title, Author. These videos cannot
 // be downloaded until more information is loaded!
 func (p *Playlist) FetchPlaylistInfo(ctx context.Context, c *Client) ([]byte, error) {
-	requestUrl := strings.Replace(playlist_fetch_url, "{playlist}", p.ID, 1)
-	resp, err := c.httpGet(ctx, requestUrl)
+	requestURL := strings.Replace(playlistFetchURL, "{playlist}", p.ID, 1)
+	resp, err := c.httpGet(ctx, requestURL)
 
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func extractPlaylistID(url string) (string, error) {
 	if len(url) == 34 {
 		id = url
 	} else {
-		matches := id_regex.FindStringSubmatch(url)
+		matches := idRegex.FindStringSubmatch(url)
 
 		if len(matches) == 2 {
 			id = matches[1]

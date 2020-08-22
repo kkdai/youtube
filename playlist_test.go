@@ -8,7 +8,7 @@ func TestYoutube_extractPlaylistID(t *testing.T) {
 	attempts := []struct {
 		name      string
 		url       string
-		correctId string
+		correctID string
 		wantErr   bool
 	}{
 		{
@@ -57,8 +57,8 @@ func TestYoutube_extractPlaylistID(t *testing.T) {
 			return
 		}
 
-		if ans != v.correctId {
-			t.Errorf("Test %s wanted id: %v, entered url: %v\n", v.name, v.correctId, v.url)
+		if ans != v.correctID {
+			t.Errorf("Test %s wanted id: %v, entered url: %v\n", v.name, v.correctID, v.url)
 		}
 	}
 }
