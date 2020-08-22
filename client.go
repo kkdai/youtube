@@ -65,10 +65,12 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 	return c.httpGet(ctx, url)
 }
 
+// GetStreamURL returns the url for a specific format
 func (c *Client) GetStreamURL(video *Video, format *Format) (string, error) {
 	return c.GetStreamURLContext(context.Background(), video, format)
 }
 
+// GetStreamURL returns the url for a specific format with a context
 func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *Format) (string, error) {
 	if format.URL != "" {
 		return format.URL, nil
