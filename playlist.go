@@ -1,8 +1,11 @@
 package youtube
 
 import (
+	"context"
 	"encoding/json"
+	"io/ioutil"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -35,7 +38,8 @@ type Playlist struct {
 	Videos []*Video
 }
 
-func (p *Playlist) parsePlaylistResponse(info []byte) error {
+// Parse information provided from youtube on this playlist; only basic information.
+func (p *Playlist) parsePlaylistResponse(info string) error {
 	resp := new(playlistResponse)
 
 	if err := json.Unmarshal([]byte(info), resp); err != nil {
@@ -53,11 +57,39 @@ func (p *Playlist) parsePlaylistResponse(info []byte) error {
 			Author:   v.Author,
 			ID:       v.ID,
 			Duration: d,
+			Loaded:   WeaklyLoaded, // Videos are only partially loaded with data from playlist.
 		})
 	}
 
 	p.Videos = videos
 	return nil
+}
+
+// Fetch, from youtube, the information for this playlist (Author, Title, Description, etc...) along
+// with a list of videos and their basic information, such as ID, Title, Author. These videos cannot
+// be downloaded until more information is loaded!
+func (p *Playlist) FetchPlaylistInfo(ctx context.Context, c *Client) ([]byte, error) {
+	requestUrl := strings.Replace(playlist_fetch_url, "{playlist}", p.ID, 1)
+	resp, err := c.httpGet(ctx, requestUrl)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
+}
+
+// Fetch information on this playlist from youtube, and then - providing there was no error - parse
+// this information.
+func (p *Playlist) LoadInfo(ctx context.Context, c *Client) error {
+	body, err := p.FetchPlaylistInfo(ctx, c)
+
+	if err != nil {
+		return err
+	}
+
+	return p.parsePlaylistResponse(string(body))
 }
 
 func extractPlaylistID(url string) (string, error) {

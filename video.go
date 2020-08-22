@@ -1,12 +1,30 @@
 package youtube
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
+)
+
+type LoadStatus uint8
+
+const (
+	// Data has not been loaded, and therefore nothing but the ID is available.
+	NotLoaded LoadStatus = iota
+	// ID, Title, Author, Duration are available, but this video cannot be downloaded as the extra
+	// metadata required has not been loaded.
+	WeaklyLoaded
+	// Data is fully loaded, this  video can be downloaded.
+	FullyLoaded
+
+	get_video_info_url string = "https://youtube.com/get_video_info?video_id={video}&eurl={eurl}"
+	eurl_url           string = "https://youtube.googleapis.com/v/{video}"
 )
 
 type Video struct {
@@ -15,6 +33,7 @@ type Video struct {
 	Author   string
 	Duration time.Duration
 	Formats  FormatList
+	Loaded   LoadStatus
 }
 
 func (v *Video) parseVideoInfo(info string) error {
@@ -65,4 +84,37 @@ func (v *Video) parseVideoInfo(info string) error {
 	}
 
 	return nil
+}
+
+func (v *Video) FetchVideoInfo(ctx context.Context, c *Client) ([]byte, error) {
+	// Circumvent age restriction to pretend access through googleapis.com
+	url := strings.Replace(get_video_info_url, "{eurl}", eurl_url, 1)
+	url = strings.Replace(url, "{video}", v.ID, -1)
+
+	resp, err := c.httpGet(ctx, url)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
+}
+
+func (v *Video) LoadInfo(ctx context.Context, c *Client) error {
+	body, err := v.FetchVideoInfo(ctx, c)
+
+	if err != nil {
+		return err
+	}
+
+	err = v.parseVideoInfo(string(body))
+
+	if err != nil {
+		v.Loaded = NotLoaded
+	} else {
+		v.Loaded = FullyLoaded
+	}
+
+	return err
 }

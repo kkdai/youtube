@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 )
 
 // Client offers methods to download video metadata and video streams.
@@ -31,18 +30,11 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 		return nil, fmt.Errorf("extractVideoID failed: %w", err)
 	}
 
-	// Circumvent age restriction to pretend access through googleapis.com
-	eurl := "https://youtube.googleapis.com/v/" + id
-	body, err := c.httpGetBodyBytes(ctx, "https://youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)
-	if err != nil {
-		return nil, err
-	}
-
 	v := &Video{
 		ID: id,
 	}
 
-	return v, v.parseVideoInfo(string(body))
+	return v, v.LoadInfo(ctx, c)
 }
 
 // Fetch playlist metadata
@@ -59,22 +51,8 @@ func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist,
 		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
 	}
 
-	requestUrl := strings.Replace(playlist_fetch_url, "{playlist}", id, 1)
-	resp, err := c.httpGet(ctx, requestUrl)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return nil, err
-	}
-
 	p := &Playlist{ID: id}
-	return p, p.parsePlaylistResponse(body)
+	return p, p.LoadInfo(ctx, c)
 }
 
 // GetStream returns the HTTP response for a specific format
