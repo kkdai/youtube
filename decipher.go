@@ -66,7 +66,7 @@ const (
 )
 
 var (
-	playerConfigPattern = regexp.MustCompile(`yt\.setConfig\({'PLAYER_CONFIG':(.*)}\);`)
+	playerConfigPattern = regexp.MustCompile(`yt\.setConfig\({.*'PLAYER_CONFIG':(.*)}\);`)
 	basejsPattern       = regexp.MustCompile(`"js":"\\/s\\/player(.*)base\.js`)
 
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
