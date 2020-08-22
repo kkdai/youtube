@@ -24,8 +24,8 @@ const (
 	// Data is fully loaded, this  video can be downloaded.
 	FullyLoaded
 
-	get_video_info_url string = "https://youtube.com/get_video_info?video_id={video}&eurl={eurl}"
-	eurl_url           string = "https://youtube.googleapis.com/v/{video}"
+	getVideoInfoURL string = "https://youtube.com/get_video_info?video_id={video}&eurl={eurl}"
+	eurlURL         string = "https://youtube.googleapis.com/v/{video}"
 )
 
 type Video struct {
@@ -139,7 +139,7 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 
 func (v *Video) FetchVideoInfo(ctx context.Context, c *Client) ([]byte, error) {
 	// Circumvent age restriction to pretend access through googleapis.com
-	url := strings.Replace(get_video_info_url, "{eurl}", eurl_url, 1)
+	url := strings.Replace(getVideoInfoURL, "{eurl}", eurlURL, 1)
 	url = strings.Replace(url, "{video}", v.ID, -1)
 
 	resp, err := c.httpGet(ctx, url)
