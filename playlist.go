@@ -3,15 +3,14 @@ package youtube
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"regexp"
-	"strings"
 	"time"
 )
 
 const (
 	playlistFetchURL string = "https://youtube.com/list_ajax?style=json&action_get_list=1" +
-		"&list={playlist}&hl=en"
+		"&list=%s&hl=en"
 )
 
 var (
@@ -69,15 +68,8 @@ func (p *Playlist) parsePlaylistResponse(info string) error {
 // with a list of videos and their basic information, such as ID, Title, Author. These videos cannot
 // be downloaded until more information is loaded!
 func (p *Playlist) FetchPlaylistInfo(ctx context.Context, c *Client) ([]byte, error) {
-	requestURL := strings.Replace(playlistFetchURL, "{playlist}", p.ID, 1)
-	resp, err := c.httpGet(ctx, requestURL)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+	requestURL := fmt.Sprintf(playlistFetchURL, p.ID)
+	return c.httpGetBodyBytes(ctx, requestURL)
 }
 
 // Fetch information on this playlist from youtube, and then - providing there was no error - parse
@@ -93,19 +85,15 @@ func (p *Playlist) LoadInfo(ctx context.Context, c *Client) error {
 }
 
 func extractPlaylistID(url string) (string, error) {
-	var id string
-
 	if len(url) == 34 {
-		id = url
-	} else {
-		matches := idRegex.FindStringSubmatch(url)
-
-		if len(matches) == 2 {
-			id = matches[1]
-		} else {
-			return "", ErrPlaylistIDMinLength
-		}
+		return url, nil
 	}
 
-	return id, nil
+	matches := idRegex.FindStringSubmatch(url)
+
+	if len(matches) == 2 {
+		return matches[1], nil
+	}
+
+	return "", ErrPlaylistIDMinLength
 }
