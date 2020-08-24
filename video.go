@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -23,8 +21,7 @@ const (
 	// Data is fully loaded, this  video can be downloaded.
 	FullyLoaded
 
-	getVideoInfoURL string = "https://youtube.com/get_video_info?video_id={video}&eurl={eurl}"
-	eurlURL         string = "https://youtube.googleapis.com/v/{video}"
+	getVideoInfoURL string = "https://youtube.com/get_video_info?video_id=%s&eurl=https://youtube.googleapis.com/v/%s"
 )
 
 type Video struct {
@@ -88,17 +85,8 @@ func (v *Video) parseVideoInfo(info string) error {
 
 func (v *Video) FetchVideoInfo(ctx context.Context, c *Client) ([]byte, error) {
 	// Circumvent age restriction to pretend access through googleapis.com
-	url := strings.Replace(getVideoInfoURL, "{eurl}", eurlURL, 1)
-	url = strings.Replace(url, "{video}", v.ID, -1)
-
-	resp, err := c.httpGet(ctx, url)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+	url := fmt.Sprintf(getVideoInfoURL, v.ID, v.ID)
+	return c.httpGetBodyBytes(ctx, url)
 }
 
 func (v *Video) LoadInfo(ctx context.Context, c *Client) error {
