@@ -32,13 +32,7 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 
 	// Circumvent age restriction to pretend access through googleapis.com
 	eurl := "https://youtube.googleapis.com/v/" + id
-	resp, err := c.httpGet(ctx, "https://youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := c.httpGetBodyBytes(ctx, "https://youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)
 	if err != nil {
 		return nil, err
 	}
