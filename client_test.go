@@ -1,85 +1,104 @@
 package youtube
 
 import (
+	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var (
-	testClient = Client{Debug: true}
-)
+func TestDownload_Regular(t *testing.T) {
+	ctx := context.Background()
 
-const dwlURL string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
-const streamURL string = "https://www.youtube.com/watch?v=5qap5aO4i9A"
-const errURL string = "https://www.youtube.com/watch?v=I8oGsuQ"
-
-func TestParseVideo(t *testing.T) {
-
-	video, err := testClient.GetVideo(dwlURL)
-	assert.NoError(t, err)
-	assert.NotNil(t, video)
-
-	_, err = testClient.GetVideo(errURL)
-	assert.EqualError(t, err, `response status: 'fail', reason: 'Invalid parameters.'`)
-}
-
-func TestYoutube_findVideoID(t *testing.T) {
-	type args struct {
-		url string
-	}
-	tests := []struct {
-		name        string
-		args        args
-		wantErr     bool
-		expectedErr error
+	testcases := []struct {
+		name       string
+		url        string
+		outputFile string
+		itagNo     int
+		quality    string
 	}{
 		{
-			name: "valid url",
-			args: args{
-				dwlURL,
-			},
-			wantErr:     false,
-			expectedErr: nil,
+			// Video from issue #25
+			name:       "default",
+			url:        "https://www.youtube.com/watch?v=54e6lBE3BoQ",
+			outputFile: "default_test.mp4",
+			quality:    "",
 		},
 		{
-			name: "valid id",
-			args: args{
-				"rFejpH_tAHM",
-			},
-			wantErr:     false,
-			expectedErr: nil,
+			// Video from issue #25
+			name:       "quality:medium",
+			url:        "https://www.youtube.com/watch?v=54e6lBE3BoQ",
+			outputFile: "medium_test.mp4",
+			quality:    "medium",
 		},
 		{
-			name: "invalid character in id",
-			args: args{
-				"<M13",
-			},
-			wantErr:     true,
-			expectedErr: ErrInvalidCharactersInVideoID,
+			name: "without-filename",
+			url:  "https://www.youtube.com/watch?v=n3kPvBCYT3E",
 		},
 		{
-			name: "video id is less than 10 characters",
-			args: args{
-				"rFejpH",
-			},
-			wantErr:     true,
-			expectedErr: ErrVideoIDMinLength,
+			name:       "Format",
+			url:        "https://www.youtube.com/watch?v=54e6lBE3BoQ",
+			outputFile: "muxedstream_test.mp4",
+			itagNo:     18,
+		},
+		{
+			name:       "AdaptiveFormat_video",
+			url:        "https://www.youtube.com/watch?v=54e6lBE3BoQ",
+			outputFile: "adaptiveStream_video_test.m4v",
+			itagNo:     134,
+		},
+		{
+			name:       "AdaptiveFormat_audio",
+			url:        "https://www.youtube.com/watch?v=54e6lBE3BoQ",
+			outputFile: "adaptiveStream_audio_test.m4a",
+			itagNo:     140,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if _, err := extractVideoID(tt.args.url); (err != nil) != tt.wantErr || err != tt.expectedErr {
-				t.Errorf("extractVideoID() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			require := require.New(t)
+
+			video, err := testClient.GetVideoContext(ctx, tc.url)
+			require.NoError(err)
+
+			var format *Format
+			if tc.itagNo > 0 {
+				format = video.Formats.FindByItag(tc.itagNo)
+				require.NotNil(format)
+			} else {
+				format = &video.Formats[0]
 			}
+
+			url, err := testClient.GetStreamURLContext(ctx, video, format)
+			require.NoError(err)
+			require.NotEmpty(url)
 		})
 	}
 }
 
-func TestGetVideo(t *testing.T) {
-	video, err := testClient.GetVideo(streamURL)
-	assert.NoError(t, err)
-	assert.NotNil(t, video)
-	assert.NotEmpty(t, video.HLSManifestURL)
-	assert.NotEmpty(t, video.DASHManifestURL)
+func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
+	testcases := []struct {
+		issue   string
+		videoID string
+		err     string
+	}{
+		{
+			issue:   "issue#65",
+			videoID: "9ja-K2FslBU",
+			err:     `status: ERROR`,
+		},
+		{
+			issue:   "issue#59",
+			videoID: "nINQjT7Zr9w",
+			err:     `status: LOGIN_REQUIRED`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.issue, func(t *testing.T) {
+			_, err := testClient.GetVideo(tc.videoID)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.err)
+		})
+	}
 }
