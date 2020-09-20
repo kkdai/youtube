@@ -11,6 +11,7 @@ var (
 )
 
 const dwlURL string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
+const streamURL string = "https://www.youtube.com/watch?v=5qap5aO4i9A"
 const errURL string = "https://www.youtube.com/watch?v=I8oGsuQ"
 
 func TestParseVideo(t *testing.T) {
@@ -73,4 +74,12 @@ func TestYoutube_findVideoID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetVideo(t *testing.T) {
+	video, err := testClient.GetVideo(streamURL)
+	assert.NoError(t, err)
+	assert.NotNil(t, video)
+	assert.NotEmpty(t, video.HLSManifestURL)
+	assert.NotEmpty(t, video.DASHManifestURL)
 }
