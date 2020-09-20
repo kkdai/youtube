@@ -10,11 +10,13 @@ import (
 )
 
 type Video struct {
-	ID       string
-	Title    string
-	Author   string
-	Duration time.Duration
-	Formats  FormatList
+	ID              string
+	Title           string
+	Author          string
+	Duration        time.Duration
+	Formats         FormatList
+	DASHManifestURL string // URI of the DASH manifest file
+	HLSManifestURL  string // URI of the HLS manifest file
 }
 
 func (v *Video) parseVideoInfo(info string) error {
@@ -63,6 +65,9 @@ func (v *Video) parseVideoInfo(info string) error {
 	if len(v.Formats) == 0 {
 		return errors.New("no formats found in the server's answer")
 	}
+
+	v.HLSManifestURL = prData.StreamingData.HlsManifestURL
+	v.DASHManifestURL = prData.StreamingData.DashManifestURL
 
 	return nil
 }
