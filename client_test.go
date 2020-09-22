@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -11,6 +12,7 @@ var (
 )
 
 const dwlURL string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
+const streamURL string = "https://www.youtube.com/watch?v=5qap5aO4i9A"
 const errURL string = "https://www.youtube.com/watch?v=I8oGsuQ"
 
 func TestParseVideo(t *testing.T) {
@@ -73,4 +75,13 @@ func TestYoutube_findVideoID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetVideo(t *testing.T) {
+	require := require.New(t)
+	video, err := testClient.GetVideo(streamURL)
+	require.NoError(err)
+	require.NotNil(video)
+	require.NotEmpty(video.HLSManifestURL)
+	require.NotEmpty(video.DASHManifestURL)
 }
