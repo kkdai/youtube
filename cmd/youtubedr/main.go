@@ -17,7 +17,6 @@ import (
 
 	ytdl "github.com/kkdai/youtube/v2/downloader"
 	"github.com/olekukonko/tablewriter"
-	"golang.org/x/net/proxy"
 )
 
 const usageString string = `Usage: youtubedr [OPTION] [URL]
@@ -29,7 +28,6 @@ var (
 	outputFile         string
 	outputDir          string
 	outputQuality      string
-	socks5Proxy        string
 	itag               int
 	info               bool
 	insecureSkipVerify bool
@@ -46,6 +44,8 @@ func run() error {
 	flag.Usage = func() {
 		fmt.Println(usageString)
 		flag.PrintDefaults()
+		fmt.Println("\n" + `Use the HTTP_PROXY environment variable to set a HTTP or SOCSK5 proxy. The proxy type is determined by the URL scheme.
+"http", "https", and "socks5" are supported. If the scheme is empty, "http" is assumed."`)
 	}
 	usr, _ := user.Current()
 	flag.StringVar(&outputFile, "o", "", "The output file")
@@ -53,7 +53,6 @@ func run() error {
 		filepath.Join(usr.HomeDir, "Movies", "youtubedr"),
 		"The output directory.")
 	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
-	flag.StringVar(&socks5Proxy, "p", "", "The Socks 5 proxy, e.g. 10.10.10.10:7878")
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
 	flag.BoolVar(&info, "info", false, "show info of video")
 	flag.BoolVar(&insecureSkipVerify, "insecure-skip-tls-verify", false, "skip server certificate verification")
@@ -61,34 +60,19 @@ func run() error {
 	flag.Parse()
 
 	if len(flag.Args()) == 0 {
-		flag.PrintDefaults()
+		flag.Usage()
 		return nil
 	}
 
 	httpTransport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
 		IdleConnTimeout:       60 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-	}
-
-	if socks5Proxy != "" {
-		log.Println("Using SOCKS5 proxy", socks5Proxy)
-		dialer, err := proxy.SOCKS5("tcp", socks5Proxy, nil, proxy.Direct)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
-			os.Exit(1)
-		}
-
-		// set our socks5 as the dialer
-		dc := dialer.(interface {
-			DialContext(ctx context.Context, network, addr string) (net.Conn, error)
-		})
-		httpTransport.DialContext = dc.DialContext
-	} else {
-		httpTransport.DialContext = (&net.Dialer{
+		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
-		}).DialContext
+		}).DialContext,
 	}
 
 	if insecureSkipVerify {
