@@ -8,3 +8,4 @@ builds:
       - freebsd
     goarch:
       - amd64
+      - arm
