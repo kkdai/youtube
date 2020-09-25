@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -15,6 +16,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kkdai/youtube/v2"
 	ytdl "github.com/kkdai/youtube/v2/downloader"
 	"github.com/olekukonko/tablewriter"
 )
@@ -121,5 +123,18 @@ func run() error {
 		return dl.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
 	}
 
-	return dl.Download(context.Background(), video, &video.Formats[0], outputFile)
+	var format *youtube.Format
+	if itag > 0 {
+		format = video.Formats.FindByItag(itag)
+		if format == nil {
+			return fmt.Errorf("unable to find format with itag %d", itag)
+		}
+	} else {
+		if len(video.Formats) == 0 {
+			return errors.New("no formats found")
+		}
+		format = &video.Formats[0]
+	}
+
+	return dl.Download(context.Background(), video, format, outputFile)
 }
