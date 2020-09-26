@@ -12,6 +12,7 @@ import (
 type Video struct {
 	ID              string
 	Title           string
+	Description     string
 	Author          string
 	Duration        time.Duration
 	Formats         FormatList
@@ -45,6 +46,7 @@ func (v *Video) parseVideoInfo(info string) error {
 	}
 
 	v.Title = prData.VideoDetails.Title
+	v.Description = prData.VideoDetails.ShortDescription
 	v.Author = prData.VideoDetails.Author
 
 	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
