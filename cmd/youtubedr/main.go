@@ -116,6 +116,7 @@ func run() error {
 
 	if info {
 		fmt.Printf("Title:    %s\n", video.Title)
+		fmt.Printf("Description:    %s\n", video.Description)
 		fmt.Printf("Author:   %s\n", video.Author)
 		fmt.Printf("Duration: %v\n", video.Duration)
 
