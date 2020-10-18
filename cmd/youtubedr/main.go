@@ -11,8 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/user"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -49,11 +47,8 @@ func run() error {
 		fmt.Println("\n" + `Use the HTTP_PROXY environment variable to set a HTTP or SOCSK5 proxy. The proxy type is determined by the URL scheme.
 "http", "https", and "socks5" are supported. If the scheme is empty, "http" is assumed."`)
 	}
-	usr, _ := user.Current()
 	flag.StringVar(&outputFile, "o", "", "The output file")
-	flag.StringVar(&outputDir, "d",
-		filepath.Join(usr.HomeDir, "Movies", "youtubedr"),
-		"The output directory.")
+	flag.StringVar(&outputDir, "d", ".", "The output directory.")
 	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
 	flag.BoolVar(&info, "info", false, "show info of video")
