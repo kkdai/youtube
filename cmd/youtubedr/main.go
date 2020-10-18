@@ -114,13 +114,8 @@ func run() error {
 
 	fmt.Println("download to directory", outputDir)
 
-	if outputQuality == "hd1080" {
-		fmt.Println("check ffmpeg is installed....")
-		ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
-		if err := ffmpegVersionCmd.Run(); err != nil {
-			return fmt.Errorf("please check ffmpeg is installed correctly, err: %w", err)
-		}
-		return dl.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
+	if len(video.Formats) == 0 {
+		return errors.New("no formats found")
 	}
 
 	var format *youtube.Format
@@ -129,12 +124,23 @@ func run() error {
 		if format == nil {
 			return fmt.Errorf("unable to find format with itag %d", itag)
 		}
-	} else {
-		if len(video.Formats) == 0 {
-			return errors.New("no formats found")
+		outputQuality = format.Quality
+	} else if outputQuality != "" {
+		format = video.Formats.FindByQuality(outputQuality)
+		if format == nil {
+			return fmt.Errorf("unable to find format with quality %s", outputQuality)
 		}
+	} else {
 		format = &video.Formats[0]
 	}
 
-	return dl.Download(context.Background(), video, format, outputFile)
+	if outputQuality == "hd1080" {
+		fmt.Println("check ffmpeg is installed....")
+		ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
+		if err := ffmpegVersionCmd.Run(); err != nil {
+			return fmt.Errorf("please check ffmpeg is installed correctly, err: %w", err)
+		}
+		return dl.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
+	}
+	return dl.Download(context.Background(),video, format, outputFile)
 }
