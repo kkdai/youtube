@@ -68,7 +68,7 @@ const (
 var (
 	playerConfigPattern = regexp.MustCompile(`yt\.setConfig\({.*["']PLAYER_CONFIG["']:(.*)}\);`)
 	basejsPattern       = regexp.MustCompile(`"js":"\\/s\\/player(.*)base\.js`)
-	basejsUrlPattern    = regexp.MustCompile(`"jsUrl":"/s/player(.*)base.js`)
+	basejsURLPattern    = regexp.MustCompile(`"jsUrl":"/s/player(.*)base.js`)
 
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
 		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
@@ -103,7 +103,7 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 	// example: "jsUrl":"/s/player/4a1799bd/player_ias.vflset/en_US/base.js
 	escapedBasejsURL := string(basejsPattern.Find(playerConfig))
 	if escapedBasejsURL == "" {
-		escapedBasejsURL = string(basejsUrlPattern.Find(playerConfig))
+		escapedBasejsURL = string(basejsURLPattern.Find(playerConfig))
 	}
 	// example: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
 	// example: ["jsUrl", /s/player/4a1799bd/player_ias.vflset/en_US/base.js]
