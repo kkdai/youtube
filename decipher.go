@@ -66,8 +66,9 @@ const (
 )
 
 var (
-	playerConfigPattern = regexp.MustCompile(`yt\.setConfig\({.*'PLAYER_CONFIG':(.*)}\);`)
+	playerConfigPattern = regexp.MustCompile(`yt\.setConfig\({.*["']PLAYER_CONFIG["']:(.*)}\);`)
 	basejsPattern       = regexp.MustCompile(`"js":"\\/s\\/player(.*)base\.js`)
+	basejsURLPattern    = regexp.MustCompile(`"jsUrl":"/s/player(.*)base.js`)
 
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
 		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
@@ -97,9 +98,15 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 
 	playerConfig := playerConfigPattern.Find(embedBody)
 
-	// eg: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
+	// example: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
+	// updated 2020/10/24: some videos use jsUrl
+	// example: "jsUrl":"/s/player/4a1799bd/player_ias.vflset/en_US/base.js
 	escapedBasejsURL := string(basejsPattern.Find(playerConfig))
-	// eg: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
+	if escapedBasejsURL == "" {
+		escapedBasejsURL = string(basejsURLPattern.Find(playerConfig))
+	}
+	// example: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
+	// example: ["jsUrl", /s/player/4a1799bd/player_ias.vflset/en_US/base.js]
 	arr := strings.Split(escapedBasejsURL, ":\"")
 	basejsURL := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
 	basejsBody, err := c.httpGetBodyBytes(ctx, basejsURL)
