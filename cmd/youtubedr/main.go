@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -31,6 +32,12 @@ var (
 	itag               int
 	info               bool
 	insecureSkipVerify bool
+	showVersion        bool
+
+	// set through ldflags
+	version string
+	commit  string
+	date    string
 )
 
 func main() {
@@ -52,9 +59,18 @@ func run() error {
 	flag.StringVar(&outputQuality, "q", "", "The output file quality (hd720, medium)")
 	flag.IntVar(&itag, "i", 0, "Specify itag number, e.g. 13, 17")
 	flag.BoolVar(&info, "info", false, "show info of video")
+	flag.BoolVar(&showVersion, "version", false, "show version info and exit")
 	flag.BoolVar(&insecureSkipVerify, "insecure-skip-tls-verify", false, "skip server certificate verification")
 
 	flag.Parse()
+
+	if showVersion {
+		fmt.Println("Version:    ", version)
+		fmt.Println("Commit:     ", commit)
+		fmt.Println("Date:       ", date)
+		fmt.Println("Go Version: ", runtime.Version())
+		os.Exit(0)
+	}
 
 	if len(flag.Args()) == 0 {
 		flag.Usage()
