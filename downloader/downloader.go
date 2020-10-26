@@ -22,14 +22,13 @@ type Downloader struct {
 }
 
 func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, outputFile string) (string, error) {
-
 	if outputFile == "" {
 		outputFile = SanitizeFilename(v.Title)
 		outputFile += pickIdealFileExtension(format.MimeType)
 	}
 
 	if dl.OutputDir != "" {
-		if err := os.MkdirAll(dl.OutputDir, 0755); err != nil {
+		if err := os.MkdirAll(dl.OutputDir, 0o755); err != nil {
 			return "", err
 		}
 		outputFile = filepath.Join(dl.OutputDir, outputFile)
@@ -38,7 +37,7 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, ou
 	return outputFile, nil
 }
 
-//Download : Starting download video by arguments.
+// Download : Starting download video by arguments.
 func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
@@ -56,7 +55,7 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
-//DownloadWithHighQuality : Starting downloading video with high quality (>720p).
+// DownloadWithHighQuality : Starting downloading video with high quality (>720p).
 func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile string, v *youtube.Video, quality string) error {
 	var videoFormat, audioFormat *youtube.Format
 

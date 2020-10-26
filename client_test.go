@@ -7,16 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	testClient = Client{Debug: true}
+var testClient = Client{Debug: true}
+
+const (
+	dwlURL    string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
+	streamURL string = "https://www.youtube.com/watch?v=5qap5aO4i9A"
+	errURL    string = "https://www.youtube.com/watch?v=I8oGsuQ"
 )
 
-const dwlURL string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
-const streamURL string = "https://www.youtube.com/watch?v=5qap5aO4i9A"
-const errURL string = "https://www.youtube.com/watch?v=I8oGsuQ"
-
 func TestParseVideo(t *testing.T) {
-
 	video, err := testClient.GetVideo(dwlURL)
 	assert.NoError(t, err)
 	assert.NotNil(t, video)
