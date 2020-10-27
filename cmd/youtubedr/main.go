@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -32,6 +33,7 @@ var (
 	itag               int
 	info               bool
 	insecureSkipVerify bool
+	onlyStreamUrl	   bool
 	showVersion        bool
 
 	// set through ldflags
@@ -61,8 +63,14 @@ func run() error {
 	flag.BoolVar(&info, "info", false, "show info of video")
 	flag.BoolVar(&showVersion, "version", false, "show version info and exit")
 	flag.BoolVar(&insecureSkipVerify, "insecure-skip-tls-verify", false, "skip server certificate verification")
+	flag.BoolVar(&onlyStreamUrl, "only-stream-url", false, "Only output the stream-url to desired video")
 
 	flag.Parse()
+
+	if onlyStreamUrl {
+
+		log.SetOutput(ioutil.Discard)
+	}
 
 	if showVersion {
 		fmt.Println("Version:    ", version)
@@ -123,7 +131,7 @@ func run() error {
 		return nil
 	}
 
-	fmt.Println("download to directory", outputDir)
+	log.Println("download to directory", outputDir)
 
 	if len(video.Formats) == 0 {
 		return errors.New("no formats found")
@@ -143,6 +151,12 @@ func run() error {
 		}
 	} else {
 		format = &video.Formats[0]
+	}
+
+	if onlyStreamUrl {
+		var url,_ = dl.GetStreamURL(video,format)
+		fmt.Println(url)
+		return nil
 	}
 
 	if outputQuality == "hd1080" {

@@ -61,6 +61,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 | `-i`   | string | the output file itag (13, 17 etc..)                             | 0                    |
 | `-info`| bool   | show information of available streams (quality, itag, MIMEtype)                        |                        |
 
+| `-only-stream-url`| bool   | Only output the stream-url to desired video)                        |                        |
 ## Example:
  * ### Get information of dotGo-2015-rob-pike video for downloading
 
