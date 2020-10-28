@@ -43,6 +43,7 @@ It's really simple to use, just get the video id from youtube url - ex: `https:/
 $ youtubedr QAGDGja7kbs
 $ youtubedr https://www.youtube.com/watch?v=rFejpH_tAHM
 ```
+This tool is meant to be used to download CC0 licenced content, we do not support nor recomand using it for illegal activities.
 
 ### Use this package in your golang program
 
