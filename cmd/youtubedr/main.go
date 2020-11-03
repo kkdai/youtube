@@ -6,8 +6,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -33,7 +33,7 @@ var (
 	itag               int
 	info               bool
 	insecureSkipVerify bool
-	onlyStreamUrl	   bool
+	onlyStreamUrl      bool
 	showVersion        bool
 
 	// set through ldflags
@@ -68,7 +68,6 @@ func run() error {
 	flag.Parse()
 
 	if onlyStreamUrl {
-
 		log.SetOutput(ioutil.Discard)
 	}
 
@@ -154,7 +153,7 @@ func run() error {
 	}
 
 	if onlyStreamUrl {
-		var url,_ = dl.GetStreamURL(video,format)
+		url, _ := dl.GetStreamURL(video, format)
 		fmt.Println(url)
 		return nil
 	}

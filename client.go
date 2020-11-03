@@ -56,7 +56,6 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 		return nil, err
 	}
 
-
 	return c.httpGet(ctx, url)
 }
 
