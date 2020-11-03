@@ -56,7 +56,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 | :----- | :----- | :------------------------------------------------------------- | :--------------------- |
 | `-d`   | string | the output directory                                           | $HOME/Movies/youtubedr |
 | `-o`   | string | the output file name ( ext will auto detect on default value ) | [video's title].ext    |
-| `-d`   | string | the Socks 5 proxy (e.g. 10.10.10.10:7878)                      |                        |
+| `-p`   | string | the Socks 5 proxy (e.g. 10.10.10.10:7878)                      |                        |
 | `-q`   | string | the output file quality (medium, hd720)                        |                        |
 | `-i`   | string | the output file itag (13, 17 etc..)                             | 0                    |
 | `-info`| bool   | show information of available streams (quality, itag, MIMEtype)                        |                        |
