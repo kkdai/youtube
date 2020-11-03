@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
@@ -66,9 +66,7 @@ const (
 )
 
 var (
-	playerConfigPattern = regexp.MustCompile(`yt\.setConfig\({.*["']PLAYER_CONFIG["']:(.*)}\);`)
-	basejsPattern       = regexp.MustCompile(`"js":"\\/s\\/player(.*)base\.js`)
-	basejsURLPattern    = regexp.MustCompile(`"jsUrl":"/s/player(.*)base.js`)
+	basejsPattern = regexp.MustCompile(`(/s/player/\w+/player_ias.vflset/\w+/base.js)`)
 
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
 		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
@@ -86,37 +84,26 @@ var (
 )
 
 func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []operation, err error) {
-	if videoID == "" {
-		return nil, errors.New("video id is empty")
-	}
-
 	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
 	embedBody, err := c.httpGetBodyBytes(ctx, embedURL)
 	if err != nil {
 		return nil, err
 	}
 
-	playerConfig := playerConfigPattern.Find(embedBody)
-
-	// example: "js":\"\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js
-	// updated 2020/10/24: some videos use jsUrl
-	// example: "jsUrl":"/s/player/4a1799bd/player_ias.vflset/en_US/base.js
-	escapedBasejsURL := string(basejsPattern.Find(playerConfig))
+	// example: /s/player/f676c671/player_ias.vflset/en_US/base.js
+	escapedBasejsURL := string(basejsPattern.Find(embedBody))
 	if escapedBasejsURL == "" {
-		escapedBasejsURL = string(basejsURLPattern.Find(playerConfig))
+		log.Println("playerConfig:", string(embedBody))
+		return nil, errors.New("unable to find basejs URL in playerConfig")
 	}
-	// example: ["js", "\/s\/player\/f676c671\/player_ias.vflset\/en_US\/base.js]
-	// example: ["jsUrl", /s/player/4a1799bd/player_ias.vflset/en_US/base.js]
-	arr := strings.Split(escapedBasejsURL, ":\"")
-	basejsURL := "https://youtube.com" + strings.ReplaceAll(arr[len(arr)-1], "\\", "")
-	basejsBody, err := c.httpGetBodyBytes(ctx, basejsURL)
+
+	basejsBody, err := c.httpGetBodyBytes(ctx, "https://youtube.com"+escapedBasejsURL)
 	if err != nil {
 		return nil, err
 	}
 
-	bodyString := string(basejsBody)
-	objResult := actionsObjRegexp.FindStringSubmatch(bodyString)
-	funcResult := actionsFuncRegexp.FindStringSubmatch(bodyString)
+	objResult := actionsObjRegexp.FindSubmatch(basejsBody)
+	funcResult := actionsFuncRegexp.FindSubmatch(basejsBody)
 	if len(objResult) < 3 || len(funcResult) < 2 {
 		return nil, fmt.Errorf("error parsing signature tokens (#obj=%d, #func=%d)", len(objResult), len(funcResult))
 	}
@@ -127,14 +114,14 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 
 	var reverseKey, spliceKey, swapKey string
 
-	if result := reverseRegexp.FindStringSubmatch(objBody); len(result) > 1 {
-		reverseKey = result[1]
+	if result := reverseRegexp.FindSubmatch(objBody); len(result) > 1 {
+		reverseKey = string(result[1])
 	}
-	if result := spliceRegexp.FindStringSubmatch(objBody); len(result) > 1 {
-		spliceKey = result[1]
+	if result := spliceRegexp.FindSubmatch(objBody); len(result) > 1 {
+		spliceKey = string(result[1])
 	}
-	if result := swapRegexp.FindStringSubmatch(objBody); len(result) > 1 {
-		swapKey = result[1]
+	if result := swapRegexp.FindSubmatch(objBody); len(result) > 1 {
+		swapKey = string(result[1])
 	}
 
 	regex, err := regexp.Compile(fmt.Sprintf("(?:a=)?%s\\.(%s|%s|%s)\\(a,(\\d+)\\)", obj, reverseKey, spliceKey, swapKey))
@@ -143,15 +130,15 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 	}
 
 	var ops []operation
-	for _, s := range regex.FindAllStringSubmatch(funcBody, -1) {
-		switch s[1] {
+	for _, s := range regex.FindAllSubmatch(funcBody, -1) {
+		switch string(s[1]) {
 		case reverseKey:
 			ops = append(ops, reverseFunc)
 		case swapKey:
-			arg, _ := strconv.Atoi(s[2])
+			arg, _ := strconv.Atoi(string(s[2]))
 			ops = append(ops, newSwapFunc(arg))
 		case spliceKey:
-			arg, _ := strconv.Atoi(s[2])
+			arg, _ := strconv.Atoi(string(s[2]))
 			ops = append(ops, newSpliceFunc(arg))
 		}
 	}
