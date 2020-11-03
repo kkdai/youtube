@@ -118,7 +118,7 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 	objResult := actionsObjRegexp.FindStringSubmatch(bodyString)
 	funcResult := actionsFuncRegexp.FindStringSubmatch(bodyString)
 	if len(objResult) < 3 || len(funcResult) < 2 {
-		return nil, errors.New("error parsing signature tokens")
+		return nil, fmt.Errorf("error parsing signature tokens (#obj=%d, #func=%d)", len(objResult), len(funcResult))
 	}
 
 	obj := objResult[1]
