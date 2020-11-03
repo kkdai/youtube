@@ -33,7 +33,7 @@ var (
 	itag               int
 	info               bool
 	insecureSkipVerify bool
-	onlyStreamUrl      bool
+	onlyStreamURL      bool
 	showVersion        bool
 
 	// set through ldflags
@@ -63,11 +63,11 @@ func run() error {
 	flag.BoolVar(&info, "info", false, "show info of video")
 	flag.BoolVar(&showVersion, "version", false, "show version info and exit")
 	flag.BoolVar(&insecureSkipVerify, "insecure-skip-tls-verify", false, "skip server certificate verification")
-	flag.BoolVar(&onlyStreamUrl, "only-stream-url", false, "Only output the stream-url to desired video")
+	flag.BoolVar(&onlyStreamURL, "only-stream-url", false, "Only output the stream-url to desired video")
 
 	flag.Parse()
 
-	if onlyStreamUrl {
+	if onlyStreamURL {
 		log.SetOutput(ioutil.Discard)
 	}
 
@@ -152,7 +152,7 @@ func run() error {
 		format = &video.Formats[0]
 	}
 
-	if onlyStreamUrl {
+	if onlyStreamURL {
 		url, _ := dl.GetStreamURL(video, format)
 		fmt.Println(url)
 		return nil
