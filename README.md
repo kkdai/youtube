@@ -115,7 +115,7 @@ Please check out the [example_test.go](example_test.go) for example code.
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
     ```
-    youtubedr -i 18 https://www.youtube.com/watch?v=rFejpH_tAHM
+    youtubedr download -q 18 https://www.youtube.com/watch?v=rFejpH_tAHM
     ```
 
 ## How it works
