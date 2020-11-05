@@ -41,8 +41,8 @@ pkg install youtubedr
 It's really simple to use, just get the video id from youtube url - ex: `https://www.youtube.com/watch?v=rFejpH_tAHM`, the video id is `rFejpH_tAHM`
 
 ```shell
-$ youtubedr QAGDGja7kbs
-$ youtubedr https://www.youtube.com/watch?v=rFejpH_tAHM
+$ youtubedr download QAGDGja7kbs
+$ youtubedr download https://www.youtube.com/watch?v=rFejpH_tAHM
 ```
 
 
@@ -50,18 +50,7 @@ $ youtubedr https://www.youtube.com/watch?v=rFejpH_tAHM
 
 Please check out the [example_test.go](example_test.go) for example code.
 
-## Options:
 
-| option | type   | description                                                    | default value          |
-| :----- | :----- | :------------------------------------------------------------- | :--------------------- |
-| `-d`   | string | the output directory                                           | $HOME/Movies/youtubedr |
-| `-o`   | string | the output file name ( ext will auto detect on default value ) | [video's title].ext    |
-| `-p`   | string | the Socks 5 proxy (e.g. 10.10.10.10:7878)                      |                        |
-| `-q`   | string | the output file quality (medium, hd720)                        |                        |
-| `-i`   | string | the output file itag (13, 17 etc..)                             | 0                    |
-| `-info`| bool   | show information of available streams (quality, itag, MIMEtype)                        |                        |
-
-| `-only-stream-url`| bool   | Only output the stream-url to desired video)                        |                        |
 ## Example:
  * ### Get information of dotGo-2015-rob-pike video for downloading
 
@@ -70,7 +59,7 @@ Please check out the [example_test.go](example_test.go) for example code.
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
     ```
-    youtubedr -info https://www.youtube.com/watch?v=rFejpH_tAHM
+    youtubedr info https://www.youtube.com/watch?v=rFejpH_tAHM
 
    Title: dotGo 2015 - Rob Pike - Simplicity is Complicated
    Author: dotconferences
@@ -88,7 +77,7 @@ Please check out the [example_test.go](example_test.go) for example code.
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
     ```
-    youtubedr https://www.youtube.com/watch?v=rFejpH_tAHM
+    youtubedr download https://www.youtube.com/watch?v=rFejpH_tAHM
     ```
 
  * ### Download video to specific folder and name
@@ -98,7 +87,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) to current directory and name the file to simplicity-is-complicated.mp4
 
 	```
-	youtubedr -d ./ -o simplicity-is-complicated.mp4 https://www.youtube.com/watch?v=rFejpH_tAHM
+	youtubedr download -d ./ -o simplicity-is-complicated.mp4 https://www.youtube.com/watch?v=rFejpH_tAHM
 	```
 
  * ### Download video with specific quality
@@ -108,14 +97,14 @@ Please check out the [example_test.go](example_test.go) for example code.
 	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) with specific quality
 
 	```
-	youtubedr -q medium https://www.youtube.com/watch?v=rFejpH_tAHM
+	youtubedr download -q medium https://www.youtube.com/watch?v=rFejpH_tAHM
 	```
 
    #### Special case by quality hd1080:
    Installation of ffmpeg is necessary for hd1080
    ```
    ffmpeg   //check ffmpeg is installed, if not please download ffmpeg and set to your PATH.
-   youtubedr -q hd1080 https://www.youtube.com/watch?v=rFejpH_tAHM
+   youtubedr download -q hd1080 https://www.youtube.com/watch?v=rFejpH_tAHM
    ```
 
 
