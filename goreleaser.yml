@@ -1,3 +1,7 @@
+env:
+  # Build without CGO to don't depend on specific glibc versions
+  - CGO_ENABLED=0
+
 builds:
   - main: ./cmd/youtubedr
     binary: youtubedr
@@ -12,4 +16,4 @@ builds:
       - arm64
     flags:
       - -trimpath
-    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.CommitDate}} -linkmode external -extldflags "-static"
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.CommitDate}}
