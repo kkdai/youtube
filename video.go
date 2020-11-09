@@ -25,12 +25,16 @@ const (
 )
 
 type Video struct {
-	ID       string
-	Title    string
-	Author   string
-	Duration time.Duration
-	Formats  FormatList
-	Loaded   LoadStatus
+	ID              string
+	Title           string
+	Description     string
+	Author          string
+	Duration        time.Duration
+	Formats         FormatList
+	DASHManifestURL string // URI of the DASH manifest file
+	HLSManifestURL  string // URI of the HLS manifest file
+
+	Loaded LoadStatus
 }
 
 func (v *Video) parseVideoInfo(info string) error {
@@ -59,6 +63,7 @@ func (v *Video) parseVideoInfo(info string) error {
 	}
 
 	v.Title = prData.VideoDetails.Title
+	v.Description = prData.VideoDetails.ShortDescription
 	v.Author = prData.VideoDetails.Author
 
 	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
@@ -79,6 +84,9 @@ func (v *Video) parseVideoInfo(info string) error {
 	if len(v.Formats) == 0 {
 		return errors.New("no formats found in the server's answer")
 	}
+
+	v.HLSManifestURL = prData.StreamingData.HlsManifestURL
+	v.DASHManifestURL = prData.StreamingData.DashManifestURL
 
 	return nil
 }

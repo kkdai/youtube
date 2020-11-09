@@ -11,6 +11,8 @@ type playerResponseData struct {
 		ExpiresInSeconds string   `json:"expiresInSeconds"`
 		Formats          []Format `json:"formats"`
 		AdaptiveFormats  []Format `json:"adaptiveFormats"`
+		DashManifestURL  string   `json:"dashManifestUrl"`
+		HlsManifestURL   string   `json:"hlsManifestUrl"`
 	} `json:"streamingData"`
 	Captions struct {
 		PlayerCaptionsRenderer struct {

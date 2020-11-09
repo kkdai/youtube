@@ -19,7 +19,6 @@ var testDownloader = func() (dl Downloader) {
 }()
 
 func TestMain(m *testing.M) {
-
 	exitCode := m.Run()
 	// the following code doesn't work under debugger, please delete download files manually
 	if err := os.RemoveAll(testDownloader.OutputDir); err != nil {
