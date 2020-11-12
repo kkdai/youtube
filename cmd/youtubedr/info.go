@@ -26,10 +26,15 @@ var infoCmd = &cobra.Command{
 
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetAutoWrapText(false)
-		table.SetHeader([]string{"itag", "quality", "MimeType"})
+		table.SetHeader([]string{"itag", "quality", "bitrate", "MimeType"})
 
 		for _, itag := range video.Formats {
-			table.Append([]string{strconv.Itoa(itag.ItagNo), itag.Quality, itag.MimeType})
+			table.Append([]string{
+				strconv.Itoa(itag.ItagNo),
+				itag.Quality,
+				strconv.Itoa(itag.Bitrate),
+				itag.MimeType,
+			})
 		}
 		table.Render()
 	},
