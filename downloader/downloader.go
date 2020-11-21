@@ -109,9 +109,8 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
 		"-i", videoFile.Name(),
 		"-i", audioFile.Name(),
-		"-strict",
-		"-2",
-		"-shortest",
+		"-c", "copy", // Just copy without re-encoding
+		"-shortest", // Finish encoding when the shortest input stream ends
 		destFile,
 		"-loglevel", "warning",
 	)
