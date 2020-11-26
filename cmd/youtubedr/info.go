@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -26,7 +27,7 @@ var infoCmd = &cobra.Command{
 
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetAutoWrapText(false)
-		table.SetHeader([]string{"itag", "quality", "size [MB]", "bitrate", "MimeType"})
+		table.SetHeader([]string{"itag", "video quality", "audio quality", "size [MB]", "bitrate", "MimeType"})
 
 		for _, itag := range video.Formats {
 			bitrate := itag.AverageBitrate
@@ -37,6 +38,7 @@ var infoCmd = &cobra.Command{
 			table.Append([]string{
 				strconv.Itoa(itag.ItagNo),
 				itag.Quality,
+				strings.ToLower(strings.TrimPrefix(itag.AudioQuality, "AUDIO_QUALITY_")),
 				fmt.Sprintf("%0.1f", float64(bitrate)*video.Duration.Seconds()/8/1024/1024),
 				strconv.Itoa(bitrate),
 				itag.MimeType,
