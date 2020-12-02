@@ -32,14 +32,21 @@ var infoCmd = &cobra.Command{
 		for _, format := range video.Formats {
 			bitrate := format.AverageBitrate
 			if bitrate == 0 {
+				// Some formats don't have the average bitrate
 				bitrate = format.Bitrate
+			}
+
+			size, _ := strconv.ParseInt(format.ContentLength, 10, 64)
+			if size == 0 {
+				// Some formats don't have this information
+				size = int64(float64(bitrate) * video.Duration.Seconds() / 8)
 			}
 
 			table.Append([]string{
 				strconv.Itoa(format.ItagNo),
 				format.QualityLabel,
 				strings.ToLower(strings.TrimPrefix(format.AudioQuality, "AUDIO_QUALITY_")),
-				fmt.Sprintf("%0.1f", float64(bitrate)*video.Duration.Seconds()/8/1024/1024),
+				fmt.Sprintf("%0.1f", float64(size)/1024/1024),
 				strconv.Itoa(bitrate),
 				format.MimeType,
 			})
