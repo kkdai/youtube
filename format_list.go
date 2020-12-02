@@ -4,7 +4,7 @@ type FormatList []Format
 
 func (list FormatList) FindByQuality(quality string) *Format {
 	for i := range list {
-		if list[i].Quality == quality {
+		if list[i].Quality == quality || list[i].QualityLabel == quality {
 			return &list[i]
 		}
 	}

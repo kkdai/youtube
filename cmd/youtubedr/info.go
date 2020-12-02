@@ -29,19 +29,19 @@ var infoCmd = &cobra.Command{
 		table.SetAutoWrapText(false)
 		table.SetHeader([]string{"itag", "video quality", "audio quality", "size [MB]", "bitrate", "MimeType"})
 
-		for _, itag := range video.Formats {
-			bitrate := itag.AverageBitrate
+		for _, format := range video.Formats {
+			bitrate := format.AverageBitrate
 			if bitrate == 0 {
-				bitrate = itag.Bitrate
+				bitrate = format.Bitrate
 			}
 
 			table.Append([]string{
-				strconv.Itoa(itag.ItagNo),
-				itag.Quality,
-				strings.ToLower(strings.TrimPrefix(itag.AudioQuality, "AUDIO_QUALITY_")),
+				strconv.Itoa(format.ItagNo),
+				format.QualityLabel,
+				strings.ToLower(strings.TrimPrefix(format.AudioQuality, "AUDIO_QUALITY_")),
 				fmt.Sprintf("%0.1f", float64(bitrate)*video.Duration.Seconds()/8/1024/1024),
 				strconv.Itoa(bitrate),
-				itag.MimeType,
+				format.MimeType,
 			})
 		}
 		table.Render()
