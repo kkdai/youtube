@@ -18,19 +18,29 @@ This tool is meant to be used to download CC0 licenced content, we do not suppor
   * [Options](#options)
   * [Example: Download video from \[dotGo 2015 - Rob Pike - Simplicity is Complicated\]](#download-dotGo-2015-rob-pike-video)
 
-## Install:
+## Installation
+
+### Install via go get
+
 ```shell
 go get github.com/kkdai/youtube/v2
 ```
 
-OR
+### From source code
 
 ```shell
 git clone https://github.com/kkdai/youtube.git
 cd youtube
 go run ./cmd/youtubedr
 ```
-## Install in Termux
+
+### Mac
+
+```shell
+brew install youtubedr
+```
+
+### in Termux
 ```shell
 pkg install youtubedr
 ```
