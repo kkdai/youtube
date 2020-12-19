@@ -11,8 +11,11 @@ import (
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
+	// TODO implement loglevel instead
 	// Debug enables debugging output through log package
 	Debug bool
+	// DebugHTTPClient enables debugging output through log package
+	DebugHTTPClient bool
 
 	// HTTPClient can be used to set a custom HTTP client.
 	// If not set, http.DefaultClient will be used
@@ -137,7 +140,7 @@ func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, 
 		client = http.DefaultClient
 	}
 
-	if c.Debug {
+	if c.DebugHTTPClient {
 		log.Println("GET", url)
 	}
 

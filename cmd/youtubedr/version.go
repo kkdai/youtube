@@ -9,9 +9,9 @@ import (
 
 var (
 	// set through ldflags
-	version string
-	commit  string
-	date    string
+	version   string
+	commit    string
+	buildTime string
 )
 
 // versionCmd represents the version command
@@ -21,7 +21,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Version:    ", version)
 		fmt.Println("Commit:     ", commit)
-		fmt.Println("Date:       ", date)
+		fmt.Println("Date:       ", buildTime)
 		fmt.Println("Go Version: ", runtime.Version())
 	},
 }

@@ -39,6 +39,7 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, ou
 
 // Download : Starting download video by arguments.
 func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
+	dl.logf("Video '%s' - Quality '%s' - Codec '%s'", v.Title, format.QualityLabel, format.MimeType)
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
 		return err
@@ -60,8 +61,20 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 	var videoFormat, audioFormat *youtube.Format
 
 	switch quality {
+	case "hdr2060":
+		videoFormat = v.Formats.FindByItag(401)
+		audioFormat = v.Formats.FindByItag(140)
+	case "hdr1080":
+		videoFormat = v.Formats.FindByItag(399)
+		audioFormat = v.Formats.FindByItag(140)
 	case "hd1080":
 		videoFormat = v.Formats.FindByItag(137)
+		audioFormat = v.Formats.FindByItag(140)
+	case "hdr720":
+		videoFormat = v.Formats.FindByItag(398)
+		audioFormat = v.Formats.FindByItag(140)
+	case "hd720":
+		videoFormat = v.Formats.FindByItag(136)
 		audioFormat = v.Formats.FindByItag(140)
 	default:
 		return fmt.Errorf("unknown quality: %s", quality)
@@ -73,6 +86,8 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 	if audioFormat == nil {
 		return fmt.Errorf("no format audio/mp4 for %s found", quality)
 	}
+
+	dl.logf("Video '%s' - Quality '%s' - Video Codec '%s' - Audio Codec '%s'", v.Title, videoFormat.QualityLabel, videoFormat.MimeType, audioFormat.MimeType)
 
 	destFile, err := dl.getOutputFile(v, videoFormat, outputFile)
 	if err != nil {

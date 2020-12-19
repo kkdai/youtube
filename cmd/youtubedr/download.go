@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -13,43 +14,64 @@ import (
 var downloadCmd = &cobra.Command{
 	Use:     "download",
 	Short:   "Downloads a video from youtube",
-	Example: `youtubedr -o "Campaign Diary".mp4 https://www.youtube.com/watch\?v\=XbNghLqsVwU`,
-	Args:    cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		exitOnError(download(args[0]))
-	},
+	Example: `download https://www.youtube.com/watch\?v\=XbNghLqsVwU https://www.youtube.com/watch\?v\=XbNghLqsVwU`,
+	Args:    cobra.MinimumNArgs(1),
+	RunE:    download,
 }
 
 var (
-	outputFile string
-	outputDir  string
+	ffmpegCheck            error
+	ffmpegCheckInitialized bool
+	outputFile             string
+	outputDir              string
 )
 
 func init() {
 	rootCmd.AddCommand(downloadCmd)
 
-	downloadCmd.Flags().StringVarP(&outputFile, "filename", "o", "", "The output file, the default is genated by the video title.")
 	downloadCmd.Flags().StringVarP(&outputDir, "directory", "d", ".", "The output directory.")
 	addQualityFlag(downloadCmd.Flags())
+	addCodecFlag(downloadCmd.Flags())
 }
 
-func download(id string) error {
-	video, format, err := getVideoWithFormat(id)
-	if err != nil {
-		return err
-	}
-
+func download(cmd *cobra.Command, args []string) error {
 	log.Println("download to directory", outputDir)
 
-	if outputQuality == "hd1080" {
-		fmt.Println("check ffmpeg is installed....")
-		ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
-		if err := ffmpegVersionCmd.Run(); err != nil {
-			return fmt.Errorf("please check ffmpeg is installed correctly, err: %w", err)
+	if strings.HasPrefix(outputQuality, "hd") {
+		if err := checkFFMPEG(); err != nil {
+			return err
 		}
-
-		return downloader.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
 	}
 
-	return downloader.Download(context.Background(), video, format, outputFile)
+	var errors []string
+	for _, videoURL := range args {
+		video, format, err := getVideoWithFormat(videoURL)
+		if err != nil {
+			errors = append(errors, err.Error())
+			continue
+		}
+
+		if strings.HasPrefix(outputQuality, "hd") {
+			if err := downloader.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality); err != nil {
+				errors = append(errors, err.Error())
+			}
+		} else if err := downloader.Download(context.Background(), video, format, outputFile); err != nil {
+			errors = append(errors, err.Error())
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("failure to process videos:\n" + strings.Join(errors, "\n"))
+	}
+	return nil
+}
+
+func checkFFMPEG() error {
+	if !ffmpegCheckInitialized {
+		fmt.Println("check ffmpeg is installed....")
+		if err := exec.Command("ffmpeg", "-version").Run(); err != nil {
+			ffmpegCheck = fmt.Errorf("please check ffmpegCheck is installed correctly")
+		}
+	}
+
+	return ffmpegCheck
 }
