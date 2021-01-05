@@ -44,6 +44,10 @@ brew install youtubedr
 ```shell
 pkg install youtubedr
 ```
+###  You can also find this package in 
+- [archlinux](https://aur.archlinux.org/packages/youtubedr/)  (thanks to [cjsthompson](https://github.com/cjsthompson))
+- [Termux package](https://github.com/termux/termux-packages/tree/master/packages/youtubedr) (thanks to [kcubeterm](https://github.com/kcubeterm))
+- [Homebrew](https://formulae.brew.sh/formula/youtubedr)
 
 ## Usage
 
