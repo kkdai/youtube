@@ -7,8 +7,8 @@ import (
 
 func TestSimpleCache(t *testing.T) {
 	type args struct {
-		setVideoId string
-		getVideoId string
+		setVideoID string
+		getVideoID string
 		operations []operation
 		expiredAt  string
 		getCacheAt string
@@ -21,8 +21,8 @@ func TestSimpleCache(t *testing.T) {
 		{
 			name: "Get cache data with video id",
 			args: args{
-				setVideoId: "test",
-				getVideoId: "test",
+				setVideoID: "test",
+				getVideoID: "test",
 				operations: []operation{func(bytes []byte) []byte { return nil }},
 				expiredAt:  "2021-01-01 00:01:00",
 				getCacheAt: "2021-01-01 00:00:00",
@@ -32,8 +32,8 @@ func TestSimpleCache(t *testing.T) {
 		{
 			name: "Get nil when cache is expired",
 			args: args{
-				setVideoId: "test",
-				getVideoId: "test",
+				setVideoID: "test",
+				getVideoID: "test",
 				operations: []operation{func(bytes []byte) []byte { return nil }},
 				expiredAt:  "2021-01-01 00:00:00",
 				getCacheAt: "2021-01-01 00:00:00",
@@ -43,8 +43,8 @@ func TestSimpleCache(t *testing.T) {
 		{
 			name: "Get nil when video id is not cached",
 			args: args{
-				setVideoId: "test",
-				getVideoId: "not test",
+				setVideoID: "test",
+				getVideoID: "not test",
 				operations: []operation{func(bytes []byte) []byte { return nil }},
 				expiredAt:  "2021-01-01 00:00:01",
 				getCacheAt: "2021-01-01 00:00:00",
@@ -58,9 +58,9 @@ func TestSimpleCache(t *testing.T) {
 			s := NewSimpleCache()
 			timeFormat := "2006-01-02 15:04:05"
 			expiredAt, _ := time.Parse(timeFormat, tt.args.expiredAt)
-			s.setWithExpiredTime(tt.args.setVideoId, tt.args.operations, expiredAt)
+			s.setWithExpiredTime(tt.args.setVideoID, tt.args.operations, expiredAt)
 			getCacheAt, _ := time.Parse(timeFormat, tt.args.getCacheAt)
-			if got := s.GetCacheBefore(tt.args.getVideoId, getCacheAt); len(got) != len(tt.want) {
+			if got := s.GetCacheBefore(tt.args.getVideoID, getCacheAt); len(got) != len(tt.want) {
 				t.Errorf("GetCacheBefore() = %v, want %v", got, tt.want)
 			}
 		})
