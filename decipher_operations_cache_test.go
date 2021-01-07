@@ -9,32 +9,32 @@ func TestSimpleCache(t *testing.T) {
 	type args struct {
 		setVideoID string
 		getVideoID string
-		operations []operation
+		operations []DecipherOperation
 		expiredAt  string
 		getCacheAt string
 	}
 	tests := []struct {
 		name string
 		args args
-		want []operation
+		want []DecipherOperation
 	}{
 		{
 			name: "Get cache data with video id",
 			args: args{
 				setVideoID: "test",
 				getVideoID: "test",
-				operations: []operation{func(bytes []byte) []byte { return nil }},
+				operations: []DecipherOperation{func(bytes []byte) []byte { return nil }},
 				expiredAt:  "2021-01-01 00:01:00",
 				getCacheAt: "2021-01-01 00:00:00",
 			},
-			want: []operation{func(bytes []byte) []byte { return nil }},
+			want: []DecipherOperation{func(bytes []byte) []byte { return nil }},
 		},
 		{
 			name: "Get nil when cache is expired",
 			args: args{
 				setVideoID: "test",
 				getVideoID: "test",
-				operations: []operation{func(bytes []byte) []byte { return nil }},
+				operations: []DecipherOperation{func(bytes []byte) []byte { return nil }},
 				expiredAt:  "2021-01-01 00:00:00",
 				getCacheAt: "2021-01-01 00:00:00",
 			},
@@ -45,7 +45,7 @@ func TestSimpleCache(t *testing.T) {
 			args: args{
 				setVideoID: "test",
 				getVideoID: "not test",
-				operations: []operation{func(bytes []byte) []byte { return nil }},
+				operations: []DecipherOperation{func(bytes []byte) []byte { return nil }},
 				expiredAt:  "2021-01-01 00:00:01",
 				getCacheAt: "2021-01-01 00:00:00",
 			},
