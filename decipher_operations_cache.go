@@ -6,6 +6,8 @@ var (
 	_ DecipherOperationsCache = NewSimpleCache()
 )
 
+const defaultCacheExpiration = time.Minute * time.Duration(5)
+
 type DecipherOperationsCache interface {
 	Get(videoId string) []operation
 	Set(video string, operations []operation)
@@ -15,12 +17,10 @@ type SimpleCache struct {
 	videoID    string
 	expiredAt  time.Time
 	operations []operation
-	expiration time.Duration
 }
 
 func NewSimpleCache() *SimpleCache {
-	minutes := time.Minute * time.Duration(1)
-	return &SimpleCache{expiration: minutes}
+	return &SimpleCache{}
 }
 
 // Get : get cache  when it has same video id and not expired
@@ -40,8 +40,12 @@ func (s SimpleCache) GetCacheBefore(videoId string, time time.Time) []operation 
 
 // Set : set cache with default expiration
 func (s *SimpleCache) Set(videoId string, operations []operation) {
+	s.setWithExpiredTime(videoId, operations, time.Now().Add(defaultCacheExpiration))
+}
+
+func (s *SimpleCache) setWithExpiredTime(videoId string, operations []operation, time time.Time) {
 	s.videoID = videoId
-	s.operations = make([]operation, len(s.operations))
+	s.operations = make([]operation, len(operations))
 	copy(s.operations, operations)
-	s.expiredAt = time.Now().Add(s.expiration)
+	s.expiredAt = time
 }

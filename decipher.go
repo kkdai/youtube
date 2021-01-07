@@ -37,7 +37,7 @@ func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 		return a.join("")
 	*/
 
-	operations, err := c.parseDecipherOps(ctx, videoID)
+	operations, err := c.parseDecipherOpsWithCache(ctx, videoID)
 	if err != nil {
 		return "", err
 	}
@@ -143,4 +143,22 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 		}
 	}
 	return ops, nil
+}
+
+func (c *Client) parseDecipherOpsWithCache(ctx context.Context, videoID string) (operations []operation, err error) {
+	if c.decipherOpsCache == nil {
+		c.decipherOpsCache = NewSimpleCache()
+	}
+
+	if ops := c.decipherOpsCache.Get(videoID); ops != nil {
+		return ops, nil
+	}
+
+	ops, err := c.parseDecipherOps(ctx, videoID)
+	if err != nil {
+		return nil, err
+	}
+
+	c.decipherOpsCache.Set(videoID, ops)
+	return ops, err
 }

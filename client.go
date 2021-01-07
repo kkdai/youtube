@@ -16,6 +16,9 @@ type Client struct {
 	// HTTPClient can be used to set a custom HTTP client.
 	// If not set, http.DefaultClient will be used
 	HTTPClient *http.Client
+
+	// decipherOpsCache cache decipher operations
+	decipherOpsCache DecipherOperationsCache
 }
 
 // GetVideo fetches video metadata
