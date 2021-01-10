@@ -37,7 +37,7 @@ func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 		return a.join("")
 	*/
 
-	operations, err := c.parseDecipherOps(ctx, videoID)
+	operations, err := c.parseDecipherOpsWithCache(ctx, videoID)
 	if err != nil {
 		return "", err
 	}
@@ -83,7 +83,7 @@ var (
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
 
-func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []operation, err error) {
+func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []DecipherOperation, err error) {
 	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
 	embedBody, err := c.httpGetBodyBytes(ctx, embedURL)
 	if err != nil {
@@ -129,7 +129,7 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 		return nil, err
 	}
 
-	var ops []operation
+	var ops []DecipherOperation
 	for _, s := range regex.FindAllSubmatch(funcBody, -1) {
 		switch string(s[1]) {
 		case reverseKey:
@@ -143,4 +143,22 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 		}
 	}
 	return ops, nil
+}
+
+func (c *Client) parseDecipherOpsWithCache(ctx context.Context, videoID string) (operations []DecipherOperation, err error) {
+	if c.decipherOpsCache == nil {
+		c.decipherOpsCache = NewSimpleCache()
+	}
+
+	if ops := c.decipherOpsCache.Get(videoID); ops != nil {
+		return ops, nil
+	}
+
+	ops, err := c.parseDecipherOps(ctx, videoID)
+	if err != nil {
+		return nil, err
+	}
+
+	c.decipherOpsCache.Set(videoID, ops)
+	return ops, err
 }
