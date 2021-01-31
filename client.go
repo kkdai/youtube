@@ -44,7 +44,19 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 		ID: id,
 	}
 
-	return v, v.parseVideoInfo(string(body))
+	err = v.parseVideoInfo(string(body))
+
+	// If the uploader has disabled embedding the video on other sites, parse video page
+	if err == ErrNotPlayableInEmbed {
+		html, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/watch?v="+id)
+		if err != nil {
+			return nil, err
+		}
+
+		return v, v.parseVideoPage(html)
+	}
+
+	return v, err
 }
 
 // GetStream returns the HTTP response for a specific format

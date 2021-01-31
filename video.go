@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -42,6 +43,52 @@ func (v *Video) parseVideoInfo(info string) error {
 
 	var prData playerResponseData
 	if err := json.Unmarshal([]byte(playerResponse), &prData); err != nil {
+		return fmt.Errorf("unable to parse player response JSON: %w", err)
+	}
+
+	v.Title = prData.VideoDetails.Title
+	v.Description = prData.VideoDetails.ShortDescription
+	v.Author = prData.VideoDetails.Author
+
+	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
+		v.Duration = time.Duration(seconds) * time.Second
+	}
+
+	// Check if video is downloadable
+	if prData.PlayabilityStatus.Status != "OK" {
+		if !prData.PlayabilityStatus.PlayableInEmbed {
+			return ErrNotPlayableInEmbed
+		} else {
+			return &ErrPlayabiltyStatus{
+				Status: prData.PlayabilityStatus.Status,
+				Reason: prData.PlayabilityStatus.Reason,
+			}
+		}
+	}
+
+	// Assign Streams
+	v.Formats = append(prData.StreamingData.Formats, prData.StreamingData.AdaptiveFormats...)
+
+	if len(v.Formats) == 0 {
+		return errors.New("no formats found in the server's answer")
+	}
+
+	v.HLSManifestURL = prData.StreamingData.HlsManifestURL
+	v.DASHManifestURL = prData.StreamingData.DashManifestURL
+
+	return nil
+}
+
+func (v *Video) parseVideoPage(html []byte) error {
+	iprPattern := regexp.MustCompile(`var ytInitialPlayerResponse\s*=\s*(\{.+?\});`)
+
+	initialPlayerResponse := iprPattern.FindSubmatch(html)
+	if initialPlayerResponse == nil || len(initialPlayerResponse) < 2 {
+		return errors.New("no ytInitialPlayerResponse found in the server's answer")
+	}
+
+	var prData playerResponseData
+	if err := json.Unmarshal(initialPlayerResponse[1], &prData); err != nil {
 		return fmt.Errorf("unable to parse player response JSON: %w", err)
 	}
 
