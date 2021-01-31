@@ -59,13 +59,6 @@ func TestDownload_Regular(t *testing.T) {
 			url:        "https://www.youtube.com/watch?v=gr-IqFcNExY",
 			outputFile: "not_playable_in_embed.mp4",
 		},
-		{
-			// Video from issue #138
-			name:       "NotPlayableInEmbed_cipher",
-			url:        "https://www.youtube.com/watch?v=_4UsZ1icOjA",
-			outputFile: "not_playable_in_embed_cipher.m4v",
-			itagNo:     135,
-		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {

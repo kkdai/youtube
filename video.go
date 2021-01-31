@@ -58,11 +58,11 @@ func (v *Video) parseVideoInfo(info string) error {
 	if prData.PlayabilityStatus.Status != "OK" {
 		if !prData.PlayabilityStatus.PlayableInEmbed {
 			return ErrNotPlayableInEmbed
-		} else {
-			return &ErrPlayabiltyStatus{
-				Status: prData.PlayabilityStatus.Status,
-				Reason: prData.PlayabilityStatus.Reason,
-			}
+		}
+
+		return &ErrPlayabiltyStatus{
+			Status: prData.PlayabilityStatus.Status,
+			Reason: prData.PlayabilityStatus.Reason,
 		}
 	}
 
