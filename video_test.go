@@ -53,6 +53,12 @@ func TestDownload_Regular(t *testing.T) {
 			outputFile: "adaptiveStream_audio_test.m4a",
 			itagNo:     140,
 		},
+		{
+			// Video from issue #138
+			name:       "NotPlayableInEmbed",
+			url:        "https://www.youtube.com/watch?v=gr-IqFcNExY",
+			outputFile: "not_playable_in_embed.mp4",
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {

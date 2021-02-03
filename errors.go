@@ -10,6 +10,7 @@ var (
 	ErrInvalidCharactersInVideoID = errors.New("invalid characters in video id")
 	ErrVideoIDMinLength           = errors.New("the video id must be at least 10 characters long")
 	ErrReadOnClosedResBody        = errors.New("http: read on closed response body")
+	ErrNotPlayableInEmbed         = errors.New("embedding of this video has been disabled")
 )
 
 type ErrResponseStatus struct {
