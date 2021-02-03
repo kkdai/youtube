@@ -44,7 +44,7 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 		ID: id,
 	}
 
-	err = v.parseVideoInfo(string(body))
+	err = v.parseVideoInfo(body)
 
 	// If the uploader has disabled embedding the video on other sites, parse video page
 	if err == ErrNotPlayableInEmbed {

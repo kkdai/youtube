@@ -21,29 +21,51 @@ type Video struct {
 	HLSManifestURL  string // URI of the HLS manifest file
 }
 
-func (v *Video) parseVideoInfo(info string) error {
-	answer, err := url.ParseQuery(info)
-	if err != nil {
-		return err
-	}
+func (v *Video) parseVideoInfo(body []byte) error {
+	return v.parseVideoInfoOrPage(body, false)
+}
 
-	status := answer.Get("status")
-	if status != "ok" {
-		return &ErrResponseStatus{
-			Status: status,
-			Reason: answer.Get("reason"),
-		}
-	}
+func (v *Video) parseVideoPage(body []byte) error {
+	return v.parseVideoInfoOrPage(body, true)
+}
 
-	// read the streams map
-	playerResponse := answer.Get("player_response")
-	if playerResponse == "" {
-		return errors.New("no player_response found in the server's answer")
-	}
-
+func (v *Video) parseVideoInfoOrPage(body []byte, isVideoPage bool) error {
 	var prData playerResponseData
-	if err := json.Unmarshal([]byte(playerResponse), &prData); err != nil {
-		return fmt.Errorf("unable to parse player response JSON: %w", err)
+
+	if !isVideoPage {
+		answer, err := url.ParseQuery(string(body))
+		if err != nil {
+			return err
+		}
+
+		status := answer.Get("status")
+		if status != "ok" {
+			return &ErrResponseStatus{
+				Status: status,
+				Reason: answer.Get("reason"),
+			}
+		}
+
+		// read the streams map
+		playerResponse := answer.Get("player_response")
+		if playerResponse == "" {
+			return errors.New("no player_response found in the server's answer")
+		}
+
+		if err := json.Unmarshal([]byte(playerResponse), &prData); err != nil {
+			return fmt.Errorf("unable to parse player response JSON: %w", err)
+		}
+	} else {
+		playerResponsePattern := regexp.MustCompile(`var ytInitialPlayerResponse\s*=\s*(\{.+?\});`)
+
+		initialPlayerResponse := playerResponsePattern.FindSubmatch(body)
+		if initialPlayerResponse == nil || len(initialPlayerResponse) < 2 {
+			return errors.New("no ytInitialPlayerResponse found in the server's answer")
+		}
+
+		if err := json.Unmarshal(initialPlayerResponse[1], &prData); err != nil {
+			return fmt.Errorf("unable to parse player response JSON: %w", err)
+		}
 	}
 
 	v.Title = prData.VideoDetails.Title
@@ -56,52 +78,10 @@ func (v *Video) parseVideoInfo(info string) error {
 
 	// Check if video is downloadable
 	if prData.PlayabilityStatus.Status != "OK" {
-		if !prData.PlayabilityStatus.PlayableInEmbed {
+		if !isVideoPage && !prData.PlayabilityStatus.PlayableInEmbed {
 			return ErrNotPlayableInEmbed
 		}
 
-		return &ErrPlayabiltyStatus{
-			Status: prData.PlayabilityStatus.Status,
-			Reason: prData.PlayabilityStatus.Reason,
-		}
-	}
-
-	// Assign Streams
-	v.Formats = append(prData.StreamingData.Formats, prData.StreamingData.AdaptiveFormats...)
-
-	if len(v.Formats) == 0 {
-		return errors.New("no formats found in the server's answer")
-	}
-
-	v.HLSManifestURL = prData.StreamingData.HlsManifestURL
-	v.DASHManifestURL = prData.StreamingData.DashManifestURL
-
-	return nil
-}
-
-func (v *Video) parseVideoPage(html []byte) error {
-	iprPattern := regexp.MustCompile(`var ytInitialPlayerResponse\s*=\s*(\{.+?\});`)
-
-	initialPlayerResponse := iprPattern.FindSubmatch(html)
-	if initialPlayerResponse == nil || len(initialPlayerResponse) < 2 {
-		return errors.New("no ytInitialPlayerResponse found in the server's answer")
-	}
-
-	var prData playerResponseData
-	if err := json.Unmarshal(initialPlayerResponse[1], &prData); err != nil {
-		return fmt.Errorf("unable to parse player response JSON: %w", err)
-	}
-
-	v.Title = prData.VideoDetails.Title
-	v.Description = prData.VideoDetails.ShortDescription
-	v.Author = prData.VideoDetails.Author
-
-	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
-		v.Duration = time.Duration(seconds) * time.Second
-	}
-
-	// Check if video is downloadable
-	if prData.PlayabilityStatus.Status != "OK" {
 		return &ErrPlayabiltyStatus{
 			Status: prData.PlayabilityStatus.Status,
 			Reason: prData.PlayabilityStatus.Reason,
