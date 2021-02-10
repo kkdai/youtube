@@ -1,8 +1,9 @@
 package youtube
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFormatList_FindByQuality(t *testing.T) {
@@ -61,9 +62,8 @@ func TestFormatList_FindByQuality(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.list.FindByQuality(tt.args.quality); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FindByQuality() = %v, want %v", got, tt.want)
-			}
+			format := tt.list.FindByQuality(tt.args.quality)
+			assert.Equal(t, format, tt.want)
 		})
 	}
 }
@@ -116,9 +116,8 @@ func TestFormatList_FindByItag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.list.FindByItag(tt.args.itagNo); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FindByItag() = %v, want %v", got, tt.want)
-			}
+			format := tt.list.FindByItag(tt.args.itagNo)
+			assert.Equal(t, format, tt.want)
 		})
 	}
 }
