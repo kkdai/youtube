@@ -10,7 +10,7 @@ import (
 )
 
 // infoJsonCmd represents the info command but output it as JSON for other application to read
-var infoJsonCmd = &cobra.Command{
+var infoJSONCmd = &cobra.Command{
 	Use:   "infojson",
 	Short: "Print metadata of the desired video in json format",
 	Args:  cobra.ExactArgs(1),
@@ -78,5 +78,5 @@ var infoJsonCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(infoJsonCmd)
+	rootCmd.AddCommand(infoJSONCmd)
 }
