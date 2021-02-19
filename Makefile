@@ -56,7 +56,7 @@ format:
 ## test-unit: Run all Youtube Go unit tests
 .PHONY: test-unit
 test-unit:
-	@go test -v -cover . ./pkg/...
+	@go test -v -cover ./...
 
 
 ## test-integration: Run all Youtube Go integration tests
