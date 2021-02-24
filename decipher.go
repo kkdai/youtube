@@ -69,7 +69,7 @@ var (
 	basejsPattern = regexp.MustCompile(`(/s/player/\w+/player_ias.vflset/\w+/base.js)`)
 
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
-		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
+		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, swapStr, jsvarStr, spliceStr, jsvarStr, reverseStr))
 
 	actionsFuncRegexp = regexp.MustCompile(fmt.Sprintf(
 		"function(?: %s)?\\(a\\)\\{"+
