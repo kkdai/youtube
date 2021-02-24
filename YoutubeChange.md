@@ -4,10 +4,9 @@ Tracking Youtube decipher change
 
 #### action objects:
 
-var Mx={FH:function(a){a.reverse()},
-"do":function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}, xK:function(a,b){a.splice(0,b)}};
-
+var Mx={nK:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}, IT:function(a,b){a.splice(0,b)}, Th:function(a)
+{a.reverse()}}
 #### actions function:
 
-Nx=function(a){a=a.split("");Mx\["do"](a,17);Mx.FH(a,61);Mx.xK(a,3);Mx\["do"](a,12);Mx.xK(a,1);Mx.FH(a,37);Mx\["do"](
-a,47);Mx.FH(a,6);return a.join("")};
+Nx=function(a){a=a.split("");Mx.Th(a,74);Mx.IT(a,2);Mx.Th(a,8);Mx.nK(a,48);Mx.IT(a,1);Mx.nK(a,15);Mx.Th(a,15);return
+a.join("")};

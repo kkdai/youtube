@@ -61,24 +61,22 @@ const (
 		"a\\.splice\\(0,b\\)" +
 		"\\}"
 	swapStr = ":function\\(a,b\\)\\{" +
-		"var c=a\\[0\\];a\\[0\\]=a\\[b(?:%a\\.length)?\\];a\\[b(?:%a\\.length)?\\]=c" +
+		"var c=a\\[0\\];a\\[0\\]=a\\[b(?:%a\\.length)?\\];a\\[b(?:%a\\.length)?\\]=c(?:;return a)?" +
 		"\\}"
 )
 
 var (
 	basejsPattern = regexp.MustCompile(`(/s/player/\w+/player_ias.vflset/\w+/base.js)`)
 
-	//actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
-	//	"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
-		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, fmt.Sprintf("\"%s\"", jsvarStr), swapStr, jsvarStr, spliceStr))
+		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, swapStr, jsvarStr, spliceStr, jsvarStr, reverseStr))
 
 	actionsFuncRegexp = regexp.MustCompile(fmt.Sprintf(
 		"function(?: %s)?\\(a\\)\\{"+
 			"a=a\\.split\\(\"\"\\);\\s*"+
-			"((?:(?:a=)?%s(.%s|\\[\"%s\"\\])\\(a,\\d+\\);)+)"+
+			"((?:(?:a=)?%s\\.%s\\(a,\\d+\\);)+)"+
 			"return a\\.join\\(\"\"\\)"+
-			"\\}", jsvarStr, jsvarStr, jsvarStr, jsvarStr))
+			"\\}", jsvarStr, jsvarStr, jsvarStr))
 
 	reverseRegexp = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, reverseStr))
 	spliceRegexp  = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, spliceStr))
