@@ -71,7 +71,7 @@ var infoJSONCmd = &cobra.Command{
 		}
 
 		//Output it as json
-		js, _ := json.Marshal(videoInfo)
+		js, _ := json.MarshalIndent(videoInfo, "","  ")
 		fmt.Println(string(js))
 
 	},
