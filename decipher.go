@@ -52,6 +52,18 @@ func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 	return decipheredURL, nil
 }
 
+/*
+2021/02/04:
+eg:
+    actions objects:
+	var Mx={FH:function(a){a.reverse()},
+	"do":function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c},
+	xK:function(a,b){a.splice(0,b)}};
+
+    actions function:
+	Nx=function(a){a=a.split("");Mx["do"](a,17);Mx.FH(a,61);Mx.xK(a,3);Mx["do"](a,12);Mx.xK(a,1);Mx.FH(a,37);Mx["do"](a,47);Mx.FH(a,6);return a.join("")};
+
+*/
 const (
 	jsvarStr   = "[a-zA-Z_\\$][a-zA-Z_0-9]*"
 	reverseStr = ":function\\(a\\)\\{" +
@@ -61,22 +73,24 @@ const (
 		"a\\.splice\\(0,b\\)" +
 		"\\}"
 	swapStr = ":function\\(a,b\\)\\{" +
-		"var c=a\\[0\\];a\\[0\\]=a\\[b(?:%a\\.length)?\\];a\\[b(?:%a\\.length)?\\]=c(?:;return a)?" +
+		"var c=a\\[0\\];a\\[0\\]=a\\[b(?:%a\\.length)?\\];a\\[b(?:%a\\.length)?\\]=c" +
 		"\\}"
 )
 
 var (
 	basejsPattern = regexp.MustCompile(`(/s/player/\w+/player_ias.vflset/\w+/base.js)`)
 
+	//actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
+	//	"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
-		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, jsvarStr, spliceStr, jsvarStr, swapStr))
+		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, reverseStr, fmt.Sprintf("\"%s\"", jsvarStr), swapStr, jsvarStr, spliceStr))
 
 	actionsFuncRegexp = regexp.MustCompile(fmt.Sprintf(
 		"function(?: %s)?\\(a\\)\\{"+
 			"a=a\\.split\\(\"\"\\);\\s*"+
-			"((?:(?:a=)?%s\\.%s\\(a,\\d+\\);)+)"+
+			"((?:(?:a=)?%s(.%s|\\[\"%s\"\\])\\(a,\\d+\\);)+)"+
 			"return a\\.join\\(\"\"\\)"+
-			"\\}", jsvarStr, jsvarStr, jsvarStr))
+			"\\}", jsvarStr, jsvarStr, jsvarStr, jsvarStr))
 
 	reverseRegexp = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, reverseStr))
 	spliceRegexp  = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, spliceStr))
