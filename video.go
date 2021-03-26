@@ -17,6 +17,7 @@ type Video struct {
 	Author          string
 	Duration        time.Duration
 	Formats         FormatList
+	Thumbnails      Thumbnails
 	DASHManifestURL string // URI of the DASH manifest file
 	HLSManifestURL  string // URI of the HLS manifest file
 }
@@ -101,6 +102,7 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	v.Title = prData.VideoDetails.Title
 	v.Description = prData.VideoDetails.ShortDescription
 	v.Author = prData.VideoDetails.Author
+	v.Thumbnails = prData.VideoDetails.Thumbnail.Thumbnails
 
 	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
 		v.Duration = time.Duration(seconds) * time.Second

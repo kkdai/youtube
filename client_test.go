@@ -81,6 +81,7 @@ func TestGetVideo(t *testing.T) {
 	video, err := testClient.GetVideo(streamURL)
 	require.NoError(err)
 	require.NotNil(video)
+	require.NotEmpty(video.Thumbnails)
 	require.NotEmpty(video.HLSManifestURL)
 	require.NotEmpty(video.DASHManifestURL)
 }
