@@ -1,5 +1,5 @@
 FILES_TO_FMT      ?= $(shell find . -path ./vendor -prune -o -name '*.go' -print)
-
+BINFILE   := ./bin
 GOFLAGS   :=
 LDFLAGS   :=
 
@@ -29,7 +29,7 @@ help: Makefile
 ## build: Build project
 .PHONY: build
 build:
-	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o ./bin ./cmd/youtubedr
+	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o "$(BINFILE)" ./cmd/youtubedr
 
 ## deps: Ensures fresh go.mod and go.sum
 .PHONY: deps
@@ -65,3 +65,9 @@ test-integration:
 	echo 'mode: atomic' > coverage.out
 	go list ./... | xargs -n1 -I{} sh -c 'go test -race -tags=integration -covermode=atomic -coverprofile=coverage.tmp -coverpkg $(go list ./... | tr "\n" ",") {} && tail -n +2 coverage.tmp >> coverage.out || exit 255'
 	rm coverage.tmp
+
+## clean: Clean files and downloaded videos from builds during development
+.PHONY: clean
+clean:
+	@rm -rf *.mp4 *.mkv
+	@rm -rf "$(BINFILE)"
