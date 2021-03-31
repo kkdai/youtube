@@ -142,9 +142,9 @@ func TestFormatList_FindByType(t *testing.T) {
 			args: args{
 				mimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
 			},
-			want: append([]Format{}, Format{
+			want: []Format{{
 				MimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
-			}),
+			}},
 		},
 	}
 	for _, tt := range tests {
