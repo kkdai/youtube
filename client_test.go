@@ -82,6 +82,8 @@ func TestGetVideo(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(video)
 	require.NotEmpty(video.Thumbnails)
+	require.Greater(len(video.Thumbnails), 0)
+	require.NotEmpty(video.Thumbnails[0].URL)
 	require.NotEmpty(video.HLSManifestURL)
 	require.NotEmpty(video.DASHManifestURL)
 }
