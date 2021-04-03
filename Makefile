@@ -1,21 +1,5 @@
 FILES_TO_FMT      ?= $(shell find . -path ./vendor -prune -o -name '*.go' -print)
 
-GOFLAGS   :=
-LDFLAGS   :=
-
-BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-GITSHA := $(shell git rev-parse --short HEAD 2>/dev/null)
-
-ifndef VERSION
-	VERSION := git-$(GITSHA)
-endif
-
-GOFLAGS += -trimpath
-
-LDFLAGS += -X $(PKG)/version.version=$(VERSION)
-LDFLAGS += -X $(PKG)/version.commit=$(GITSHA)
-LDFLAGS += -X $(PKG)/version.buildTime=$(BUILDTIME)
-
 ## help: Show makefile commands
 .PHONY: help
 help: Makefile
@@ -29,7 +13,7 @@ help: Makefile
 ## build: Build project
 .PHONY: build
 build:
-	@go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o ./bin ./cmd/youtubedr
+	goreleaser --rm-dist
 
 ## deps: Ensures fresh go.mod and go.sum
 .PHONY: deps

@@ -16,4 +16,3 @@ builds:
       - arm64
     flags:
       - -trimpath
-    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.CommitDate}}
