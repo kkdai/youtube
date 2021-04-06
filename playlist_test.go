@@ -2,14 +2,16 @@ package youtube
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestYoutube_extractPlaylistID(t *testing.T) {
-	attempts := []struct {
-		name      string
-		url       string
-		correctID string
-		expected  error
+	tests := []struct {
+		name          string
+		url           string
+		expectedID    string
+		expectedError error
 	}{
 		{
 			"pass-1",
@@ -58,16 +60,12 @@ func TestYoutube_extractPlaylistID(t *testing.T) {
 		},
 	}
 
-	for _, v := range attempts {
-		ans, err := extractPlaylistID(v.url)
+	for _, v := range tests {
+		t.Run(v.name, func(t *testing.T) {
+			id, err := extractPlaylistID(v.url)
 
-		if err != v.expected {
-			t.Errorf("test: %s\nerror: %v\nexpected: %v\n", v.name, err, v.expected)
-			return
-		}
-
-		if ans != v.correctID {
-			t.Errorf("Test %s wanted id: %v, entered url: %v\n", v.name, v.correctID, v.url)
-		}
+			assert.Equal(t, v.expectedError, err)
+			assert.Equal(t, v.expectedID, id)
+		})
 	}
 }
