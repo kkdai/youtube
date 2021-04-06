@@ -121,3 +121,36 @@ func TestFormatList_FindByItag(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatList_FindByType(t *testing.T) {
+	list := []Format{{
+		MimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+	},
+	}
+	type args struct {
+		mimeType string
+	}
+	tests := []struct {
+		name string
+		list FormatList
+		args args
+		want []Format
+	}{
+		{
+			name: "find video",
+			list: list,
+			args: args{
+				mimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+			},
+			want: []Format{{
+				MimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+			}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			format := tt.list.FindByType("video")
+			assert.Equal(t, format, tt.want)
+		})
+	}
+}

@@ -51,11 +51,7 @@ type playerResponseData struct {
 		ShortDescription string `json:"shortDescription"`
 		IsCrawlable      bool   `json:"isCrawlable"`
 		Thumbnail        struct {
-			Thumbnails []struct {
-				URL    string `json:"url"`
-				Width  int    `json:"width"`
-				Height int    `json:"height"`
-			} `json:"thumbnails"`
+			Thumbnails []Thumbnail `json:"thumbnails"`
 		} `json:"thumbnail"`
 		AverageRating     float64 `json:"averageRating"`
 		AllowRatings      bool    `json:"allowRatings"`
@@ -155,4 +151,12 @@ type Format struct {
 		Start string `json:"start"`
 		End   string `json:"end"`
 	} `json:"indexRange"`
+}
+
+type Thumbnails []Thumbnail
+
+type Thumbnail struct {
+	URL    string
+	Width  uint
+	Height uint
 }
