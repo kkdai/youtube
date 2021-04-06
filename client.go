@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -32,7 +33,10 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	if err != nil {
 		return nil, fmt.Errorf("extractVideoID failed: %w", err)
 	}
+	return c.videoFromID(ctx, id)
+}
 
+func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	// Circumvent age restriction to pretend access through googleapis.com
 	eurl := "https://youtube.googleapis.com/v/" + id
 	body, err := c.httpGetBodyBytes(ctx, "https://youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)
@@ -57,6 +61,39 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	}
 
 	return v, err
+}
+
+// Fetch playlist metadata
+func (c *Client) GetPlaylist(url string) (*Playlist, error) {
+	return c.GetPlaylistContext(context.Background(), url)
+}
+
+// Fetch playlist metadata, with a context, along with a list of Videos, and some basic information
+// for these videos. Playlist entries cannot be downloaded, as they lack all the required metadata, but
+// can be used to enumerate all IDs, Authors, Titles, etc.
+func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist, error) {
+	id, err := extractPlaylistID(url)
+	if err != nil {
+		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
+	}
+
+	requestURL := fmt.Sprintf(playlistFetchURL, id)
+	resp, err := c.httpGet(ctx, requestURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	p := &Playlist{ID: id}
+	return p, json.NewDecoder(resp.Body).Decode(p)
+}
+
+func (c *Client) VideoFromPlaylistEntry(entry *PlaylistEntry) (*Video, error) {
+	return c.videoFromID(context.Background(), entry.ID)
+}
+
+func (c *Client) VideoFromPlaylistEntryContext(ctx context.Context, entry *PlaylistEntry) (*Video, error) {
+	return c.videoFromID(ctx, entry.ID)
 }
 
 // GetStream returns the HTTP response for a specific format
