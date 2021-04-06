@@ -78,12 +78,14 @@ func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist,
 	}
 
 	requestURL := fmt.Sprintf(playlistFetchURL, id)
-	body, err := c.httpGetBodyBytes(ctx, requestURL)
+	resp, err := c.httpGet(ctx, requestURL)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+
 	p := &Playlist{ID: id}
-	return p, json.Unmarshal(body, p)
+	return p, json.NewDecoder(resp.Body).Decode(p)
 }
 
 func (c *Client) VideoFromPlaylistEntry(entry *PlaylistEntry) (*Video, error) {

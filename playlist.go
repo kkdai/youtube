@@ -12,9 +12,16 @@ const (
 )
 
 var (
-	pidRegex      *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9_-]{24,34}$")
-	pidInURLRegex *regexp.Regexp = regexp.MustCompile("[&?]list=([A-Za-z0-9_-]{24,34})(&.*)?$")
+	playlistIDRegex    = regexp.MustCompile("^[A-Za-z0-9_-]{24,34}$")
+	playlistInURLRegex = regexp.MustCompile("[&?]list=([A-Za-z0-9_-]{24,34})(&.*)?$")
 )
+
+type Playlist struct {
+	ID     string
+	Title  string           `json:"title"`
+	Author string           `json:"author"`
+	Videos []*PlaylistEntry `json:"video"`
+}
 
 type PlaylistEntry struct {
 	ID       string `json:"encrypted_id"`
@@ -53,19 +60,12 @@ func (p PlaylistEntry) MarshalJSON() ([]byte, error) {
 	return json.Marshal(wf)
 }
 
-type Playlist struct {
-	ID     string
-	Title  string           `json:"title"`
-	Author string           `json:"author"`
-	Videos []*PlaylistEntry `json:"video"`
-}
-
 func extractPlaylistID(url string) (string, error) {
-	if pidRegex.Match([]byte(url)) {
+	if playlistIDRegex.Match([]byte(url)) {
 		return url, nil
 	}
 
-	matches := pidInURLRegex.FindStringSubmatch(url)
+	matches := playlistInURLRegex.FindStringSubmatch(url)
 
 	if matches != nil {
 		return matches[1], nil
