@@ -1,7 +1,6 @@
 package youtube
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,20 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"time"
-)
-
-type LoadStatus uint8
-
-const (
-	// Data has not been loaded, and therefore nothing but the ID is available.
-	NotLoaded LoadStatus = iota
-	// ID, Title, Author, Duration are available, but this video cannot be downloaded as the extra
-	// metadata required has not been loaded.
-	WeaklyLoaded
-	// Data is fully loaded, this  video can be downloaded.
-	FullyLoaded
-
-	getVideoInfoURL string = "https://youtube.com/get_video_info?video_id=%s&eurl=https://youtube.googleapis.com/v/%s"
 )
 
 type Video struct {
@@ -132,28 +117,4 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	v.DASHManifestURL = prData.StreamingData.DashManifestURL
 
 	return nil
-}
-
-func (v *Video) FetchVideoInfo(ctx context.Context, c *Client) ([]byte, error) {
-	// Circumvent age restriction to pretend access through googleapis.com
-	url := fmt.Sprintf(getVideoInfoURL, v.ID, v.ID)
-	return c.httpGetBodyBytes(ctx, url)
-}
-
-func (v *Video) LoadInfo(ctx context.Context, c *Client) error {
-	body, err := v.FetchVideoInfo(ctx, c)
-
-	if err != nil {
-		return err
-	}
-
-	err = v.parseVideoInfo(string(body))
-
-	if err != nil {
-		v.Loaded = NotLoaded
-	} else {
-		v.Loaded = FullyLoaded
-	}
-
-	return err
 }

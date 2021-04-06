@@ -1,7 +1,6 @@
 package youtube_test
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -58,16 +57,12 @@ func ExamplePlaylist() {
 	}
 
 	/* ----- Downloading the 1st video ----- */
-	video := playlist.Videos[0]
-
-	// Videos must be FullyLoaded to be downloaded, as we loaded this through a playlist it will not
-	// be, but for demonstration purposes we can check first.
-	if video.Loaded != youtube.FullyLoaded {
-		if err := video.LoadInfo(context.Background(), &client); err != nil {
-			panic(err)
-		}
-		// Now it's fully loaded.
+	entry := playlist.Videos[0]
+	video, err := client.VideoFromPlaylistEntry(entry)
+	if err != nil {
+		panic(err)
 	}
+	// Now it's fully loaded.
 
 	fmt.Printf("Downloading %s by '%s'!\n", video.Title, video.Author)
 

@@ -11,7 +11,7 @@ var (
 	ErrVideoIDMinLength           = errors.New("the video id must be at least 10 characters long")
 	ErrReadOnClosedResBody        = errors.New("http: read on closed response body")
 	ErrNotPlayableInEmbed         = errors.New("embedding of this video has been disabled")
-	ErrPlaylistIDMinLength        = errors.New("playlist ids must be 34 characters")
+	ErrInvalidPlaylist            = errors.New("no playlist detected or invalid playlist ID")
 )
 
 type ErrResponseStatus struct {
