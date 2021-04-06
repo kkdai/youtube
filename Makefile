@@ -49,3 +49,9 @@ test-integration:
 	echo 'mode: atomic' > coverage.out
 	go list ./... | xargs -n1 -I{} sh -c 'go test -race -tags=integration -covermode=atomic -coverprofile=coverage.tmp -coverpkg $(go list ./... | tr "\n" ",") {} && tail -n +2 coverage.tmp >> coverage.out || exit 255'
 	rm coverage.tmp
+
+
+## clean: Clean files and downloaded videos from builds during development
+.PHONY: clean
+clean:
+	@rm -rf dist *.mp4 *.mkv
