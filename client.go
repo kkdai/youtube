@@ -63,12 +63,12 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	return v, err
 }
 
-// Fetch playlist metadata
+// GetPlaylist fetches playlist metadata
 func (c *Client) GetPlaylist(url string) (*Playlist, error) {
 	return c.GetPlaylistContext(context.Background(), url)
 }
 
-// Fetch playlist metadata, with a context, along with a list of Videos, and some basic information
+// GetPlaylistContext fetches playlist metadata, with a context, along with a list of Videos, and some basic information
 // for these videos. Playlist entries cannot be downloaded, as they lack all the required metadata, but
 // can be used to enumerate all IDs, Authors, Titles, etc.
 func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist, error) {
@@ -116,7 +116,7 @@ func (c *Client) GetStreamURL(video *Video, format *Format) (string, error) {
 	return c.GetStreamURLContext(context.Background(), video, format)
 }
 
-// GetStreamURL returns the url for a specific format with a context
+// GetStreamURLContext returns the url for a specific format with a context
 func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *Format) (string, error) {
 	if format.URL != "" {
 		return format.URL, nil
