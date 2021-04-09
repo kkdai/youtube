@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testClient = Client{}
+var testClient = Client{Debug: true}
 
 const (
 	dwlURL    string = "https://www.youtube.com/watch?v=rFejpH_tAHM"

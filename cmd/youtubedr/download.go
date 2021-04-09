@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,19 @@ var downloadCmd = &cobra.Command{
 	Example: `youtubedr -o "Campaign Diary".mp4 https://www.youtube.com/watch\?v\=XbNghLqsVwU`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		exitOnError(download(args[0]))
+		if strings.Contains(args[0], "playlist") {
+			if videos, err := getDownloader().GetPlaylistFromHTML(args[0]); err != nil {
+				exitOnError(err)
+			} else {
+				for _, v := range videos {
+					if err := download(v.ID); err != nil {
+						fmt.Println(err)
+					}
+				}
+			}
+		} else {
+			exitOnError(download(args[0]))
+		}
 	},
 }
 
