@@ -63,6 +63,28 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	return v, err
 }
 
+// GetPlaylistFromHTML fetches videos from HTML Playlist page
+func (c *Client) GetPlaylistFromHTML(url string) ([]*Video, error) {
+	return c.GetPlaylistFromHTMLContext(context.Background(), url)
+}
+
+// GetPlaylistFromHTMLContext fetches videos from HTML Playlist page with a context
+func (c *Client) GetPlaylistFromHTMLContext(ctx context.Context, url string) ([]*Video, error) {
+	id, err := extractPlaylistID(url)
+	if err != nil {
+		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
+	}
+
+	body, err := c.httpGetBodyBytes(ctx, fmt.Sprintf(playlistFetchHTMLURL, id))
+	if err != nil {
+		return nil, err
+	}
+
+	v := ParsePlaylistInfo(id, body)
+
+	return v, nil
+}
+
 // GetPlaylist fetches playlist metadata
 func (c *Client) GetPlaylist(url string) (*Playlist, error) {
 	return c.GetPlaylistContext(context.Background(), url)

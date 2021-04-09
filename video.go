@@ -22,6 +22,18 @@ type Video struct {
 	HLSManifestURL  string // URI of the HLS manifest file
 }
 
+func ParsePlaylistInfo(id string, info []byte) []*Video {
+	re := regexp.MustCompile(`"/watch\?v[=/](?P<videoID>[^"&?/=%]{11})\\u0026list=` + id + `\\u0026index=(?P<index>[0-9]+)"`)
+	answer := re.FindAllStringSubmatch(string(info), -1)
+	var videos []*Video
+	for _, entry := range answer {
+		videos = append(videos, &Video{
+			ID: entry[1],
+		})
+	}
+	return videos
+}
+
 func (v *Video) parseVideoInfo(body []byte) error {
 	answer, err := url.ParseQuery(string(body))
 	if err != nil {

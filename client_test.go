@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testClient = Client{Debug: true}
+var testClient = Client{}
 
 const (
 	dwlURL    string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
@@ -86,4 +86,13 @@ func TestGetVideo(t *testing.T) {
 	require.NotEmpty(video.Thumbnails[0].URL)
 	require.NotEmpty(video.HLSManifestURL)
 	require.NotEmpty(video.DASHManifestURL)
+}
+
+func TestGetPlaylistFromHTML(t *testing.T) {
+	t.Skipped()
+	playlistURL := "https://www.youtube.com/playlist?list=PLQZgI7en5XEgM0L1_ZcKmEzxW1sCOVZwP"
+	require := require.New(t)
+	videos, err := testClient.GetPlaylistFromHTML(playlistURL)
+	require.NoError(err)
+	require.NotEmpty(videos)
 }

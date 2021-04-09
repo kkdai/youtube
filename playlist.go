@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	playlistFetchURL string = "https://youtube.com/list_ajax?style=json&action_get_list=1" +
+	playlistFetchHTMLURL string = "https://youtube.com/playlist?list=%[1]s&eurl=https://youtube.googleapis.com/v/%[1]s"
+	playlistFetchURL     string = "https://youtube.com/list_ajax?style=json&action_get_list=1" +
 		"&list=%s&hl=en"
 )
 
