@@ -11,7 +11,8 @@ var videoRegexpList = []*regexp.Regexp{
 	regexp.MustCompile(`([^"&?/=%]{11})`),
 }
 
-func extractVideoID(videoID string) (string, error) {
+// ExtractVideoID extracts the videoID from the given string
+func ExtractVideoID(videoID string) (string, error) {
 	if strings.Contains(videoID, "youtu") || strings.ContainsAny(videoID, "\"?&/<%=") {
 		for _, re := range videoRegexpList {
 			if isMatch := re.MatchString(videoID); isMatch {

@@ -29,7 +29,7 @@ func (c *Client) GetVideo(url string) (*Video, error) {
 
 // GetVideoContext fetches video metadata with a context
 func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error) {
-	id, err := extractVideoID(url)
+	id, err := ExtractVideoID(url)
 	if err != nil {
 		return nil, fmt.Errorf("extractVideoID failed: %w", err)
 	}
