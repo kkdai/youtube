@@ -46,7 +46,9 @@ var outputWriters = map[string]outputWriter{
 		fmt.Println("Title:      ", info.Title)
 		fmt.Println("Author:     ", info.Author)
 		fmt.Println("Duration:   ", info.Duration)
-		fmt.Println("Description:", info.Description)
+		if printDescription {
+			fmt.Println("Description:", info.Description)
+		}
 		fmt.Println()
 
 		table := tablewriter.NewWriter(os.Stdout)
@@ -100,7 +102,6 @@ var infoCmd = &cobra.Command{
 				// Some formats don't have the average bitrate
 				bitrate = format.Bitrate
 			}
-
 			size, _ := strconv.ParseInt(format.ContentLength, 10, 64)
 			if size == 0 {
 				// Some formats don't have this information
@@ -122,8 +123,10 @@ var infoCmd = &cobra.Command{
 }
 
 var outputFormat string
+var printDescription bool
 
 func init() {
 	rootCmd.AddCommand(infoCmd)
 	infoCmd.Flags().StringVarP(&outputFormat, "format", "f", "plain", "The output format (plain/json/xml).")
+	infoCmd.Flags().BoolVarP(&printDescription, "desc", "d", false, "description")
 }
