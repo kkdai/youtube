@@ -60,12 +60,21 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 	var videoFormat, audioFormat *youtube.Format
 
 	switch quality {
+	case "hdr2060":
+		videoFormat = v.Formats.FindByItag(401)
+	case "hdr1080":
+		videoFormat = v.Formats.FindByItag(399)
 	case "hd1080":
 		videoFormat = v.Formats.FindByItag(137)
-		audioFormat = v.Formats.FindByItag(140)
+	case "hdr720":
+		videoFormat = v.Formats.FindByItag(398)
+	case "hd720":
+		videoFormat = v.Formats.FindByItag(136)
 	default:
 		return fmt.Errorf("unknown quality: %s", quality)
 	}
+
+	audioFormat = v.Formats.FindByItag(140)
 
 	if videoFormat == nil {
 		return fmt.Errorf("no format video/mp4 for %s found", quality)
