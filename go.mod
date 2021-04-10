@@ -10,4 +10,5 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
 	github.com/vbauerster/mpb/v5 v5.3.0
+	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 )
