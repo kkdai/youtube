@@ -25,7 +25,7 @@ func (list FormatList) FindByItag(itagNo int) *Format {
 }
 
 // FindByType returns mime type of video which only audio or video
-func (list FormatList) FindByType(t string) []Format {
+func (list FormatList) FindByType(t string) FormatList {
 	var f []Format
 	for i := range list {
 		if strings.Contains(list[i].MimeType, t) {

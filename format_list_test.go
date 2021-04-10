@@ -134,7 +134,7 @@ func TestFormatList_FindByType(t *testing.T) {
 		name string
 		list FormatList
 		args args
-		want []Format
+		want FormatList
 	}{
 		{
 			name: "find video",
