@@ -7,12 +7,14 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/kkdai/youtube/v2"
 	ytdl "github.com/kkdai/youtube/v2/downloader"
 	"github.com/spf13/pflag"
+	"golang.org/x/net/http/httpproxy"
 )
 
 var (
@@ -35,8 +37,12 @@ func getDownloader() *ytdl.Downloader {
 		return downloader
 	}
 
+	proxyFunc := httpproxy.FromEnvironment().ProxyFunc()
 	httpTransport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
+		// Proxy: http.ProxyFromEnvironment() does not work. Why?
+		Proxy: func(r *http.Request) (uri *url.URL, err error) {
+			return proxyFunc(r.URL)
+		},
 		IdleConnTimeout:       60 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
