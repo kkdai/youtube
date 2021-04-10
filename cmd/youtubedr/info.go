@@ -31,9 +31,9 @@ type VideoInfo struct {
 	Formats     []VideoFormat
 }
 
-type outputFunction func(VideoInfo, io.Writer) error
+type outputWriter func(VideoInfo, io.Writer) error
 
-var outputWriters = map[string]outputFunction{
+var outputWriters = map[string]outputWriter{
 	"json": func(info VideoInfo, w io.Writer) error {
 		encoder := json.NewEncoder(w)
 		encoder.SetIndent("", "  ")
@@ -69,18 +69,21 @@ var outputWriters = map[string]outputFunction{
 	},
 }
 
+var outputFunc outputWriter
+
 // infoCmd represents the info command
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Print metadata of the desired video",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		outputWriter := outputWriters[outputFormat]
-		if outputWriter == nil {
-			fmt.Fprintln(os.Stderr, "invalid format:", outputFormat)
-			os.Exit(1)
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		outputFunc = outputWriters[outputFormat]
+		if outputFunc == nil {
+			return fmt.Errorf("output format %s is not valid", outputFormat)
 		}
-
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		video, err := getDownloader().GetVideo(args[0])
 		exitOnError(err)
 
@@ -114,7 +117,7 @@ var infoCmd = &cobra.Command{
 			})
 		}
 
-		exitOnError(outputWriter(videoInfo, os.Stdout))
+		exitOnError(outputFunc(videoInfo, os.Stdout))
 	},
 }
 
