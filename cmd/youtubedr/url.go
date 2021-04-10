@@ -24,5 +24,6 @@ var urlCmd = &cobra.Command{
 
 func init() {
 	addQualityFlag(urlCmd.Flags())
+	addMimeTypeFlag(urlCmd.Flags())
 	rootCmd.AddCommand(urlCmd)
 }

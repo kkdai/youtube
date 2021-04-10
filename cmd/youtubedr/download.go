@@ -21,8 +21,9 @@ var downloadCmd = &cobra.Command{
 }
 
 var (
-	outputFile string
-	outputDir  string
+	ffmpegCheck error
+	outputFile  string
+	outputDir   string
 )
 
 func init() {
@@ -31,6 +32,7 @@ func init() {
 	downloadCmd.Flags().StringVarP(&outputFile, "filename", "o", "", "The output file, the default is genated by the video title.")
 	downloadCmd.Flags().StringVarP(&outputDir, "directory", "d", ".", "The output directory.")
 	addQualityFlag(downloadCmd.Flags())
+	addMimeTypeFlag(downloadCmd.Flags())
 }
 
 func download(id string) error {
@@ -41,15 +43,20 @@ func download(id string) error {
 
 	log.Println("download to directory", outputDir)
 
-	if outputQuality == "hd1080" {
-		fmt.Println("check ffmpeg is installed....")
-		ffmpegVersionCmd := exec.Command("ffmpeg", "-version")
-		if err := ffmpegVersionCmd.Run(); err != nil {
-			return fmt.Errorf("please check ffmpeg is installed correctly, err: %w", err)
+	if format.AudioChannels == 0 {
+		if err := checkFFMPEG(); err != nil {
+			return err
 		}
+		return downloader.DownloadSeparatedStreams(context.Background(), outputFile, video, outputQuality, mimetype)
+	}
+	return downloader.Download(context.Background(), video, format, outputFile)
+}
 
-		return downloader.DownloadWithHighQuality(context.Background(), outputFile, video, outputQuality)
+func checkFFMPEG() error {
+	fmt.Println("check ffmpeg is installed....")
+	if err := exec.Command("ffmpeg", "-version").Run(); err != nil {
+		ffmpegCheck = fmt.Errorf("please check ffmpegCheck is installed correctly")
 	}
 
-	return downloader.Download(context.Background(), video, format, outputFile)
+	return ffmpegCheck
 }
