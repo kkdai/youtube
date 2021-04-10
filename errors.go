@@ -1,18 +1,23 @@
 package youtube
 
 import (
-	"errors"
 	"fmt"
 )
 
-var (
-	ErrCipherNotFound             = errors.New("cipher not found")
-	ErrInvalidCharactersInVideoID = errors.New("invalid characters in video id")
-	ErrVideoIDMinLength           = errors.New("the video id must be at least 10 characters long")
-	ErrReadOnClosedResBody        = errors.New("http: read on closed response body")
-	ErrNotPlayableInEmbed         = errors.New("embedding of this video has been disabled")
-	ErrInvalidPlaylist            = errors.New("no playlist detected or invalid playlist ID")
+const (
+	ErrCipherNotFound             = constError("cipher not found")
+	ErrInvalidCharactersInVideoID = constError("invalid characters in video id")
+	ErrVideoIDMinLength           = constError("the video id must be at least 10 characters long")
+	ErrReadOnClosedResBody        = constError("http: read on closed response body")
+	ErrNotPlayableInEmbed         = constError("embedding of this video has been disabled")
+	ErrInvalidPlaylist            = constError("no playlist detected or invalid playlist ID")
 )
+
+type constError string
+
+func (e constError) Error() string {
+	return string(e)
+}
 
 type ErrResponseStatus struct {
 	Status string
