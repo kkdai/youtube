@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -110,13 +111,23 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 
 	// Assign Streams
 	v.Formats = append(prData.StreamingData.Formats, prData.StreamingData.AdaptiveFormats...)
-
 	if len(v.Formats) == 0 {
 		return errors.New("no formats found in the server's answer")
 	}
+
+	// Sort formats by bitrate
+	sort.SliceStable(v.Formats, v.SortBitrateDesc)
 
 	v.HLSManifestURL = prData.StreamingData.HlsManifestURL
 	v.DASHManifestURL = prData.StreamingData.DashManifestURL
 
 	return nil
+}
+
+func (v *Video) SortBitrateDesc(i int, j int) bool {
+	return v.Formats[i].Bitrate > v.Formats[j].Bitrate
+}
+
+func (v *Video) SortBitrateAsc(i int, j int) bool {
+	return v.Formats[i].Bitrate < v.Formats[j].Bitrate
 }
