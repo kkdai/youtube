@@ -102,6 +102,7 @@ var infoCmd = &cobra.Command{
 				// Some formats don't have the average bitrate
 				bitrate = format.Bitrate
 			}
+
 			size, _ := strconv.ParseInt(format.ContentLength, 10, 64)
 			if size == 0 {
 				// Some formats don't have this information
@@ -127,6 +128,6 @@ var printDescription bool
 
 func init() {
 	rootCmd.AddCommand(infoCmd)
-	infoCmd.Flags().StringVarP(&outputFormat, "format", "f", "plain", "The output format (plain/json/xml).")
-	infoCmd.Flags().BoolVarP(&printDescription, "desc", "d", false, "description")
+	infoCmd.Flags().StringVarP(&outputFormat, "format", "f", "plain", "The output format (plain/json/xml)")
+	infoCmd.Flags().BoolVarP(&printDescription, "description", "d", false, "Print description")
 }
