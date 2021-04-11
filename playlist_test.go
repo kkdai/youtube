@@ -42,8 +42,8 @@ func TestYoutube_extractPlaylistID(t *testing.T) {
 			nil,
 		},
 		{
-			"fail-1",
-			"https://www.youtube.com/watch?v=9UL390els7M&list=PLqAfPOrmacr963ATEroh67fbvjmTzTEx5X", "",
+			"fail-1-playlist-id-44-char",
+			"https://www.youtube.com/watch?v=9UL390els7M&list=PLqAfPOrmacr963ATEroh67fbvjmTzTEx5X1212404244", "",
 			ErrInvalidPlaylist,
 		},
 		{
