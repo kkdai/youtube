@@ -16,6 +16,7 @@ import (
 // Define two new struct in local scope
 type VideoFormat struct {
 	Itag          int
+	FPS           int
 	VideoQuality  string
 	AudioQuality  string
 	AudioChannels int
@@ -56,17 +57,19 @@ var outputWriters = map[string]outputWriter{
 		table.SetAutoWrapText(false)
 		table.SetHeader([]string{
 			"itag",
-			"Video quality",
-			"Audio quality",
-			"Audio channels",
-			"Size [MB]",
-			"Bitrate",
+			"fps",
+			"video quality",
+			"audio quality",
+			"audio channels",
+			"size [MB]",
+			"bitrate",
 			"MimeType",
 		})
 
 		for _, format := range info.Formats {
 			table.Append([]string{
 				strconv.Itoa(format.Itag),
+				strconv.Itoa(format.FPS),
 				format.VideoQuality,
 				format.AudioQuality,
 				strconv.Itoa(format.AudioChannels),
@@ -121,6 +124,7 @@ var infoCmd = &cobra.Command{
 
 			videoInfo.Formats = append(videoInfo.Formats, VideoFormat{
 				Itag:          format.ItagNo,
+				FPS:           format.FPS,
 				VideoQuality:  format.QualityLabel,
 				AudioQuality:  strings.ToLower(strings.TrimPrefix(format.AudioQuality, "AUDIO_QUALITY_")),
 				AudioChannels: format.AudioChannels,
