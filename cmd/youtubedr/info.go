@@ -58,9 +58,9 @@ var outputWriters = map[string]outputWriter{
 		table.SetHeader([]string{
 			"itag",
 			"fps",
-			"video quality",
-			"audio quality",
-			"audio channels",
+			"video\nquality",
+			"audio\nquality",
+			"audio\nchannels",
 			"size [MB]",
 			"bitrate",
 			"MimeType",
