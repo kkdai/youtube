@@ -15,6 +15,9 @@ import (
 
 const (
 	playlistFetchURL string = "https://www.youtube.com/playlist?list=%s&hl=en"
+	// The following are used in tests but also for fetching test data
+	testPlaylistResponseDataFile = "./testdata/playlist_test_data.html"
+	testPlaylistID               = "PL59FEE129ADFF2B12"
 )
 
 var (
