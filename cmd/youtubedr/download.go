@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -43,12 +44,13 @@ func download(id string) error {
 
 	log.Println("download to directory", outputDir)
 
-	if format.AudioChannels == 0 {
+	if strings.HasPrefix(outputQuality, "hd") {
 		if err := checkFFMPEG(); err != nil {
 			return err
 		}
-		return downloader.DownloadSeparatedStreams(context.Background(), outputFile, video, outputQuality, mimetype)
+		return downloader.DownloadComposite(context.Background(), outputFile, video, outputQuality, mimetype)
 	}
+
 	return downloader.Download(context.Background(), video, format, outputFile)
 }
 

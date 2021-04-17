@@ -69,7 +69,7 @@ func TestYoutube_DownloadWithHighQualityFails(t *testing.T) {
 				Formats: tt.formats,
 			}
 
-			err := testDownloader.DownloadSeparatedStreams(context.Background(), "", video, "hd1080", "")
+			err := testDownloader.DownloadComposite(context.Background(), "", video, "hd1080", "")
 			assert.EqualError(t, err, tt.message)
 		})
 	}

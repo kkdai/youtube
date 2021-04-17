@@ -56,8 +56,8 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
-// DownloadSeparatedStreams : Starting downloading video with high quality (>720p).
-func (dl *Downloader) DownloadSeparatedStreams(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype string) error {
+// DownloadComposite : Downloads audio and video streams separately and merges them via ffmpeg.
+func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype string) error {
 	videoFormat, audioFormat, err1 := getVideoAudioFormats(v, quality, mimetype)
 	if err1 != nil {
 		return err1
