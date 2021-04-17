@@ -102,7 +102,7 @@ func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 
 	default:
 		// select the first format
-		formats.SortFormats()
+		formats.Sort()
 		format = &formats[0]
 	}
 

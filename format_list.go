@@ -63,11 +63,11 @@ func (list FormatList) AudioChannels(n int) (result FormatList) {
 // FilterQuality reduces the format list to formats matching the quality
 func (v *Video) FilterQuality(quality string) {
 	v.Formats = v.Formats.Quality(quality)
-	v.Formats.SortFormats()
+	v.Formats.Sort()
 }
 
-// SortFormats sorts all formats fields
-func (list FormatList) SortFormats() {
+// Sort sorts all formats fields
+func (list FormatList) Sort() {
 	sort.SliceStable(list, func(i, j int) bool {
 		return sortFormat(i, j, list)
 	})
