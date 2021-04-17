@@ -76,16 +76,18 @@ func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist,
 	if err != nil {
 		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
 	}
-
 	requestURL := fmt.Sprintf(playlistFetchURL, id)
 	resp, err := c.httpGet(ctx, requestURL)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
+	data, err := extractPlaylistJSON(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	p := &Playlist{ID: id}
-	return p, json.NewDecoder(resp.Body).Decode(p)
+	return p, json.Unmarshal(data, p)
 }
 
 func (c *Client) VideoFromPlaylistEntry(entry *PlaylistEntry) (*Video, error) {
