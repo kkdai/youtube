@@ -145,6 +145,9 @@ func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, 
 	if err != nil {
 		return nil, err
 	}
+
+	// Add range header to disable throttling
+	// see https://github.com/kkdai/youtube/pull/170
 	req.Header.Set("Range", "bytes=0-")
 
 	resp, err = client.Do(req)
