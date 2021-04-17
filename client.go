@@ -145,13 +145,16 @@ func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, 
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Range", "bytes=0-")
 
 	resp, err = client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusOK, http.StatusPartialContent:
+	default:
 		resp.Body.Close()
 		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
 	}
