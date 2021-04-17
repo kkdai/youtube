@@ -55,12 +55,12 @@ func TestYoutube_DownloadWithHighQualityFails(t *testing.T) {
 		{
 			name:    "video format not found",
 			formats: []youtube.Format{{ItagNo: 140}},
-			message: "no format video/mp4 for hd1080 found",
+			message: "no video format found after filtering",
 		},
 		{
 			name:    "audio format not found",
-			formats: []youtube.Format{{ItagNo: 137}},
-			message: "no format audio/mp4 for hd1080 found",
+			formats: []youtube.Format{{ItagNo: 137, Quality: "hd1080", MimeType: "video/mp4", AudioChannels: 0}},
+			message: "no audio format found after filtering",
 		},
 	}
 	for _, tt := range tests {
@@ -69,7 +69,7 @@ func TestYoutube_DownloadWithHighQualityFails(t *testing.T) {
 				Formats: tt.formats,
 			}
 
-			err := testDownloader.DownloadWithHighQuality(context.Background(), "", video, "hd1080")
+			err := testDownloader.DownloadComposite(context.Background(), "", video, "hd1080", "")
 			assert.EqualError(t, err, tt.message)
 		})
 	}

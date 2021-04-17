@@ -39,6 +39,7 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, ou
 
 // Download : Starting download video by arguments.
 func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
+	dl.logf("Video '%s' - Quality '%s' - Codec '%s'", v.Title, format.QualityLabel, format.MimeType)
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
 		return err
@@ -55,34 +56,14 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
-// DownloadWithHighQuality : Starting downloading video with high quality (>720p).
-func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile string, v *youtube.Video, quality string) error {
-	var videoFormat, audioFormat *youtube.Format
-
-	switch quality {
-	case "hdr2060":
-		videoFormat = v.Formats.FindByItag(401)
-	case "hdr1080":
-		videoFormat = v.Formats.FindByItag(399)
-	case "hd1080":
-		videoFormat = v.Formats.FindByItag(137)
-	case "hdr720":
-		videoFormat = v.Formats.FindByItag(398)
-	case "hd720":
-		videoFormat = v.Formats.FindByItag(136)
-	default:
-		return fmt.Errorf("unknown quality: %s", quality)
+// DownloadComposite : Downloads audio and video streams separately and merges them via ffmpeg.
+func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype string) error {
+	videoFormat, audioFormat, err1 := getVideoAudioFormats(v, quality, mimetype)
+	if err1 != nil {
+		return err1
 	}
 
-	audioFormat = v.Formats.FindByItag(140)
-
-	if videoFormat == nil {
-		return fmt.Errorf("no format video/mp4 for %s found", quality)
-	}
-	if audioFormat == nil {
-		return fmt.Errorf("no format audio/mp4 for %s found", quality)
-	}
-
+	dl.logf("Video '%s' - Quality '%s' - Video Codec '%s' - Audio Codec '%s'", v.Title, videoFormat.QualityLabel, videoFormat.MimeType, audioFormat.MimeType)
 	destFile, err := dl.getOutputFile(v, videoFormat, outputFile)
 	if err != nil {
 		return err
@@ -128,6 +109,40 @@ func (dl *Downloader) DownloadWithHighQuality(ctx context.Context, outputFile st
 	dl.logf("merging video and audio to %s", destFile)
 
 	return ffmpegVersionCmd.Run()
+}
+
+func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*youtube.Format, *youtube.Format, error) {
+	var videoFormat, audioFormat *youtube.Format
+	var videoFormats, audioFormats youtube.FormatList
+
+	// Default mime-type to mp4
+	if mimetype == "" {
+		mimetype = "mp4"
+	}
+	formats := v.Formats.FindByType(mimetype)
+	videoFormats = formats.FindByType("video").FilterByAudioChannels(0)
+	audioFormats = formats.FindByType("audio")
+	if quality != "" {
+		videoFormats = videoFormats.FilterQuality(quality)
+	}
+
+	if len(videoFormats) > 0 {
+		videoFormats.SortFormats()
+		videoFormat = &videoFormats[0]
+	}
+
+	if len(audioFormats) > 0 {
+		audioFormats.SortFormats()
+		audioFormat = &audioFormats[0]
+	}
+
+	if videoFormat == nil {
+		return nil, nil, fmt.Errorf("no video format found after filtering")
+	}
+	if audioFormat == nil {
+		return nil, nil, fmt.Errorf("no audio format found after filtering")
+	}
+	return videoFormat, audioFormat, nil
 }
 
 func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *youtube.Video, format *youtube.Format) error {

@@ -18,11 +18,16 @@ import (
 var (
 	insecureSkipVerify bool   // skip TLS server validation
 	outputQuality      string // itag number or quality string
+	mimetype           string // mimetype
 	downloader         *ytdl.Downloader
 )
 
 func addQualityFlag(flagSet *pflag.FlagSet) {
 	flagSet.StringVarP(&outputQuality, "quality", "q", "", "The itag number or quality label (hd720, medium)")
+}
+
+func addMimeTypeFlag(flagSet *pflag.FlagSet) {
+	flagSet.StringVarP(&mimetype, "mimetype", "m", "mp4", "Mime-Type to filter (mp4, webm, av01, avc1)")
 }
 
 func getDownloader() *ytdl.Downloader {
@@ -67,27 +72,32 @@ func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 		return nil, nil, err
 	}
 
-	if len(video.Formats) == 0 {
+	formats := video.Formats
+	if mimetype != "" {
+		formats = formats.FindByType(mimetype)
+	}
+	if len(formats) == 0 {
 		return nil, nil, errors.New("no formats found")
 	}
 
 	var format *youtube.Format
 	switch {
 	case itag > 0:
-		format = video.Formats.FindByItag(itag)
+		format = formats.FindByItag(itag)
 		if format == nil {
 			return nil, nil, fmt.Errorf("unable to find format with itag %d", itag)
 		}
 
 	case outputQuality != "":
-		format = video.Formats.FindByQuality(outputQuality)
+		format = formats.FindByQuality(outputQuality)
 		if format == nil {
 			return nil, nil, fmt.Errorf("unable to find format with quality %s", outputQuality)
 		}
 
 	default:
 		// select the first format
-		format = &video.Formats[0]
+		formats.SortFormats()
+		format = &formats[0]
 	}
 
 	return video, format, nil
