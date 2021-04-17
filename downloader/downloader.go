@@ -119,11 +119,13 @@ func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*y
 	if mimetype == "" {
 		mimetype = "mp4"
 	}
-	formats := v.Formats.FindByType(mimetype)
-	videoFormats = formats.FindByType("video").FilterByAudioChannels(0)
-	audioFormats = formats.FindByType("audio")
+
+	formats := v.Formats.Type(mimetype)
+	videoFormats = formats.Type("video").AudioChannels(0)
+	audioFormats = formats.Type("audio")
+
 	if quality != "" {
-		videoFormats = videoFormats.FilterQuality(quality)
+		videoFormats = videoFormats.Quality(quality)
 	}
 
 	if len(videoFormats) > 0 {
@@ -139,9 +141,11 @@ func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*y
 	if videoFormat == nil {
 		return nil, nil, fmt.Errorf("no video format found after filtering")
 	}
+
 	if audioFormat == nil {
 		return nil, nil, fmt.Errorf("no audio format found after filtering")
 	}
+
 	return videoFormat, audioFormat, nil
 }
 

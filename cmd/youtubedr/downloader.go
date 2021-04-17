@@ -74,7 +74,7 @@ func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 
 	formats := video.Formats
 	if mimetype != "" {
-		formats = formats.FindByType(mimetype)
+		formats = formats.Type(mimetype)
 	}
 	if len(formats) == 0 {
 		return nil, nil, errors.New("no formats found")

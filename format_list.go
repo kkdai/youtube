@@ -8,6 +8,7 @@ import (
 
 type FormatList []Format
 
+// FindByQuality returns the first format matching Quality or QualityLabel
 func (list FormatList) FindByQuality(quality string) *Format {
 	for i := range list {
 		if list[i].Quality == quality || list[i].QualityLabel == quality {
@@ -17,6 +18,7 @@ func (list FormatList) FindByQuality(quality string) *Format {
 	return nil
 }
 
+// FindByItag returns the first format matching the itag number
 func (list FormatList) FindByItag(itagNo int) *Format {
 	for i := range list {
 		if list[i].ItagNo == itagNo {
@@ -26,49 +28,45 @@ func (list FormatList) FindByItag(itagNo int) *Format {
 	return nil
 }
 
-// FindByType returns mime type of video which only audio or video
-func (list FormatList) FindByType(t string) FormatList {
-	var fl FormatList
+// Type returns a new FormatList filtered by mime type of video
+func (list FormatList) Type(t string) (result FormatList) {
 	for i := range list {
 		if strings.Contains(list[i].MimeType, t) {
-			fl = append(fl, list[i])
+			result = append(result, list[i])
 		}
 	}
-	return fl
+	return result
 }
 
-// FilterQuality returns a new FormatList filtered by quality, quality label or itag,
+// Quality returns a new FormatList filtered by quality, quality label or itag,
 // but not audio quality
-func (list FormatList) FilterQuality(quality string) FormatList {
-	var fl FormatList
+func (list FormatList) Quality(quality string) (result FormatList) {
 	for _, f := range list {
 		itag, _ := strconv.Atoi(quality)
 		if itag == f.ItagNo || strings.Contains(f.Quality, quality) || strings.Contains(f.QualityLabel, quality) {
-			fl = append(fl, f)
+			result = append(result, f)
 		}
 	}
-	return fl
+	return result
 }
 
-// FilterByAudioChannels returns a new FormatList filtered by the matching AudioChannels
-func (list FormatList) FilterByAudioChannels(n int) FormatList {
-	var fl FormatList
+// AudioChannels returns a new FormatList filtered by the matching AudioChannels
+func (list FormatList) AudioChannels(n int) (result FormatList) {
 	for _, f := range list {
 		if f.AudioChannels == n {
-			fl = append(fl, f)
+			result = append(result, f)
 		}
 	}
-	return fl
+	return result
 }
 
+// FilterQuality reduces the format list to formats matching the quality
 func (v *Video) FilterQuality(quality string) {
-	v.Formats = v.Formats.FilterQuality(quality)
-	//v.AudioFormats = v.AudioFormats.FilterQuality(quality)
-	//v.VideoFormats = v.VideoFormats.FilterQuality(quality)
+	v.Formats = v.Formats.Quality(quality)
 	v.Formats.SortFormats()
 }
 
-// SortFormats sort all Formats fields
+// SortFormats sorts all formats fields
 func (list FormatList) SortFormats() {
 	sort.SliceStable(list, func(i, j int) bool {
 		return sortFormat(i, j, list)
