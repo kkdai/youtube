@@ -2,7 +2,7 @@ Download Youtube Video in Golang
 ==================
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/kkdai/youtube/master/LICENSE)
-[![GoDoc](https://godoc.org/github.com/kkdai/youtube?status.svg)](https://godoc.org/github.com/kkdai/youtube)
+[![Go Reference](https://pkg.go.dev/badge/github.com/kkdai/youtube.svg)](https://pkg.go.dev/github.com/kkdai/youtube/v2)
 [![Build Status](https://github.com/kkdai/youtube/workflows/go/badge.svg?branch=master)](https://github.com/kkdai/youtube/actions)
 [![Coverage](https://codecov.io/gh/kkdai/youtube/branch/master/graph/badge.svg)](https://codecov.io/gh/kkdai/youtube)
 [![](https://goreportcard.com/badge/github.com/kkdai/youtube)](https://goreportcard.com/badge/github.com/kkdai/youtube)
@@ -44,7 +44,7 @@ brew install youtubedr
 ```shell
 pkg install youtubedr
 ```
-###  You can also find this package in 
+###  You can also find this package in
 - [archlinux](https://aur.archlinux.org/packages/youtubedr/)  (thanks to [cjsthompson](https://github.com/cjsthompson))
 - [Termux package](https://github.com/termux/termux-packages/tree/master/packages/youtubedr) (thanks to [kcubeterm](https://github.com/kcubeterm))
 - [Homebrew](https://formulae.brew.sh/formula/youtubedr) (thanks to [kkc](https://github.com/kkc))
