@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"os"
@@ -17,23 +15,18 @@ type PlaylistInfo struct {
 	Videos []VideoInfo
 }
 
-type playlistOutputWriter func(PlaylistInfo, io.Writer) error
-
 var (
-	playlistOutputFunc    playlistOutputWriter
-	playlistOutputWriters = map[string]playlistOutputWriter{
-		"json": func(info PlaylistInfo, w io.Writer) error {
-			encoder := json.NewEncoder(w)
-			encoder.SetIndent("", "  ")
-			return encoder.Encode(info)
-		},
-		"xml": func(info PlaylistInfo, w io.Writer) error {
-			return xml.NewEncoder(w).Encode(info)
-		},
-		"plain": func(info PlaylistInfo, w io.Writer) error {
-			fmt.Println("Title:      ", info.Title)
-			fmt.Println("Author:     ", info.Author)
-			fmt.Println("# Videos:   ", len(info.Videos))
+	playlistOutputWriters = map[string]outputWriter{
+		"json": jsonOutput(),
+		"xml":  xmlOutput(),
+		"plain": func(info interface{}, w io.Writer) error {
+			i, ok := info.(PlaylistInfo)
+			if !ok {
+				return fmt.Errorf("input is not PlaylistInfo")
+			}
+			fmt.Println("Title:      ", i.Title)
+			fmt.Println("Author:     ", i.Author)
+			fmt.Println("# Videos:   ", len(i.Videos))
 
 			fmt.Println()
 
@@ -41,7 +34,7 @@ var (
 			table.SetAutoWrapText(false)
 			table.SetHeader([]string{"ID", "Author", "Title", "Duration"})
 
-			for _, vid := range info.Videos {
+			for _, vid := range i.Videos {
 				table.Append([]string{
 					vid.ID,
 					vid.Author,
@@ -59,8 +52,8 @@ var (
 		Short: "Print metadata of the desired playlist",
 		Args:  cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			playlistOutputFunc = playlistOutputWriters[outputFormat]
-			if playlistOutputFunc == nil {
+			outputFunc = playlistOutputWriters[outputFormat]
+			if outputFunc == nil {
 				return fmt.Errorf("output format %s is not valid", outputFormat)
 			}
 			return nil
@@ -81,7 +74,7 @@ var (
 					Duration: v.Duration.String(),
 				})
 			}
-			exitOnError(playlistOutputFunc(playlistInfo, os.Stdout))
+			exitOnError(outputFunc(playlistInfo, os.Stdout))
 		},
 	}
 )

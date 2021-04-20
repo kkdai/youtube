@@ -34,25 +34,23 @@ type VideoInfo struct {
 	Formats     []VideoFormat
 }
 
-type videoOutputWriter func(VideoInfo, io.Writer) error
+type outputWriter func(interface{}, io.Writer) error
 
 var (
-	videoOutputFunc    videoOutputWriter
-	videoOutputWriters = map[string]videoOutputWriter{
-		"json": func(info VideoInfo, w io.Writer) error {
-			encoder := json.NewEncoder(w)
-			encoder.SetIndent("", "  ")
-			return encoder.Encode(info)
-		},
-		"xml": func(info VideoInfo, w io.Writer) error {
-			return xml.NewEncoder(w).Encode(info)
-		},
-		"plain": func(info VideoInfo, w io.Writer) error {
-			fmt.Println("Title:      ", info.Title)
-			fmt.Println("Author:     ", info.Author)
-			fmt.Println("Duration:   ", info.Duration)
+	outputFunc         outputWriter
+	videoOutputWriters = map[string]outputWriter{
+		"json": jsonOutput(),
+		"xml":  xmlOutput(),
+		"plain": func(info interface{}, w io.Writer) error {
+			i, ok := info.(VideoInfo)
+			if !ok {
+				return fmt.Errorf("input is not VideoInfo")
+			}
+			fmt.Println("Title:      ", i.Title)
+			fmt.Println("Author:     ", i.Author)
+			fmt.Println("Duration:   ", i.Duration)
 			if printDescription {
-				fmt.Println("Description:", info.Description)
+				fmt.Println("Description:", i.Description)
 			}
 			fmt.Println()
 
@@ -69,7 +67,7 @@ var (
 				"MimeType",
 			})
 
-			for _, format := range info.Formats {
+			for _, format := range i.Formats {
 				table.Append([]string{
 					strconv.Itoa(format.Itag),
 					strconv.Itoa(format.FPS),
@@ -88,14 +86,28 @@ var (
 	}
 )
 
+func xmlOutput() func(info interface{}, w io.Writer) error {
+	return func(info interface{}, w io.Writer) error {
+		return xml.NewEncoder(w).Encode(info)
+	}
+}
+
+func jsonOutput() func(info interface{}, w io.Writer) error {
+	return func(info interface{}, w io.Writer) error {
+		encoder := json.NewEncoder(w)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(info)
+	}
+}
+
 // infoCmd represents the info command
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Print metadata of the desired video",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		videoOutputFunc = videoOutputWriters[outputFormat]
-		if videoOutputFunc == nil {
+		outputFunc = videoOutputWriters[outputFormat]
+		if outputFunc == nil {
 			return fmt.Errorf("output format %s is not valid", outputFormat)
 		}
 		return nil
@@ -136,7 +148,7 @@ var infoCmd = &cobra.Command{
 			})
 		}
 
-		exitOnError(videoOutputFunc(videoInfo, os.Stdout))
+		exitOnError(outputFunc(videoInfo, os.Stdout))
 	},
 }
 
