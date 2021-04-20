@@ -26,6 +26,7 @@ type VideoFormat struct {
 }
 
 type VideoInfo struct {
+	ID          string
 	Title       string
 	Author      string
 	Duration    string
@@ -143,6 +144,6 @@ var printDescription bool
 
 func init() {
 	rootCmd.AddCommand(infoCmd)
-	infoCmd.Flags().StringVarP(&outputFormat, "format", "f", "plain", "The output format (plain/json/xml)")
+	addFormatFlag(infoCmd.Flags())
 	infoCmd.Flags().BoolVarP(&printDescription, "description", "d", false, "Print description")
 }

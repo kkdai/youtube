@@ -24,6 +24,10 @@ var (
 	downloader         *ytdl.Downloader
 )
 
+func addFormatFlag(flagSet *pflag.FlagSet) {
+	flagSet.StringVarP(&outputFormat, "format", "f", "plain", "The output format (plain/json/xml)")
+}
+
 func addQualityFlag(flagSet *pflag.FlagSet) {
 	flagSet.StringVarP(&outputQuality, "quality", "q", "", "The itag number or quality label (hd720, medium)")
 }
