@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"os"
@@ -34,71 +32,13 @@ type VideoInfo struct {
 	Formats     []VideoFormat
 }
 
-type videoOutputWriter func(VideoInfo, io.Writer) error
-
-var (
-	videoOutputFunc    videoOutputWriter
-	videoOutputWriters = map[string]videoOutputWriter{
-		"json": func(info VideoInfo, w io.Writer) error {
-			encoder := json.NewEncoder(w)
-			encoder.SetIndent("", "  ")
-			return encoder.Encode(info)
-		},
-		"xml": func(info VideoInfo, w io.Writer) error {
-			return xml.NewEncoder(w).Encode(info)
-		},
-		"plain": func(info VideoInfo, w io.Writer) error {
-			fmt.Println("Title:      ", info.Title)
-			fmt.Println("Author:     ", info.Author)
-			fmt.Println("Duration:   ", info.Duration)
-			if printDescription {
-				fmt.Println("Description:", info.Description)
-			}
-			fmt.Println()
-
-			table := tablewriter.NewWriter(os.Stdout)
-			table.SetAutoWrapText(false)
-			table.SetHeader([]string{
-				"itag",
-				"fps",
-				"video\nquality",
-				"audio\nquality",
-				"audio\nchannels",
-				"size [MB]",
-				"bitrate",
-				"MimeType",
-			})
-
-			for _, format := range info.Formats {
-				table.Append([]string{
-					strconv.Itoa(format.Itag),
-					strconv.Itoa(format.FPS),
-					format.VideoQuality,
-					format.AudioQuality,
-					strconv.Itoa(format.AudioChannels),
-					fmt.Sprintf("%0.1f", float64(format.Size)/1024/1024),
-					strconv.Itoa(format.Bitrate),
-					format.MimeType,
-				})
-			}
-
-			table.Render()
-			return nil
-		},
-	}
-)
-
 // infoCmd represents the info command
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Print metadata of the desired video",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		videoOutputFunc = videoOutputWriters[outputFormat]
-		if videoOutputFunc == nil {
-			return fmt.Errorf("output format %s is not valid", outputFormat)
-		}
-		return nil
+		return checkOutputFormat()
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		video, err := getDownloader().GetVideo(args[0])
@@ -136,11 +76,52 @@ var infoCmd = &cobra.Command{
 			})
 		}
 
-		exitOnError(videoOutputFunc(videoInfo, os.Stdout))
+		if outputFormat == outputFormatPlain {
+			writeInfoOutput(os.Stdout, &videoInfo)
+		} else {
+			exitOnError(writeStructuredOutput(os.Stdout, &videoInfo))
+		}
 	},
 }
 
-var outputFormat string
+func writeInfoOutput(w io.Writer, info *VideoInfo) {
+	fmt.Println("Title:      ", info.Title)
+	fmt.Println("Author:     ", info.Author)
+	fmt.Println("Duration:   ", info.Duration)
+	if printDescription {
+		fmt.Println("Description:", info.Description)
+	}
+	fmt.Println()
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetAutoWrapText(false)
+	table.SetHeader([]string{
+		"itag",
+		"fps",
+		"video\nquality",
+		"audio\nquality",
+		"audio\nchannels",
+		"size [MB]",
+		"bitrate",
+		"MimeType",
+	})
+
+	for _, format := range info.Formats {
+		table.Append([]string{
+			strconv.Itoa(format.Itag),
+			strconv.Itoa(format.FPS),
+			format.VideoQuality,
+			format.AudioQuality,
+			strconv.Itoa(format.AudioChannels),
+			fmt.Sprintf("%0.1f", float64(format.Size)/1024/1024),
+			strconv.Itoa(format.Bitrate),
+			format.MimeType,
+		})
+	}
+
+	table.Render()
+}
+
 var printDescription bool
 
 func init() {
