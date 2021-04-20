@@ -32,18 +32,29 @@ func checkOutputFormat() error {
 		}
 	}
 
-	return fmt.Errorf("output format %s is not valid", outputFormat)
+	return errInvalidFormat(outputFormat)
 }
 
-func writeStructuredOutput(w io.Writer, v interface{}) error {
+type outputWriter func(w io.Writer)
+
+func writeOutput(w io.Writer, v interface{}, plainWriter outputWriter) error {
 	switch outputFormat {
-	case outputFormatXML:
-		return xml.NewEncoder(w).Encode(v)
+	case outputFormatPlain:
+		plainWriter(w)
+		return nil
 	case outputFormatJSON:
 		encoder := json.NewEncoder(w)
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(v)
+	case outputFormatXML:
+		return xml.NewEncoder(w).Encode(v)
 	default:
-		panic("invalid format: " + outputFormat)
+		return errInvalidFormat(outputFormat)
 	}
+}
+
+type errInvalidFormat string
+
+func (err errInvalidFormat) Error() string {
+	return fmt.Sprintf("invalid output format: %s", outputFormat)
 }

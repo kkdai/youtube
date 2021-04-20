@@ -76,11 +76,9 @@ var infoCmd = &cobra.Command{
 			})
 		}
 
-		if outputFormat == outputFormatPlain {
-			writeInfoOutput(os.Stdout, &videoInfo)
-		} else {
-			exitOnError(writeStructuredOutput(os.Stdout, &videoInfo))
-		}
+		exitOnError(writeOutput(os.Stdout, &videoInfo, func(w io.Writer) {
+			writeInfoOutput(w, &videoInfo)
+		}))
 	},
 }
 

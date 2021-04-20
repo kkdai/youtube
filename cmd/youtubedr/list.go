@@ -41,11 +41,9 @@ var (
 				})
 			}
 
-			if outputFormat == outputFormatPlain {
-				writePlaylistOutput(os.Stdout, &playlistInfo)
-			} else {
-				exitOnError(writeStructuredOutput(os.Stdout, &playlistInfo))
-			}
+			exitOnError(writeOutput(os.Stdout, &playlistInfo, func(w io.Writer) {
+				writePlaylistOutput(w, &playlistInfo)
+			}))
 		},
 	}
 )
