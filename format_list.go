@@ -76,13 +76,18 @@ func (list FormatList) Sort() {
 // sortFormat sorts video by resolution, FPS, codec (av01, vp9, avc1), bitrate
 // sorts audio by codec (mp4, opus), channels, bitrate, sample rate
 func sortFormat(i int, j int, formats FormatList) bool {
-	// Format 137 downloads slowly
-	switch 137 {
-	case formats[i].ItagNo: return false
-	case formats[j].ItagNo: return true
-	}
+
 	// Sort by Width
 	if formats[i].Width == formats[j].Width {
+		// Format 137 downloads slowly, give it less priority
+		// see https://github.com/kkdai/youtube/pull/171
+		switch 137 {
+		case formats[i].ItagNo:
+			return false
+		case formats[j].ItagNo:
+			return true
+		}
+
 		// Sort by FPS
 		if formats[i].FPS == formats[j].FPS {
 			if formats[i].FPS == 0 && formats[i].AudioChannels > 0 && formats[j].AudioChannels > 0 {
