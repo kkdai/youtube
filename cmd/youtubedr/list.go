@@ -52,10 +52,9 @@ func writePlaylistOutput(w io.Writer, info *PlaylistInfo) {
 	fmt.Println("Title:      ", info.Title)
 	fmt.Println("Author:     ", info.Author)
 	fmt.Println("# Videos:   ", len(info.Videos))
-
 	fmt.Println()
 
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(w)
 	table.SetAutoWrapText(false)
 	table.SetHeader([]string{"ID", "Author", "Title", "Duration"})
 
