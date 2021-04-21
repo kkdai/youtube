@@ -91,7 +91,7 @@ func writeInfoOutput(w io.Writer, info *VideoInfo) {
 	}
 	fmt.Println()
 
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(w)
 	table.SetAutoWrapText(false)
 	table.SetHeader([]string{
 		"itag",
