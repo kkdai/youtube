@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -41,12 +42,25 @@ var (
 				})
 			}
 
-			exitOnError(writeOutput(os.Stdout, &playlistInfo, func(w io.Writer) {
-				writePlaylistOutput(w, &playlistInfo)
+			exitOnError(writeOutput(os.Stdout, &playlistInfo, map[string]outputWriter{
+				outputFormatPlain: func(w io.Writer) {
+					writePlaylistOutput(w, &playlistInfo)
+				},
+				outputVideoIds: func(w io.Writer) {
+					writePlaylistVideoIdsOutput(w, &playlistInfo)
+				},
 			}))
 		},
 	}
 )
+
+func writePlaylistVideoIdsOutput(w io.Writer, info *PlaylistInfo) {
+	var ids []string
+	for _, v := range info.Videos {
+		ids = append(ids, v.ID)
+	}
+	fmt.Println(strings.Join(ids, " "))
+}
 
 func writePlaylistOutput(w io.Writer, info *PlaylistInfo) {
 	fmt.Println("Title:      ", info.Title)
