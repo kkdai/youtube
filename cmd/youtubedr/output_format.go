@@ -45,7 +45,7 @@ func writeOutput(w io.Writer, v interface{}, writers map[string]outputWriter) er
 	case outputFormatPlain:
 		writer, ok := writers[outputFormat]
 		if !ok {
-			return errInvalidFormat(outputFormat)
+			return errUnhandledFormat(outputFormat)
 		}
 		writer(w)
 		return nil
@@ -64,4 +64,10 @@ type errInvalidFormat string
 
 func (err errInvalidFormat) Error() string {
 	return fmt.Sprintf("invalid output format: %s", outputFormat)
+}
+
+type errUnhandledFormat string
+
+func (err errUnhandledFormat) Error() string {
+	return fmt.Sprintf("unhandled output format: %s", outputFormat)
 }
