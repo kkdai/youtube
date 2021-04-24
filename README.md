@@ -8,7 +8,7 @@ Download Youtube Video in Golang
 [![](https://goreportcard.com/badge/github.com/kkdai/youtube)](https://goreportcard.com/badge/github.com/kkdai/youtube)
 
 
-This package is a Youtube video download package, for more detail refer [https://github.com/rg3/youtube-dl](https://github.com/rg3/youtube-dl) for more download options.
+This package is a Youtube video download package, for more detail refer [https://github.com/ytdl-org/youtube-dl](https://github.com/ytdl-org/youtube-dl) for more download options.
 
 This tool is meant to be used to download CC0 licenced content, we do not support nor recommend using it for illegal activities.
 
