@@ -29,7 +29,7 @@ func addQualityFlag(flagSet *pflag.FlagSet) {
 }
 
 func addMimeTypeFlag(flagSet *pflag.FlagSet) {
-	flagSet.StringVarP(&mimetype, "mimetype", "m", "mp4", "Mime-Type to filter (mp4, webm, av01, avc1)")
+	flagSet.StringVarP(&mimetype, "mimetype", "m", "", "Mime-Type to filter (mp4, webm, av01, avc1)")
 }
 
 func getDownloader() *ytdl.Downloader {
