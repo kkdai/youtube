@@ -29,7 +29,7 @@ func addQualityFlag(flagSet *pflag.FlagSet) {
 }
 
 func addMimeTypeFlag(flagSet *pflag.FlagSet) {
-	flagSet.StringVarP(&mimetype, "mimetype", "m", "mp4", "Mime-Type to filter (mp4, webm, av01, avc1)")
+	flagSet.StringVarP(&mimetype, "mimetype", "m", "mp4", "Mime-Type to filter (mp4, webm, av01, avc1) - applicable if --quality used is quality label")
 }
 
 func getDownloader() *ytdl.Downloader {
@@ -71,22 +71,14 @@ func getDownloader() *ytdl.Downloader {
 
 func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 	dl := getDownloader()
-	itag, _ := strconv.Atoi(outputQuality)
-
 	video, err := dl.GetVideo(id)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	formats := video.Formats
-	if mimetype != "" {
-		formats = formats.Type(mimetype)
-	}
-	if len(formats) == 0 {
-		return nil, nil, errors.New("no formats found")
-	}
 
 	var format *youtube.Format
+	itag, _ := strconv.Atoi(outputQuality)
 	switch {
 	case itag > 0:
 		format = formats.FindByItag(itag)
@@ -95,12 +87,24 @@ func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 		}
 
 	case outputQuality != "":
+		if mimetype != "" {
+			formats = formats.Type(mimetype)
+		}
+		if len(formats) == 0 {
+			return nil, nil, errors.New("no formats found")
+		}
 		format = formats.FindByQuality(outputQuality)
 		if format == nil {
 			return nil, nil, fmt.Errorf("unable to find format with quality %s", outputQuality)
 		}
 
 	default:
+		if mimetype != "" {
+			formats = formats.Type(mimetype)
+		}
+		if len(formats) == 0 {
+			return nil, nil, errors.New("no formats found")
+		}
 		// select the first format
 		formats.Sort()
 		format = &formats[0]
