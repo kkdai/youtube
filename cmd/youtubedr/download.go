@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 
@@ -39,10 +38,11 @@ func init() {
 func download(id string) error {
 	video, format, err := getVideoWithFormat(id)
 	if err != nil {
+		downloader.Logf("⛔ %s: '%s'\n", id, err)
 		return err
 	}
-
-	log.Println("download to directory", outputDir)
+	downloader.Logf("▶ %s: '%s'\n", video.ID, video.Title)
+	downloader.Logf("download to directory: %s\n", outputDir)
 
 	if strings.HasPrefix(outputQuality, "hd") {
 		if err := checkFFMPEG(); err != nil {
@@ -55,7 +55,7 @@ func download(id string) error {
 }
 
 func checkFFMPEG() error {
-	fmt.Println("check ffmpeg is installed....")
+	downloader.Logf("check ffmpeg is installed....")
 	if err := exec.Command("ffmpeg", "-version").Run(); err != nil {
 		ffmpegCheck = fmt.Errorf("please check ffmpegCheck is installed correctly")
 	}

@@ -61,10 +61,13 @@ func getDownloader() *ytdl.Downloader {
 	}
 
 	downloader = &ytdl.Downloader{
+		Client: youtube.Client{
+			Debug:           verbose,
+			HTTPClientDebug: trace,
+			HTTPClient:      &http.Client{Transport: httpTransport},
+		},
 		OutputDir: outputDir,
 	}
-	downloader.Client.Debug = verbose
-	downloader.HTTPClient = &http.Client{Transport: httpTransport}
 
 	return downloader
 }

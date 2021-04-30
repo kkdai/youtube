@@ -14,6 +14,9 @@ type Client struct {
 	// Debug enables debugging output through log package
 	Debug bool
 
+	// HTTPClientDebug enables debugging output through log package
+	HTTPClientDebug bool
+
 	// HTTPClient can be used to set a custom HTTP client.
 	// If not set, http.DefaultClient will be used
 	HTTPClient *http.Client
@@ -139,7 +142,7 @@ func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, 
 		client = http.DefaultClient
 	}
 
-	if c.Debug {
+	if c.HTTPClientDebug {
 		log.Println("GET", url)
 	}
 

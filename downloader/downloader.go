@@ -39,10 +39,15 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, ou
 
 // Download : Starting download video by arguments.
 func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
-	dl.logf("Video '%s' - Quality '%s' - Codec '%s'", v.Title, format.QualityLabel, format.MimeType)
+	dl.Logf("Video (Quality '%s' | FPS '%d' | Codec '%s') - Audio (Channels '%d')",
+		format.QualityLabel, format.FPS, format.MimeType, format.AudioChannels)
+
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
 		return err
+	}
+	if fileExists(destFile) {
+		return fmt.Errorf("⚠ SKIP: video %s - file %s exists", v.ID, destFile)
 	}
 
 	// Create output file
@@ -52,7 +57,7 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	}
 	defer out.Close()
 
-	dl.logf("Download to file=%s", destFile)
+	dl.Logf("Download to file=%s", destFile)
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
@@ -62,11 +67,17 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	if err1 != nil {
 		return err1
 	}
+	dl.Logf("Video (Quality '%s' | FPS '%d' | Codec '%s')",
+		videoFormat.QualityLabel, videoFormat.FPS, videoFormat.MimeType)
+	dl.Logf("Audio (Channels '%d' | Codec '%s')",
+		audioFormat.AudioChannels, audioFormat.MimeType)
 
-	dl.logf("Video '%s' - Quality '%s' - Video Codec '%s' - Audio Codec '%s'", v.Title, videoFormat.QualityLabel, videoFormat.MimeType, audioFormat.MimeType)
 	destFile, err := dl.getOutputFile(v, videoFormat, outputFile)
 	if err != nil {
 		return err
+	}
+	if fileExists(destFile) {
+		return fmt.Errorf("⚠ SKIP: video %s - file %s exists", v.ID, destFile)
 	}
 	outputDir := filepath.Dir(destFile)
 
@@ -84,13 +95,13 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	}
 	defer os.Remove(audioFile.Name())
 
-	dl.logf("Downloading video file...")
+	dl.Logf("Downloading video file...")
 	err = dl.videoDLWorker(ctx, videoFile, v, videoFormat)
 	if err != nil {
 		return err
 	}
 
-	dl.logf("Downloading audio file...")
+	dl.Logf("Downloading audio file...")
 	err = dl.videoDLWorker(ctx, audioFile, v, audioFormat)
 	if err != nil {
 		return err
@@ -106,7 +117,7 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	)
 	ffmpegVersionCmd.Stderr = os.Stderr
 	ffmpegVersionCmd.Stdout = os.Stdout
-	dl.logf("merging video and audio to %s", destFile)
+	dl.Logf("merging video and audio to %s", destFile)
 
 	return ffmpegVersionCmd.Run()
 }
@@ -187,8 +198,16 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 	return nil
 }
 
-func (dl *Downloader) logf(format string, v ...interface{}) {
+func (dl *Downloader) Logf(format string, v ...interface{}) {
 	if dl.Debug {
 		log.Printf(format, v...)
 	}
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
