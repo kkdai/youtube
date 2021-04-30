@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/kkdai/youtube/v2"
@@ -48,7 +49,12 @@ var downloadCmd = &cobra.Command{
 			outputFileOrigin := outputFile
 			for i, v := range playlist.Videos {
 				if len(outputFileOrigin) != 0 {
-					outputFile = fmt.Sprintf("%s-%d", outputFile, i)
+					index := v.Index
+					if len(index) == 0 {
+						// In case video does not contain index
+						index = strconv.Itoa(i)
+					}
+					outputFile = fmt.Sprintf("%s-%s", outputFile, index)
 				}
 				if err := download(v.ID); err != nil {
 					errors = append(errors, err)
