@@ -76,35 +76,30 @@ func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 		return nil, nil, err
 	}
 	formats := video.Formats
+	if mimetype != "" {
+		formats = formats.Type(mimetype)
+	}
+	if len(formats) == 0 {
+		return nil, nil, errors.New("no formats found")
+	}
 
 	var format *youtube.Format
 	itag, _ := strconv.Atoi(outputQuality)
 	switch {
 	case itag > 0:
-		format = formats.FindByItag(itag)
+		// When an itag is specified, do not filter format with mime-type
+		format = video.Formats.FindByItag(itag)
 		if format == nil {
 			return nil, nil, fmt.Errorf("unable to find format with itag %d", itag)
 		}
 
 	case outputQuality != "":
-		if mimetype != "" {
-			formats = formats.Type(mimetype)
-		}
-		if len(formats) == 0 {
-			return nil, nil, errors.New("no formats found")
-		}
 		format = formats.FindByQuality(outputQuality)
 		if format == nil {
 			return nil, nil, fmt.Errorf("unable to find format with quality %s", outputQuality)
 		}
 
 	default:
-		if mimetype != "" {
-			formats = formats.Type(mimetype)
-		}
-		if len(formats) == 0 {
-			return nil, nil, errors.New("no formats found")
-		}
 		// select the first format
 		formats.Sort()
 		format = &formats[0]
