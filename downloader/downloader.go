@@ -115,12 +115,11 @@ func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*y
 	var videoFormat, audioFormat *youtube.Format
 	var videoFormats, audioFormats youtube.FormatList
 
-	// Default mime-type to mp4
-	if mimetype == "" {
-		mimetype = "mp4"
+	formats := v.Formats
+	if mimetype != "" {
+		formats = formats.Type(mimetype)
 	}
 
-	formats := v.Formats.Type(mimetype)
 	videoFormats = formats.Type("video").AudioChannels(0)
 	audioFormats = formats.Type("audio")
 
