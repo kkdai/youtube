@@ -58,7 +58,7 @@ var infoCmd = &cobra.Command{
 				bitrate = format.Bitrate
 			}
 
-			size, _ := strconv.ParseInt(format.ContentLength, 10, 64)
+			size := format.ContentLength
 			if size == 0 {
 				// Some formats don't have this information
 				size = int64(float64(bitrate) * video.Duration.Seconds() / 8)
