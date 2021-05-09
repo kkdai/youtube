@@ -25,7 +25,7 @@ var (
 )
 
 func addQualityFlag(flagSet *pflag.FlagSet) {
-	flagSet.StringVarP(&outputQuality, "quality", "q", "", "The itag number or quality label (hd720, medium)")
+	flagSet.StringVarP(&outputQuality, "quality", "q", "medium", "The itag number or quality label (hd720, medium)")
 }
 
 func addMimeTypeFlag(flagSet *pflag.FlagSet) {
