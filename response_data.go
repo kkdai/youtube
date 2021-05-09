@@ -131,7 +131,7 @@ type Format struct {
 	Width            int    `json:"width"`
 	Height           int    `json:"height"`
 	LastModified     string `json:"lastModified"`
-	ContentLength    string `json:"contentLength"`
+	ContentLength    int64  `json:"contentLength,string"`
 	QualityLabel     string `json:"qualityLabel"`
 	ProjectionType   string `json:"projectionType"`
 	AverageBitrate   int    `json:"averageBitrate"`
