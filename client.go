@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -110,6 +110,43 @@ func (c *Client) VideoFromPlaylistEntryContext(ctx context.Context, entry *Playl
 	return c.videoFromID(ctx, entry.ID)
 }
 
+func (c *Client) GetStreamFast(video *Video, format *Format, w io.Writer) error {
+	url, err := c.GetStreamURL(video, format)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	var (
+		chunk  int64 = 10_000_000
+		client       = c.HTTPClient
+		pos    int64
+	)
+	if client == nil {
+		client = http.DefaultClient
+	}
+	for pos < format.ContentLength {
+		bytes := fmt.Sprintf("bytes=%v-%v", pos, pos+chunk-1)
+		req.Header.Set("Range", bytes)
+		log.Println(bytes)
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusPartialContent {
+			return ErrUnexpectedStatusCode(resp.StatusCode)
+		}
+		if _, err = io.Copy(w, resp.Body); err != nil {
+			return err
+		}
+		pos += chunk
+	}
+	return nil
+}
+
 // GetStream returns the HTTP response for a specific format
 func (c *Client) GetStream(video *Video, format *Format) (*http.Response, error) {
 	return c.GetStreamContext(context.Background(), video, format)
@@ -145,7 +182,7 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 }
 
 // httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
-func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, err error) {
+func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error) {
 	client := c.HTTPClient
 	if client == nil {
 		client = http.DefaultClient
@@ -160,23 +197,16 @@ func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, 
 		return nil, err
 	}
 
-	// Add range header to disable throttling
-	// see https://github.com/kkdai/youtube/pull/170
-	req.Header.Set("Range", "bytes=0-")
-
-	resp, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusOK, http.StatusPartialContent:
-	default:
+	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
 		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
 	}
-
-	return
+	return resp, nil
 }
 
 // httpGetBodyBytes reads the whole HTTP body and returns it
@@ -187,5 +217,5 @@ func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, erro
 	}
 	defer resp.Body.Close()
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
