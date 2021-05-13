@@ -110,56 +110,62 @@ func (c *Client) VideoFromPlaylistEntryContext(ctx context.Context, entry *Playl
 	return c.videoFromID(ctx, entry.ID)
 }
 
-func (c *Client) GetStreamFast(video *Video, format *Format, w io.Writer) error {
-	url, err := c.GetStreamURL(video, format)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-	var (
-		chunk  int64 = 10_000_000
-		client       = c.HTTPClient
-		pos    int64
-	)
-	if client == nil {
-		client = http.DefaultClient
-	}
-	for pos < format.ContentLength {
-		bytes := fmt.Sprintf("bytes=%v-%v", pos, pos+chunk-1)
-		req.Header.Set("Range", bytes)
-		log.Println(bytes)
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusPartialContent {
-			return ErrUnexpectedStatusCode(resp.StatusCode)
-		}
-		if _, err = io.Copy(w, resp.Body); err != nil {
-			return err
-		}
-		pos += chunk
-	}
-	return nil
-}
-
-// GetStream returns the HTTP response for a specific format
-func (c *Client) GetStream(video *Video, format *Format) (*http.Response, error) {
+// GetStream returns the stream and the total size for a specific format
+func (c *Client) GetStream(video *Video, format *Format) (io.Reader, int64, error) {
 	return c.GetStreamContext(context.Background(), video, format)
 }
 
-// GetStreamContext returns the HTTP response for a specific format with a context
-func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (*http.Response, error) {
-	url, err := c.GetStreamURLContext(ctx, video, format)
+// GetStream returns the stream and the total size for a specific format with a context.
+func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (io.Reader, int64, error) {
+	url, err := c.GetStreamURL(video, format)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return c.httpGet(ctx, url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	const chunkSize int64 = 10_000_000
+	r, w := io.Pipe()
+
+	// Loads a chunk a returns the written bytes.
+	// Downloading in multiple chunks is much faster:
+	// https://github.com/kkdai/youtube/pull/190
+	loadChunk := func(pos int64) (int64, error) {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%v-%v", pos, pos+chunkSize-1))
+
+		resp, err := c.httpDo(req)
+		if err != nil {
+			return 0, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusPartialContent {
+			return 0, ErrUnexpectedStatusCode(resp.StatusCode)
+		}
+
+		return io.Copy(w, resp.Body)
+	}
+
+	//nolint:golint,errcheck
+	go func() {
+		// load all the chunks
+		for pos := int64(0); pos < format.ContentLength; {
+			written, err := loadChunk(pos)
+			if err != nil {
+				w.CloseWithError(err)
+				return
+			}
+
+			pos += written
+		}
+
+		w.Close()
+	}()
+
+	return r, format.ContentLength, nil
 }
 
 // GetStreamURL returns the url for a specific format
@@ -181,23 +187,28 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 	return c.decipherURL(ctx, video.ID, cipher)
 }
 
-// httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
-func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error) {
+// httpDo sends an HTTP request and returns an HTTP response.
+func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	client := c.HTTPClient
 	if client == nil {
 		client = http.DefaultClient
 	}
 
 	if c.Debug {
-		log.Println("GET", url)
+		log.Println(req.Method, req.URL)
 	}
 
+	return client.Do(req)
+}
+
+// httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
+func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := client.Do(req)
+	resp, err := c.httpDo(req)
 	if err != nil {
 		return nil, err
 	}

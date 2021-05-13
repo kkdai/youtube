@@ -149,14 +149,13 @@ func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*y
 }
 
 func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *youtube.Video, format *youtube.Format) error {
-	resp, err := dl.GetStreamContext(ctx, video, format)
+	stream, size, err := dl.GetStreamContext(ctx, video, format)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
 	prog := &progress{
-		contentLength: float64(resp.ContentLength),
+		contentLength: float64(size),
 	}
 
 	// create progress bar
@@ -175,7 +174,7 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 		),
 	)
 
-	reader := bar.ProxyReader(resp.Body)
+	reader := bar.ProxyReader(stream)
 	mw := io.MultiWriter(out, prog)
 	_, err = io.Copy(mw, reader)
 	if err != nil {
