@@ -3,6 +3,7 @@ package youtube
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -39,8 +40,19 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	// Circumvent age restriction to pretend access through googleapis.com
 	eurl := "https://youtube.googleapis.com/v/" + id
+	var retried bool
+	var errStatus ErrUnexpectedStatusCode
+
+retry:
+	// get_video_info can fail sometimes:
+	// https://github.com/kkdai/youtube/issues/192
 	body, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)
 	if err != nil {
+		if !retried && errors.As(err, &errStatus) && int(errStatus) == http.StatusNotFound {
+			retried = true
+			goto retry
+		}
+
 		return nil, err
 	}
 
