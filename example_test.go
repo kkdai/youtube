@@ -19,11 +19,10 @@ func ExampleClient() {
 		panic(err)
 	}
 
-	resp, err := client.GetStream(video, &video.Formats[0])
+	stream, _, err := client.GetStream(video, &video.Formats[0])
 	if err != nil {
 		panic(err)
 	}
-	defer resp.Body.Close()
 
 	file, err := os.Create("video.mp4")
 	if err != nil {
@@ -31,7 +30,7 @@ func ExampleClient() {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(file, resp.Body)
+	_, err = io.Copy(file, stream)
 	if err != nil {
 		panic(err)
 	}
@@ -66,12 +65,11 @@ func ExamplePlaylist() {
 
 	fmt.Printf("Downloading %s by '%s'!\n", video.Title, video.Author)
 
-	resp, err := client.GetStream(video, &video.Formats[0])
+	stream, _, err := client.GetStream(video, &video.Formats[0])
 	if err != nil {
 		panic(err)
 	}
 
-	defer resp.Body.Close()
 	file, err := os.Create("video.mp4")
 
 	if err != nil {
@@ -79,7 +77,7 @@ func ExamplePlaylist() {
 	}
 
 	defer file.Close()
-	_, err = io.Copy(file, resp.Body)
+	_, err = io.Copy(file, stream)
 
 	if err != nil {
 		panic(err)

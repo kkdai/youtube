@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -110,19 +110,62 @@ func (c *Client) VideoFromPlaylistEntryContext(ctx context.Context, entry *Playl
 	return c.videoFromID(ctx, entry.ID)
 }
 
-// GetStream returns the HTTP response for a specific format
-func (c *Client) GetStream(video *Video, format *Format) (*http.Response, error) {
+// GetStream returns the stream and the total size for a specific format
+func (c *Client) GetStream(video *Video, format *Format) (io.Reader, int64, error) {
 	return c.GetStreamContext(context.Background(), video, format)
 }
 
-// GetStreamContext returns the HTTP response for a specific format with a context
-func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (*http.Response, error) {
-	url, err := c.GetStreamURLContext(ctx, video, format)
+// GetStream returns the stream and the total size for a specific format with a context.
+func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (io.Reader, int64, error) {
+	url, err := c.GetStreamURL(video, format)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return c.httpGet(ctx, url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	const chunkSize int64 = 10_000_000
+	r, w := io.Pipe()
+
+	// Loads a chunk a returns the written bytes.
+	// Downloading in multiple chunks is much faster:
+	// https://github.com/kkdai/youtube/pull/190
+	loadChunk := func(pos int64) (int64, error) {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%v-%v", pos, pos+chunkSize-1))
+
+		resp, err := c.httpDo(req)
+		if err != nil {
+			return 0, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusPartialContent {
+			return 0, ErrUnexpectedStatusCode(resp.StatusCode)
+		}
+
+		return io.Copy(w, resp.Body)
+	}
+
+	//nolint:golint,errcheck
+	go func() {
+		// load all the chunks
+		for pos := int64(0); pos < format.ContentLength; {
+			written, err := loadChunk(pos)
+			if err != nil {
+				w.CloseWithError(err)
+				return
+			}
+
+			pos += written
+		}
+
+		w.Close()
+	}()
+
+	return r, format.ContentLength, nil
 }
 
 // GetStreamURL returns the url for a specific format
@@ -144,39 +187,37 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 	return c.decipherURL(ctx, video.ID, cipher)
 }
 
-// httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
-func (c *Client) httpGet(ctx context.Context, url string) (resp *http.Response, err error) {
+// httpDo sends an HTTP request and returns an HTTP response.
+func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	client := c.HTTPClient
 	if client == nil {
 		client = http.DefaultClient
 	}
 
 	if c.Debug {
-		log.Println("GET", url)
+		log.Println(req.Method, req.URL)
 	}
 
+	return client.Do(req)
+}
+
+// httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
+func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// Add range header to disable throttling
-	// see https://github.com/kkdai/youtube/pull/170
-	req.Header.Set("Range", "bytes=0-")
-
-	resp, err = client.Do(req)
+	resp, err := c.httpDo(req)
 	if err != nil {
 		return nil, err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusOK, http.StatusPartialContent:
-	default:
+	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
 		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
 	}
-
-	return
+	return resp, nil
 }
 
 // httpGetBodyBytes reads the whole HTTP body and returns it
@@ -187,5 +228,5 @@ func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, erro
 	}
 	defer resp.Body.Close()
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
