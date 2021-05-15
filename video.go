@@ -17,11 +17,14 @@ type Video struct {
 	Description     string
 	Author          string
 	Duration        time.Duration
+	PublishDate     time.Time
 	Formats         FormatList
 	Thumbnails      Thumbnails
 	DASHManifestURL string // URI of the DASH manifest file
 	HLSManifestURL  string // URI of the HLS manifest file
 }
+
+const dateFormat = "2006-01-02"
 
 func (v *Video) parseVideoInfo(body []byte) error {
 	answer, err := url.ParseQuery(string(body))
@@ -107,6 +110,10 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 
 	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
 		v.Duration = time.Duration(seconds) * time.Second
+	}
+
+	if str := prData.Microformat.PlayerMicroformatRenderer.PublishDate; str != "" {
+		v.PublishDate, _ = time.Parse(dateFormat, str)
 	}
 
 	// Assign Streams

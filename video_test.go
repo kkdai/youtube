@@ -1,14 +1,12 @@
 package youtube
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestDownload_Regular(t *testing.T) {
-	ctx := context.Background()
 
 	testcases := []struct {
 		name       string
@@ -64,7 +62,7 @@ func TestDownload_Regular(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			require := require.New(t)
 
-			video, err := testClient.GetVideoContext(ctx, tc.url)
+			video, err := testClient.GetVideo(tc.url)
 			require.NoError(err)
 
 			var format *Format
@@ -75,7 +73,7 @@ func TestDownload_Regular(t *testing.T) {
 				format = &video.Formats[0]
 			}
 
-			url, err := testClient.GetStreamURLContext(ctx, video, format)
+			url, err := testClient.GetStreamURL(video, format)
 			require.NoError(err)
 			require.NotEmpty(url)
 		})

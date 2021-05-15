@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,14 +77,37 @@ func TestYoutube_findVideoID(t *testing.T) {
 	}
 }
 
-func TestGetVideo(t *testing.T) {
-	require := require.New(t)
+func TestGetVideoWithoutManifestURL(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+
+	video, err := testClient.GetVideo(dwlURL)
+	require.NoError(err)
+	require.NotNil(video)
+
+	assert.NotEmpty(video.Thumbnails)
+	assert.Greater(len(video.Thumbnails), 0)
+	assert.NotEmpty(video.Thumbnails[0].URL)
+	assert.Empty(video.HLSManifestURL)
+	assert.Empty(video.DASHManifestURL)
+
+	assert.Equal("rFejpH_tAHM", video.ID)
+	assert.Equal("dotGo 2015 - Rob Pike - Simplicity is Complicated", video.Title)
+	assert.Equal("dotconferences", video.Author)
+	assert.Equal(1392*time.Second, video.Duration)
+	assert.Contains(video.Description, "Go is often described as a simple language.")
+	assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
+}
+
+func TestGetVideoWithManifestURL(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+
 	video, err := testClient.GetVideo(streamURL)
 	require.NoError(err)
 	require.NotNil(video)
-	require.NotEmpty(video.Thumbnails)
-	require.Greater(len(video.Thumbnails), 0)
-	require.NotEmpty(video.Thumbnails[0].URL)
-	require.NotEmpty(video.HLSManifestURL)
-	require.NotEmpty(video.DASHManifestURL)
+
+	assert.NotEmpty(video.Thumbnails)
+	assert.Greater(len(video.Thumbnails), 0)
+	assert.NotEmpty(video.Thumbnails[0].URL)
+	assert.NotEmpty(video.HLSManifestURL)
+	assert.NotEmpty(video.DASHManifestURL)
 }
