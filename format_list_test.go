@@ -154,3 +154,15 @@ func TestFormatList_Type(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatList_Sort(t *testing.T) {
+	list := FormatList{
+		{Width: 512},
+		{Width: 768, MimeType: "mp4"},
+		{Width: 768, MimeType: "opus"},
+	}
+
+	list.Sort()
+
+	// TODO add more tests here
+}

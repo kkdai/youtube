@@ -111,12 +111,12 @@ func (c *Client) VideoFromPlaylistEntryContext(ctx context.Context, entry *Playl
 }
 
 // GetStream returns the stream and the total size for a specific format
-func (c *Client) GetStream(video *Video, format *Format) (io.Reader, int64, error) {
+func (c *Client) GetStream(video *Video, format *Format) (io.ReadCloser, int64, error) {
 	return c.GetStreamContext(context.Background(), video, format)
 }
 
 // GetStream returns the stream and the total size for a specific format with a context.
-func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (io.Reader, int64, error) {
+func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (io.ReadCloser, int64, error) {
 	url, err := c.GetStreamURL(video, format)
 	if err != nil {
 		return nil, 0, err

@@ -21,8 +21,8 @@ const (
 )
 
 var (
-	playlistIDRegex    = regexp.MustCompile("^[A-Za-z0-9_-]{24,42}$")
-	playlistInURLRegex = regexp.MustCompile("[&?]list=([A-Za-z0-9_-]{24,42})(&.*)?$")
+	playlistIDRegex    = regexp.MustCompile("^[A-Za-z0-9_-]{18,42}$")
+	playlistInURLRegex = regexp.MustCompile("[&?]list=([A-Za-z0-9_-]{18,42})(&.*)?$")
 )
 
 type Playlist struct {

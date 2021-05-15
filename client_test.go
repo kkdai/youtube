@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"io"
 	"testing"
 	"time"
 
@@ -110,4 +111,36 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 	assert.NotEmpty(video.Thumbnails[0].URL)
 	assert.NotEmpty(video.HLSManifestURL)
 	assert.NotEmpty(video.DASHManifestURL)
+}
+
+func TestGetStream(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+
+	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=BaW_jenozKc")
+	require.NoError(err)
+	require.NotNil(video)
+	require.Greater(len(video.Formats), 0)
+
+	reader, size, err := testClient.GetStream(video, &video.Formats[0])
+	require.NoError(err)
+	assert.EqualValues(2208750, size)
+
+	data, err := io.ReadAll(reader)
+	require.NoError(err)
+	assert.Len(data, int(size))
+}
+
+func TestGetPlaylist(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+
+	playlist, err := testClient.GetPlaylist("https://www.youtube.com/playlist?list=PL2F4AF82A41D0D2C6")
+	require.NoError(err)
+	require.NotNil(playlist)
+
+	if assert.Len(playlist.Videos, 1) {
+		assert.Equal("lDc63xu98cE", playlist.Videos[0].ID)
+		assert.Equal("Dazian Showroom 2010", playlist.Videos[0].Title)
+		assert.Equal("Dazian Creative Fabric", playlist.Videos[0].Author)
+		assert.Equal(173*time.Second, playlist.Videos[0].Duration)
+	}
 }
