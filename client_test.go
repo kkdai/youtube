@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 )
 
 var testClient = Client{Debug: true}
@@ -142,5 +143,31 @@ func TestGetPlaylist(t *testing.T) {
 		assert.Equal("Dazian Showroom 2010", playlist.Videos[0].Title)
 		assert.Equal("Dazian Creative Fabric", playlist.Videos[0].Author)
 		assert.Equal(173*time.Second, playlist.Videos[0].Duration)
+	}
+}
+
+func TestClient_httpGetBodyBytes(t *testing.T) {
+	tests := []struct {
+		url           string
+		errorContains string
+	}{
+		{"unknown://", "unsupported protocol scheme"},
+		{"invalid\nurl", "invalid control character in URL"},
+		{"http://unknown-host/", "dial tcp"},
+		{"http://example.com/does-not-exist", "unexpected status code: 404"},
+		{"http://example.com/", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.url, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			_, err := testClient.httpGetBodyBytes(ctx, tt.url)
+
+			if tt.errorContains == "" {
+				assert.NoError(t, err)
+			} else if assert.Error(t, err) {
+				assert.Contains(t, err.Error(), tt.errorContains)
+			}
+		})
 	}
 }
