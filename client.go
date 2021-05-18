@@ -3,7 +3,6 @@ package youtube
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -40,19 +39,9 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	// Circumvent age restriction to pretend access through googleapis.com
 	eurl := "https://youtube.googleapis.com/v/" + id
-	var retried bool
-	var errStatus ErrUnexpectedStatusCode
 
-retry:
-	// get_video_info can fail sometimes:
-	// https://github.com/kkdai/youtube/issues/192
-	body, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)
+	body, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/get_video_info?video_id="+id+"&html5=1&eurl="+eurl)
 	if err != nil {
-		if !retried && errors.As(err, &errStatus) && int(errStatus) == http.StatusNotFound {
-			retried = true
-			goto retry
-		}
-
 		return nil, err
 	}
 
@@ -198,7 +187,13 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 		log.Println(req.Method, req.URL)
 	}
 
-	return client.Do(req)
+	res, err := client.Do(req)
+
+	if c.Debug && res != nil {
+		log.Println(res.Status)
+	}
+
+	return res, err
 }
 
 // httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
