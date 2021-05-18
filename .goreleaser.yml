@@ -30,8 +30,9 @@ snapcrafts:
     base: core18
     apps:
       youtubedr:
-        plugs: ["home", "network"]
+        plugs: ["home", "network", "dot-youtubedr-yaml"]
     plugs:
-      personal-files:
+      dot-youtubedr-yaml:
+        interface: personal-files
         read:
         - $HOME/.youtubedr.yaml
