@@ -6,7 +6,7 @@ import (
 )
 
 var videoRegexpList = []*regexp.Regexp{
-	regexp.MustCompile(`(?:v|embed|watch\?v)(?:=|/)([^"&?/=%]{11})`),
+	regexp.MustCompile(`(?:v|embed|shorts|watch\?v)(?:=|/)([^"&?/=%]{11})`),
 	regexp.MustCompile(`(?:=|/)([^"&?/=%]{11})`),
 	regexp.MustCompile(`([^"&?/=%]{11})`),
 }
