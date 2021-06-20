@@ -95,7 +95,7 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert.Equal("rFejpH_tAHM", video.ID)
 	assert.Equal("dotGo 2015 - Rob Pike - Simplicity is Complicated", video.Title)
 	assert.Equal("dotconferences", video.Author)
-	assert.Equal(1392*time.Second, video.Duration)
+	assert.Equal(1391*time.Second, video.Duration)
 	assert.Contains(video.Description, "Go is often described as a simple language.")
 	assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
 }
