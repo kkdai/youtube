@@ -63,6 +63,7 @@ func (v *Video) isVideoFromInfoDownloadable(prData playerResponseData) error {
 }
 
 var playerResponsePattern = regexp.MustCompile(`var ytInitialPlayerResponse\s*=\s*(\{.+?\});`)
+var publishDatePattern = regexp.MustCompile(`(<=itemprop=\"datePublished\" content=\")?\d{4}-\d{2}-\d{2}`)
 
 func (v *Video) parseVideoPage(body []byte) error {
 	initialPlayerResponse := playerResponsePattern.FindSubmatch(body)
@@ -77,6 +78,10 @@ func (v *Video) parseVideoPage(body []byte) error {
 
 	if err := v.isVideoFromPageDownloadable(prData); err != nil {
 		return err
+	}
+
+	if publishDate := publishDatePattern.FindSubmatch(body); publishDate != nil {
+		v.PublishDate, _ = time.Parse(dateFormat, string(publishDate[0]))
 	}
 
 	return v.extractDataFromPlayerResponse(prData)
@@ -110,10 +115,6 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 
 	if seconds, _ := strconv.Atoi(prData.VideoDetails.LengthSeconds); seconds > 0 {
 		v.Duration = time.Duration(seconds) * time.Second
-	}
-
-	if str := prData.Microformat.PlayerMicroformatRenderer.PublishDate; str != "" {
-		v.PublishDate, _ = time.Parse(dateFormat, str)
 	}
 
 	// Assign Streams
