@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -38,9 +39,10 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	// Circumvent age restriction to pretend access through googleapis.com
-	eurl := "https://youtube.googleapis.com/v/" + id
+	//eurl := "https://youtube.googleapis.com/v/" + id
 
-	body, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/get_video_info?video_id="+id+"&html5=1&eurl="+eurl)
+	//body, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/get_video_info?video_id="+id+"&html5=1&c=TVHTML5&cver=7.20201028&eurl="+eurl)
+	body, err := c.videoDataByInnertube(id)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +64,61 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	}
 
 	return v, err
+}
+
+type innertubeRequest struct {
+	Context inntertubeContext `json:"context"`
+	VideoId string            `json:"videoId"`
+}
+
+type inntertubeContext struct {
+	Client innertubeClient `json:"client"`
+}
+
+type innertubeClient struct {
+	BrowserName    string `json:"browserName"`
+	BrowserVersion string `json:"browserVersion"`
+	ClientName     string `json:"clientName"`
+	ClientVersion  string `json:"clientVersion"`
+}
+
+func (c *Client) videoDataByInnertube(id string) ([]byte, error) {
+	// seems like same token for all WEB clients
+	const webToken = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
+	u := fmt.Sprintf("https://www.youtube.com/youtubei/v1/player?key=%s", webToken)
+
+	data := innertubeRequest{
+		Context: inntertubeContext{
+			Client: innertubeClient{
+				BrowserName:    "Mozilla",
+				BrowserVersion: "5.0",
+				ClientName:     "WEB",
+				ClientVersion:  "2.20210617.01.00",
+			},
+		},
+		VideoId: id,
+	}
+
+	reqData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(reqData))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.httpDo(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	return io.ReadAll(resp.Body)
 }
 
 // GetPlaylist fetches playlist metadata
