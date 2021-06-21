@@ -26,26 +26,6 @@ type Video struct {
 const dateFormat = "2006-01-02"
 
 func (v *Video) parseVideoInfo(body []byte) error {
-	// No need anymore, response already comes in json
-	//answer, err := url.ParseQuery(string(body))
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//status := answer.Get("status")
-	//if status != "ok" {
-	//	return &ErrResponseStatus{
-	//		Status: status,
-	//		Reason: answer.Get("reason"),
-	//	}
-	//}
-
-	// read the streams map
-	//playerResponse := answer.Get("player_response")
-	//if playerResponse == "" {
-	//	return errors.New("no player_response found in the server's answer")
-	//}
-
 	var prData playerResponseData
 	if err := json.Unmarshal(body, &prData); err != nil {
 		return fmt.Errorf("unable to parse player response JSON: %w", err)
