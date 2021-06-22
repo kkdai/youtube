@@ -6,6 +6,7 @@ import (
 
 const (
 	ErrCipherNotFound             = constError("cipher not found")
+	ErrSignatureTimestampNotFound = constError("signature timestamp not found")
 	ErrInvalidCharactersInVideoID = constError("invalid characters in video id")
 	ErrVideoIDMinLength           = constError("the video id must be at least 10 characters long")
 	ErrReadOnClosedResBody        = constError("http: read on closed response body")

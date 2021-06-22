@@ -2,9 +2,7 @@ package youtube
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -66,8 +64,6 @@ const (
 )
 
 var (
-	basejsPattern = regexp.MustCompile(`(/s/player/\w+/player_ias.vflset/\w+/base.js)`)
-
 	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
 		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, swapStr, jsvarStr, spliceStr, jsvarStr, reverseStr))
 
@@ -84,20 +80,7 @@ var (
 )
 
 func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []DecipherOperation, err error) {
-	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
-	embedBody, err := c.httpGetBodyBytes(ctx, embedURL)
-	if err != nil {
-		return nil, err
-	}
-
-	// example: /s/player/f676c671/player_ias.vflset/en_US/base.js
-	escapedBasejsURL := string(basejsPattern.Find(embedBody))
-	if escapedBasejsURL == "" {
-		log.Println("playerConfig:", string(embedBody))
-		return nil, errors.New("unable to find basejs URL in playerConfig")
-	}
-
-	basejsBody, err := c.httpGetBodyBytes(ctx, "https://youtube.com"+escapedBasejsURL)
+	basejsBody, err := c.fetchPlayerConfig(ctx, videoID)
 	if err != nil {
 		return nil, err
 	}
