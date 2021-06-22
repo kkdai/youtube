@@ -63,8 +63,17 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 }
 
 type innertubeRequest struct {
-	Context inntertubeContext `json:"context"`
-	VideoID string            `json:"videoId"`
+	VideoID         string            `json:"videoId"`
+	Context         inntertubeContext `json:"context"`
+	PlaybackContext playbackContext   `json:"playbackContext"`
+}
+
+type playbackContext struct {
+	ContentPlaybackContext contentPlaybackContext `json:"contentPlaybackContext"`
+}
+
+type contentPlaybackContext struct {
+	SignatureTimestamp string `json:"signatureTimestamp"`
 }
 
 type inntertubeContext struct {
@@ -72,10 +81,10 @@ type inntertubeContext struct {
 }
 
 type innertubeClient struct {
-	BrowserName    string `json:"browserName"`
-	BrowserVersion string `json:"browserVersion"`
-	ClientName     string `json:"clientName"`
-	ClientVersion  string `json:"clientVersion"`
+	HL            string `json:"hl"`
+	GL            string `json:"gl"`
+	ClientName    string `json:"clientName"`
+	ClientVersion string `json:"clientVersion"`
 }
 
 func (c *Client) videoDataByInnertube(id string) ([]byte, error) {
@@ -85,15 +94,20 @@ func (c *Client) videoDataByInnertube(id string) ([]byte, error) {
 	u := fmt.Sprintf("https://www.youtube.com/youtubei/v1/player?key=%s", webToken)
 
 	data := innertubeRequest{
+		VideoID: id,
 		Context: inntertubeContext{
 			Client: innertubeClient{
-				BrowserName:    "Mozilla",
-				BrowserVersion: "5.0",
-				ClientName:     "WEB",
-				ClientVersion:  "2.20210617.01.00",
+				HL:            "en",
+				GL:            "US",
+				ClientName:    "WEB",
+				ClientVersion: "2.20210617.01.00",
 			},
 		},
-		VideoID: id,
+		PlaybackContext: playbackContext{
+			ContentPlaybackContext: contentPlaybackContext{
+				SignatureTimestamp: "18795",
+			},
+		},
 	}
 
 	reqData, err := json.Marshal(data)
