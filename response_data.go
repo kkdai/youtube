@@ -20,11 +20,11 @@ type playerResponseData struct {
 		HlsManifestURL   string   `json:"hlsManifestUrl"`
 	} `json:"streamingData"`
 	VideoDetails struct {
-		VideoId          string   `json:"videoId"`
+		VideoID          string   `json:"videoId"`
 		Title            string   `json:"title"`
 		LengthSeconds    string   `json:"lengthSeconds"`
 		Keywords         []string `json:"keywords"`
-		ChannelId        string   `json:"channelId"`
+		ChannelID        string   `json:"channelId"`
 		IsOwnerViewing   bool     `json:"isOwnerViewing"`
 		ShortDescription string   `json:"shortDescription"`
 		IsCrawlable      bool     `json:"isCrawlable"`
@@ -43,7 +43,7 @@ type playerResponseData struct {
 		PlayerMicroformatRenderer struct {
 			Thumbnail struct {
 				Thumbnails []struct {
-					Url    string `json:"url"`
+					URL    string `json:"url"`
 					Width  int    `json:"width"`
 					Height int    `json:"height"`
 				} `json:"thumbnails"`
@@ -55,8 +55,8 @@ type playerResponseData struct {
 				SimpleText string `json:"simpleText"`
 			} `json:"description"`
 			LengthSeconds      string   `json:"lengthSeconds"`
-			OwnerProfileUrl    string   `json:"ownerProfileUrl"`
-			ExternalChannelId  string   `json:"externalChannelId"`
+			OwnerProfileURL    string   `json:"ownerProfileUrl"`
+			ExternalChannelID  string   `json:"externalChannelId"`
 			IsFamilySafe       bool     `json:"isFamilySafe"`
 			AvailableCountries []string `json:"availableCountries"`
 			IsUnlisted         bool     `json:"isUnlisted"`

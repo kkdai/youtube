@@ -64,7 +64,7 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 type innertubeRequest struct {
 	Context inntertubeContext `json:"context"`
-	VideoId string            `json:"videoId"`
+	VideoID string            `json:"videoId"`
 }
 
 type inntertubeContext struct {
@@ -80,6 +80,7 @@ type innertubeClient struct {
 
 func (c *Client) videoDataByInnertube(id string) ([]byte, error) {
 	// seems like same token for all WEB clients
+	//nolint:gosec
 	const webToken = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
 	u := fmt.Sprintf("https://www.youtube.com/youtubei/v1/player?key=%s", webToken)
 
@@ -92,7 +93,7 @@ func (c *Client) videoDataByInnertube(id string) ([]byte, error) {
 				ClientVersion:  "2.20210617.01.00",
 			},
 		},
-		VideoId: id,
+		VideoID: id,
 	}
 
 	reqData, err := json.Marshal(data)
