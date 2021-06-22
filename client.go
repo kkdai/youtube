@@ -38,7 +38,7 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 }
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
-	body, err := c.videoDataByInnertube(id)
+	body, err := c.videoDataByInnertube(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,13 @@ type innertubeClient struct {
 	ClientVersion string `json:"clientVersion"`
 }
 
-func (c *Client) videoDataByInnertube(id string) ([]byte, error) {
+func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, error) {
+	// fetch sts first
+	sts, err := c.getSignatureTimestamp(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	// seems like same token for all WEB clients
 	//nolint:gosec
 	const webToken = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
@@ -105,7 +111,7 @@ func (c *Client) videoDataByInnertube(id string) ([]byte, error) {
 		},
 		PlaybackContext: playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
-				SignatureTimestamp: "18795",
+				SignatureTimestamp: sts,
 			},
 		},
 	}
