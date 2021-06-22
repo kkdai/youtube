@@ -19,23 +19,6 @@ func (e constError) Error() string {
 	return string(e)
 }
 
-type ErrResponseStatus struct {
-	Status string
-	Reason string
-}
-
-func (err ErrResponseStatus) Error() string {
-	if err.Status == "" {
-		return "no response status found in the server's answer"
-	}
-
-	if err.Reason == "" {
-		return fmt.Sprintf("response status: '%s', no reason given", err.Status)
-	}
-
-	return fmt.Sprintf("response status: '%s', reason: '%s'", err.Status, err.Reason)
-}
-
 type ErrPlayabiltyStatus struct {
 	Status string
 	Reason string

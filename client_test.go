@@ -24,7 +24,7 @@ func TestParseVideo(t *testing.T) {
 	assert.NotNil(t, video)
 
 	_, err = testClient.GetVideo(errURL)
-	assert.EqualError(t, err, `response status: 'fail', reason: 'Invalid parameters.'`)
+	assert.IsType(t, err, &ErrPlayabiltyStatus{})
 }
 
 func TestYoutube_findVideoID(t *testing.T) {
