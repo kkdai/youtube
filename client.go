@@ -138,7 +138,7 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 		return io.Copy(w, resp.Body)
 	}
 
-	//nolint:golint,errcheck
+	//nolint:revive,errcheck
 	go func() {
 		// load all the chunks
 		for pos := int64(0); pos < format.ContentLength; {
