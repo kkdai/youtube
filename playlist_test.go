@@ -65,7 +65,7 @@ func TestYoutube_extractPlaylistID(t *testing.T) {
 
 	for _, v := range tests {
 		t.Run(v.name, func(t *testing.T) {
-			id, err := extractPlaylistID(v.url)
+			id, err := ExtractPlaylistID(v.url)
 
 			assert.Equal(t, v.expectedError, err)
 			assert.Equal(t, v.expectedID, id)

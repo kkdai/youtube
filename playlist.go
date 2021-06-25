@@ -34,12 +34,13 @@ type Playlist struct {
 
 type PlaylistEntry struct {
 	ID       string
+	Index    string
 	Title    string
 	Author   string
 	Duration time.Duration
 }
 
-func extractPlaylistID(url string) (string, error) {
+func ExtractPlaylistID(url string) (string, error) {
 	if playlistIDRegex.Match([]byte(url)) {
 		return url, nil
 	}
@@ -128,10 +129,11 @@ func (p *Playlist) UnmarshalJSON(b []byte) (err error) {
 
 type videosJSONExtractor struct {
 	Renderer *struct {
-		ID       string   `json:"videoId"`
-		Title    withRuns `json:"title"`
-		Author   withRuns `json:"shortBylineText"`
-		Duration string   `json:"lengthSeconds"`
+		ID       string    `json:"videoId"`
+		Index    indexText `json:"index"`
+		Title    withRuns  `json:"title"`
+		Author   withRuns  `json:"shortBylineText"`
+		Duration string    `json:"lengthSeconds"`
 	} `json:"playlistVideoRenderer"`
 }
 
@@ -142,6 +144,7 @@ func (vje videosJSONExtractor) PlaylistEntry() *PlaylistEntry {
 	}
 	return &PlaylistEntry{
 		ID:       vje.Renderer.ID,
+		Index:    vje.Renderer.Index.String(),
 		Title:    vje.Renderer.Title.String(),
 		Author:   vje.Renderer.Author.String(),
 		Duration: time.Second * time.Duration(ds),
@@ -154,9 +157,17 @@ type withRuns struct {
 	} `json:"runs"`
 }
 
+type indexText struct {
+	SimpleText string `json:"simpleText"`
+}
+
 func (wr withRuns) String() string {
 	if len(wr.Runs) > 0 {
 		return wr.Runs[0].Text
 	}
 	return ""
+}
+
+func (it indexText) String() string {
+	return it.SimpleText
 }
