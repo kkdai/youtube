@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
+func (c *Client) decipherURL(ctx context.Context, cipher string) (string, error) {
 	queryParams, err := url.ParseQuery(cipher)
 	if err != nil {
 		return "", err
@@ -34,16 +34,23 @@ func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 		Mt.reverse(a,52);
 		return a.join("")
 	*/
-
-	operations, err := c.parseDecipherOpsWithCache(ctx, videoID)
+	ops, err := c.getOpsFromCache(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	// apply operations
 	bs := []byte(queryParams.Get("s"))
-	for _, op := range operations {
-		bs = op(bs)
+
+	for _, op := range ops {
+		switch op.Name {
+		case OpReverse:
+			bs = reverseFunc(bs)
+		case OpSplice:
+			bs = newSpliceFunc(op.Value)(bs)
+		case OpSwap:
+			bs = newSwapFunc(op.Value)(bs)
+		}
 	}
 
 	decipheredURL := fmt.Sprintf("%s&%s=%s", queryParams.Get("url"), queryParams.Get("sp"), string(bs))
@@ -79,14 +86,9 @@ var (
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
 
-func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []DecipherOperation, err error) {
-	basejsBody, err := c.fetchPlayerConfig(ctx, videoID)
-	if err != nil {
-		return nil, err
-	}
-
-	objResult := actionsObjRegexp.FindSubmatch(basejsBody)
-	funcResult := actionsFuncRegexp.FindSubmatch(basejsBody)
+func parseOperations(player []byte) ([]Operation, error) {
+	objResult := actionsObjRegexp.FindSubmatch(player)
+	funcResult := actionsFuncRegexp.FindSubmatch(player)
 	if len(objResult) < 3 || len(funcResult) < 2 {
 		return nil, fmt.Errorf("error parsing signature tokens (#obj=%d, #func=%d)", len(objResult), len(funcResult))
 	}
@@ -112,36 +114,43 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 		return nil, err
 	}
 
-	var ops []DecipherOperation
+	var ops []Operation
 	for _, s := range regex.FindAllSubmatch(funcBody, -1) {
 		switch string(s[1]) {
 		case reverseKey:
-			ops = append(ops, reverseFunc)
+			ops = append(ops, Operation{Name: OpReverse})
 		case swapKey:
 			arg, _ := strconv.Atoi(string(s[2]))
-			ops = append(ops, newSwapFunc(arg))
+			ops = append(ops, Operation{OpSwap, arg})
 		case spliceKey:
 			arg, _ := strconv.Atoi(string(s[2]))
-			ops = append(ops, newSpliceFunc(arg))
+			ops = append(ops, Operation{OpSplice, arg})
 		}
 	}
 	return ops, nil
 }
 
-func (c *Client) parseDecipherOpsWithCache(ctx context.Context, videoID string) (operations []DecipherOperation, err error) {
-	if c.decipherOpsCache == nil {
-		c.decipherOpsCache = NewSimpleCache()
+func (c *Client) getOpsFromCache(ctx context.Context) ([]Operation, error) {
+	// if there is cache - we need to make sure its actual version
+	if c.cache != nil {
+		version, err := c.fetchPlayerVersion(ctx)
+		if err != nil {
+			// we couldn't fetch what's current player version, should we really exit here?..
+			return nil, err
+		}
+
+		ops, ok := c.cache.getOps(version)
+		if ok {
+			return ops, nil
+		}
 	}
 
-	if ops := c.decipherOpsCache.Get(videoID); ops != nil {
-		return ops, nil
-	}
-
-	ops, err := c.parseDecipherOps(ctx, videoID)
+	// both empty cache and wrong version leads here
+	_, err := c.cachePlayer(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	c.decipherOpsCache.Set(videoID, ops)
-	return ops, err
+	// we just re-cached player, no need to check version
+	return c.cache.Operations, nil
 }
