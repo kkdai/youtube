@@ -21,7 +21,7 @@ type Client struct {
 
 	// cache shouldn't be accessible from outside.
 	// Stores deciphering operations and signature timestamp
-	cache *PlayerCache
+	cache *playerCache
 }
 
 // GetVideo fetches video metadata

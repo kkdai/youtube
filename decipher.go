@@ -34,7 +34,7 @@ func (c *Client) decipherURL(ctx context.Context, cipher string) (string, error)
 		Mt.reverse(a,52);
 		return a.join("")
 	*/
-	ops, err := c.getOpsFromCache(ctx)
+	ops, err := c.getOperations(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -43,7 +43,7 @@ func (c *Client) decipherURL(ctx context.Context, cipher string) (string, error)
 	bs := []byte(queryParams.Get("s"))
 
 	for _, op := range ops {
-		switch op.Name {
+		switch op.Type {
 		case OpReverse:
 			bs = reverseFunc(bs)
 		case OpSplice:
@@ -118,7 +118,7 @@ func parseOperations(player []byte) ([]Operation, error) {
 	for _, s := range regex.FindAllSubmatch(funcBody, -1) {
 		switch string(s[1]) {
 		case reverseKey:
-			ops = append(ops, Operation{Name: OpReverse})
+			ops = append(ops, Operation{OpReverse, 0})
 		case swapKey:
 			arg, _ := strconv.Atoi(string(s[2]))
 			ops = append(ops, Operation{OpSwap, arg})
@@ -128,29 +128,4 @@ func parseOperations(player []byte) ([]Operation, error) {
 		}
 	}
 	return ops, nil
-}
-
-func (c *Client) getOpsFromCache(ctx context.Context) ([]Operation, error) {
-	// if there is cache - we need to make sure its actual version
-	if c.cache != nil {
-		version, err := c.fetchPlayerVersion(ctx)
-		if err != nil {
-			// we couldn't fetch what's current player version, should we really exit here?..
-			return nil, err
-		}
-
-		ops, ok := c.cache.getOps(version)
-		if ok {
-			return ops, nil
-		}
-	}
-
-	// both empty cache and wrong version leads here
-	_, err := c.cachePlayer(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// we just re-cached player, no need to check version
-	return c.cache.Operations, nil
 }
