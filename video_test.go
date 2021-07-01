@@ -1,8 +1,6 @@
 package youtube
 
 import (
-	"context"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -78,12 +76,6 @@ func TestDownload_Regular(t *testing.T) {
 			url, err := testClient.GetStreamURL(video, format)
 			require.NoError(err)
 			require.NotEmpty(url)
-
-			// if deciphering failed - requesting stream URL will result in 403 Access Forbidden
-			resp, err := testClient.httpGet(context.Background(), url)
-			require.NoError(err)
-			require.NotEmpty(resp)
-			require.Equal(http.StatusOK, resp.StatusCode)
 		})
 	}
 }
