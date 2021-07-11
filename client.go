@@ -75,6 +75,11 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 			return v, nil
 		}
 
+		// private video clearly not age-restricted and thus should be explicit
+		if errEmbed == ErrVideoPrivate {
+			return v, errEmbed
+		}
+
 		// wrapping error so its clear whats happened
 		return v, fmt.Errorf("can't bypass age restriction: %w", errEmbed)
 	}
@@ -145,7 +150,7 @@ var innertubeClientInfo = map[string]map[string]string{
 	// might add ANDROID and other in future, but i don't see reason yet
 	"WEB": {
 		"version": "2.20210617.01.00",
-		"key": "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+		"key":     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
 	},
 	"WEB_EMBEDDED_PLAYER": {
 		"version": "1.19700101",
