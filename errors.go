@@ -11,6 +11,8 @@ const (
 	ErrVideoIDMinLength           = constError("the video id must be at least 10 characters long")
 	ErrReadOnClosedResBody        = constError("http: read on closed response body")
 	ErrNotPlayableInEmbed         = constError("embedding of this video has been disabled")
+	ErrLoginRequired              = constError("login required to confirm your age")
+	ErrVideoPrivate               = constError("user restricted access to this video")
 	ErrInvalidPlaylist            = constError("no playlist detected or invalid playlist ID")
 )
 

@@ -94,7 +94,7 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 		{
 			issue:   "issue#59",
 			videoID: "nINQjT7Zr9w",
-			err:     `status: LOGIN_REQUIRED`,
+			err:     ErrVideoPrivate.Error(),
 		},
 	}
 
