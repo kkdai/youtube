@@ -72,6 +72,10 @@ func (v *Video) isVideoDownloadable(prData playerResponseData, isVideoPage bool)
 		return nil
 	}
 
+	if prData.PlayabilityStatus.Status == "LOGIN_REQUIRED" {
+		return ErrLoginRequired
+	}
+
 	if !isVideoPage && !prData.PlayabilityStatus.PlayableInEmbed {
 		return ErrNotPlayableInEmbed
 	}
