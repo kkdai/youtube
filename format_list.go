@@ -60,6 +60,16 @@ func (list FormatList) AudioChannels(n int) (result FormatList) {
 	return result
 }
 
+// AudioChannels returns a new FormatList filtered by the matching AudioChannels
+func (list FormatList) WithAudioChannels() (result FormatList) {
+	for _, f := range list {
+		if f.AudioChannels > 0 {
+			result = append(result, f)
+		}
+	}
+	return result
+}
+
 // FilterQuality reduces the format list to formats matching the quality
 func (v *Video) FilterQuality(quality string) {
 	v.Formats = v.Formats.Quality(quality)
