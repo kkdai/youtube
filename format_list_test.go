@@ -168,11 +168,12 @@ func TestFormatList_Sort(t *testing.T) {
 }
 
 func TestFormatList_WithAudioChannels(t *testing.T) {
-	list := []Format{{
-		AudioChannels: 0,
-		Quality:       "medium",
-		QualityLabel:  "360p",
-	},
+	list := []Format{
+		{
+			AudioChannels: 0,
+			Quality:       "medium",
+			QualityLabel:  "360p",
+		},
 		{
 			AudioChannels: 1,
 			Quality:       "large",
@@ -182,7 +183,7 @@ func TestFormatList_WithAudioChannels(t *testing.T) {
 	tests := []struct {
 		name string
 		list FormatList
-		want []Format
+		want FormatList
 	}{
 		{
 			name: "find all formats with Audio Channels",
