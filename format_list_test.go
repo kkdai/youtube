@@ -166,3 +166,41 @@ func TestFormatList_Sort(t *testing.T) {
 
 	// TODO add more tests here
 }
+
+func TestFormatList_WithAudioChannels(t *testing.T) {
+	list := []Format{
+		{
+			AudioChannels: 0,
+			Quality:       "medium",
+			QualityLabel:  "360p",
+		},
+		{
+			AudioChannels: 1,
+			Quality:       "large",
+			QualityLabel:  "480p",
+		},
+	}
+	tests := []struct {
+		name string
+		list FormatList
+		want FormatList
+	}{
+		{
+			name: "find all formats with Audio Channels",
+			list: list,
+			want: []Format{
+				{
+					AudioChannels: 1,
+					Quality:       "large",
+					QualityLabel:  "480p",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			format := tt.list.WithAudioChannels()
+			assert.Equal(t, format, tt.want)
+		})
+	}
+}
