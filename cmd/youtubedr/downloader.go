@@ -88,7 +88,7 @@ func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 	switch {
 	case itag > 0:
 		// When an itag is specified, do not filter format with mime-type
-		format = video.Formats.WithAudioChannels().FindByItag(itag)
+		format = video.Formats.FindByItag(itag)
 		if format == nil {
 			return nil, nil, fmt.Errorf("unable to find format with itag %d", itag)
 		}
