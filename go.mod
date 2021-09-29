@@ -1,4 +1,4 @@
-module github.com/kkdai/youtube/v2
+module github.com/ezoic/youtube/v2
 
 go 1.16
 
