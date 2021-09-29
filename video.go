@@ -14,6 +14,7 @@ type Video struct {
 	ID              string
 	Title           string
 	Description     string
+	Keywords        []string
 	Author          string
 	Duration        time.Duration
 	PublishDate     time.Time
@@ -85,6 +86,7 @@ func (v *Video) isVideoDownloadable(prData playerResponseData, isVideoPage bool)
 func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	v.Title = prData.VideoDetails.Title
 	v.Description = prData.VideoDetails.ShortDescription
+	v.Keywords = prData.VideoDetails.Keywords
 	v.Author = prData.VideoDetails.Author
 	v.Thumbnails = prData.VideoDetails.Thumbnail.Thumbnails
 
