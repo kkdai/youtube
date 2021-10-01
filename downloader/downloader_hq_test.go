@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kkdai/youtube/v2"
+	"github.com/ezoic/youtube/v2"
 	"github.com/stretchr/testify/require"
 )
 
