@@ -231,7 +231,7 @@ func (c *Client) GetStream(video *Video, format *Format) (io.ReadCloser, int64, 
 	return c.GetStreamContext(context.Background(), video, format)
 }
 
-// GetStream returns the stream and the total size for a specific format with a context.
+// GetStreamContext returns the stream and the total size for a specific format with a context.
 func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *Format) (io.ReadCloser, int64, error) {
 	url, err := c.GetStreamURL(video, format)
 	if err != nil {
@@ -243,9 +243,15 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 		return nil, 0, err
 	}
 
-	const chunkSize int64 = 10_000_000
 	r, w := io.Pipe()
 
+	go c.download(req, w, format)
+
+	return r, format.ContentLength, nil
+}
+
+func (c *Client) download(req *http.Request, w *io.PipeWriter, format *Format) {
+	const chunkSize int64 = 10_000_000
 	// Loads a chunk a returns the written bytes.
 	// Downloading in multiple chunks is much faster:
 	// https://github.com/kkdai/youtube/pull/190
@@ -265,23 +271,32 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 		return io.Copy(w, resp.Body)
 	}
 
+	defer w.Close()
 	//nolint:revive,errcheck
-	go func() {
-		// load all the chunks
-		for pos := int64(0); pos < format.ContentLength; {
-			written, err := loadChunk(pos)
-			if err != nil {
-				w.CloseWithError(err)
-				return
-			}
-
-			pos += written
+	if format.ContentLength == 0 {
+		resp, err := c.httpDo(req)
+		if err != nil {
+			w.CloseWithError(err)
+			return
 		}
 
-		w.Close()
-	}()
+		defer resp.Body.Close()
 
-	return r, format.ContentLength, nil
+		io.Copy(w, resp.Body)
+		return
+	}
+
+	//nolint:revive,errcheck
+	// load all the chunks
+	for pos := int64(0); pos < format.ContentLength; {
+		written, err := loadChunk(pos)
+		if err != nil {
+			w.CloseWithError(err)
+			return
+		}
+
+		pos += written
+	}
 }
 
 // GetStreamURL returns the url for a specific format
