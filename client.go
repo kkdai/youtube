@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 )
 
 // Client offers methods to download video metadata and video streams.
@@ -39,7 +38,7 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 }
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
-	body, err := c.videoDataByInnertube(ctx, id, "")
+	body, err := c.videoDataByInnertube(ctx, id, Web)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 	// If the uploader marked the video as inappropriate for some ages, use embed player
 	if err == ErrLoginRequired {
-		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id, "embed")
+		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id, EmbeddedClient)
 		if errEmbed == nil {
 			errEmbed = v.parseVideoInfo(bodyEmbed)
 		}
@@ -113,14 +112,21 @@ type innertubeClient struct {
 	ClientVersion string `json:"clientVersion"`
 }
 
-func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientName string) ([]byte, error) {
+type ClientType string
+
+const (
+	Web            ClientType = "WEB"
+	EmbeddedClient ClientType = "WEB_EMBEDDED_PLAYER"
+)
+
+func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType ClientType) ([]byte, error) {
 	// fetch sts first
 	sts, err := c.getSignatureTimestamp(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	data, keyToken := prepareInnertubeData(id, sts, clientName)
+	data, keyToken := prepareInnertubeData(id, sts, clientType)
 
 	reqData, err := json.Marshal(data)
 	if err != nil {
@@ -146,29 +152,26 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientName
 	return io.ReadAll(resp.Body)
 }
 
-var innertubeClientInfo = map[string]map[string]string{
+var innertubeClientInfo = map[ClientType]map[string]string{
 	// might add ANDROID and other in future, but i don't see reason yet
-	"WEB": {
+	Web: {
 		"version": "2.20210617.01.00",
 		"key":     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
 	},
-	"WEB_EMBEDDED_PLAYER": {
+	EmbeddedClient: {
 		"version": "1.19700101",
 		// seems like same key works for both clients
 		"key": "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
 	},
 }
 
-func prepareInnertubeData(videoID string, sts string, clientName string) (innertubeRequest, string) {
-	// currently we only have (and need) embed client and web, as default one
-	// might declare utility constants with client names in future, but not sure yet
-	if strings.ToLower(clientName) == "embed" {
-		clientName = "WEB_EMBEDDED_PLAYER"
-	} else {
-		clientName = "WEB"
+func prepareInnertubeData(videoID string, sts string, clientType ClientType) (innertubeRequest, string) {
+	cInfo, ok := innertubeClientInfo[clientType]
+	if !ok {
+		// if provided clientType not exist - use Web as fallback option
+		clientType = Web
+		cInfo = innertubeClientInfo[clientType]
 	}
-
-	cInfo := innertubeClientInfo[clientName]
 
 	return innertubeRequest{
 		VideoID: videoID,
@@ -176,7 +179,7 @@ func prepareInnertubeData(videoID string, sts string, clientName string) (innert
 			Client: innertubeClient{
 				HL:            "en",
 				GL:            "US",
-				ClientName:    clientName,
+				ClientName:    string(clientType),
 				ClientVersion: cInfo["version"],
 			},
 		},
