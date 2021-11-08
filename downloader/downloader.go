@@ -96,6 +96,7 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 		return err
 	}
 
+	//nolint:gosec
 	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
 		"-i", videoFile.Name(),
 		"-i", audioFile.Name(),
