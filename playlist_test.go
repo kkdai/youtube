@@ -42,6 +42,12 @@ func TestYoutube_extractPlaylistID(t *testing.T) {
 			nil,
 		},
 		{
+			"pass-5",
+			"https://www.youtube.com/watch?v=-T4THwne8IE&list=RD-T4THwne8IE",
+			"RD-T4THwne8IE",
+			nil,
+		},
+		{
 			"fail-1-playlist-id-44-char",
 			"https://www.youtube.com/watch?v=9UL390els7M&list=PLqAfPOrmacr963ATEroh67fbvjmTzTEx5X1212404244", "",
 			ErrInvalidPlaylist,
@@ -54,11 +60,6 @@ func TestYoutube_extractPlaylistID(t *testing.T) {
 		{
 			"fail-3",
 			"awevqevqwev", "",
-			ErrInvalidPlaylist,
-		},
-		{
-			"fail-4",
-			"https://www.youtube.com/watch?v=9UL390els7M&list=PLqAfPOrmacr963A&foo=bar", "",
 			ErrInvalidPlaylist,
 		},
 	}
