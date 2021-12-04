@@ -126,7 +126,7 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType
 	}
 
 	// fetch sts first
-	sts, err := c.getSignatureTimestamp(ctx, config)
+	sts, err := config.getSignatureTimestamp()
 	if err != nil {
 		return nil, err
 	}

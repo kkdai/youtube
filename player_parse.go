@@ -41,12 +41,3 @@ func (c *Client) getPlayerConfig(ctx context.Context, videoID string) (playerCon
 	c.playerCache.Set(escapedBasejsURL, config)
 	return config, nil
 }
-
-func (c *Client) getSignatureTimestamp(ctx context.Context, config playerConfig) (string, error) {
-	result := signatureRegexp.FindSubmatch(config)
-	if result == nil {
-		return "", ErrSignatureTimestampNotFound
-	}
-
-	return string(result[1]), nil
-}

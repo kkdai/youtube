@@ -216,3 +216,12 @@ func (config playerConfig) parseDecipherOps() (operations []DecipherOperation, e
 	}
 	return ops, nil
 }
+
+func (config playerConfig) getSignatureTimestamp() (string, error) {
+	result := signatureRegexp.FindSubmatch(config)
+	if result == nil {
+		return "", ErrSignatureTimestampNotFound
+	}
+
+	return string(result[1]), nil
+}
