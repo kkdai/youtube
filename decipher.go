@@ -9,45 +9,32 @@ import (
 )
 
 func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
-	queryParams, err := url.ParseQuery(cipher)
+	params, err := url.ParseQuery(cipher)
 	if err != nil {
 		return "", err
 	}
 
-	/* eg:
-	    extract decipher from  https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
-
-	    var Mt={
-		splice:function(a,b){a.splice(0,b)},
-		reverse:function(a){a.reverse()},
-		EQ:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
-
-		a=a.split("");
-		Mt.splice(a,3);
-		Mt.EQ(a,39);
-		Mt.splice(a,2);
-		Mt.EQ(a,1);
-		Mt.splice(a,1);
-		Mt.EQ(a,35);
-		Mt.EQ(a,51);
-		Mt.splice(a,2);
-		Mt.reverse(a,52);
-		return a.join("")
-	*/
-
-	operations, err := c.parseDecipherOpsWithCache(ctx, videoID)
+	uri, err := url.Parse(params.Get("url"))
 	if err != nil {
 		return "", err
 	}
 
-	// apply operations
-	bs := []byte(queryParams.Get("s"))
-	for _, op := range operations {
-		bs = op(bs)
+	config, err := c.getPlayerConfig(ctx, videoID)
+	if err != nil {
+		return "", err
 	}
 
-	decipheredURL := fmt.Sprintf("%s&%s=%s", queryParams.Get("url"), queryParams.Get("sp"), string(bs))
-	return decipheredURL, nil
+	// decrypt s-parameter
+	bs, err := config.decrypt([]byte(params.Get("s")))
+	if err != nil {
+		return "", err
+	}
+
+	query := uri.Query()
+	query.Add(params.Get("sp"), string(bs))
+	uri.RawQuery = query.Encode()
+
+	return uri.String(), nil
 }
 
 const (
@@ -79,14 +66,44 @@ var (
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
 
-func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operations []DecipherOperation, err error) {
-	basejsBody, err := c.fetchPlayerConfig(ctx, videoID)
+func (config playerConfig) decrypt(cyphertext []byte) ([]byte, error) {
+	operations, err := config.parseDecipherOps()
 	if err != nil {
 		return nil, err
 	}
 
-	objResult := actionsObjRegexp.FindSubmatch(basejsBody)
-	funcResult := actionsFuncRegexp.FindSubmatch(basejsBody)
+	// apply operations
+	bs := []byte(cyphertext)
+	for _, op := range operations {
+		bs = op(bs)
+	}
+
+	return bs, nil
+}
+
+/*
+	parses decipher operations from https://youtube.com/s/player/4fbb4d5b/player_ias.vflset/en_US/base.js
+
+	var Mt={
+	splice:function(a,b){a.splice(0,b)},
+	reverse:function(a){a.reverse()},
+	EQ:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
+
+	a=a.split("");
+	Mt.splice(a,3);
+	Mt.EQ(a,39);
+	Mt.splice(a,2);
+	Mt.EQ(a,1);
+	Mt.splice(a,1);
+	Mt.EQ(a,35);
+	Mt.EQ(a,51);
+	Mt.splice(a,2);
+	Mt.reverse(a,52);
+	return a.join("")
+*/
+func (config playerConfig) parseDecipherOps() (operations []DecipherOperation, err error) {
+	objResult := actionsObjRegexp.FindSubmatch(config)
+	funcResult := actionsFuncRegexp.FindSubmatch(config)
 	if len(objResult) < 3 || len(funcResult) < 2 {
 		return nil, fmt.Errorf("error parsing signature tokens (#obj=%d, #func=%d)", len(objResult), len(funcResult))
 	}
@@ -128,20 +145,16 @@ func (c *Client) parseDecipherOps(ctx context.Context, videoID string) (operatio
 	return ops, nil
 }
 
-func (c *Client) parseDecipherOpsWithCache(ctx context.Context, videoID string) (operations []DecipherOperation, err error) {
-	if c.decipherOpsCache == nil {
-		c.decipherOpsCache = NewSimpleCache()
+func (c *Client) getPlayerConfig(ctx context.Context, videoID string) (playerConfig, error) {
+	if config := c.decipherOpsCache.Get(videoID); config != nil {
+		return config, nil
 	}
 
-	if ops := c.decipherOpsCache.Get(videoID); ops != nil {
-		return ops, nil
-	}
-
-	ops, err := c.parseDecipherOps(ctx, videoID)
+	config, err := c.fetchPlayerConfig(ctx, videoID)
 	if err != nil {
 		return nil, err
 	}
 
-	c.decipherOpsCache.Set(videoID, ops)
-	return ops, err
+	c.decipherOpsCache.Set(videoID, config)
+	return config, err
 }

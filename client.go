@@ -20,7 +20,7 @@ type Client struct {
 	HTTPClient *http.Client
 
 	// decipherOpsCache cache decipher operations
-	decipherOpsCache DecipherOperationsCache
+	decipherOpsCache playerCache
 }
 
 // GetVideo fetches video metadata
@@ -120,8 +120,13 @@ const (
 )
 
 func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType ClientType) ([]byte, error) {
+	config, err := c.fetchPlayerConfig(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	// fetch sts first
-	sts, err := c.getSignatureTimestamp(ctx, id)
+	sts, err := c.getSignatureTimestamp(ctx, config)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +320,12 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 		return "", ErrCipherNotFound
 	}
 
-	return c.decipherURL(ctx, video.ID, cipher)
+	uri, err := c.decipherURL(ctx, video.ID, cipher)
+	if err != nil {
+		return "", err
+	}
+
+	return uri, err
 }
 
 // httpDo sends an HTTP request and returns an HTTP response.
