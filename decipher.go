@@ -216,17 +216,3 @@ func (config playerConfig) parseDecipherOps() (operations []DecipherOperation, e
 	}
 	return ops, nil
 }
-
-func (c *Client) getPlayerConfig(ctx context.Context, videoID string) (playerConfig, error) {
-	if config := c.decipherOpsCache.Get(videoID); config != nil {
-		return config, nil
-	}
-
-	config, err := c.fetchPlayerConfig(ctx, videoID)
-	if err != nil {
-		return nil, err
-	}
-
-	c.decipherOpsCache.Set(videoID, config)
-	return config, err
-}

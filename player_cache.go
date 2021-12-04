@@ -1,35 +1,44 @@
 package youtube
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 const defaultCacheExpiration = time.Minute * time.Duration(5)
 
 type playerCache struct {
-	playerID  string
+	key       string
 	expiredAt time.Time
 	config    playerConfig
 }
 
 // Get : get cache  when it has same video id and not expired
-func (s playerCache) Get(playerID string) playerConfig {
-	return s.GetCacheBefore(playerID, time.Now())
+func (s playerCache) Get(key string) playerConfig {
+	result := s.GetCacheBefore(key, time.Now())
+	if result == nil {
+		log.Println("Cache miss for", key)
+	} else {
+		log.Println("Cache hit for", key)
+	}
+	return result
 }
 
 // GetCacheBefore : can pass time for testing
-func (s playerCache) GetCacheBefore(playerID string, time time.Time) playerConfig {
-	if playerID == s.playerID && s.expiredAt.After(time) {
+func (s playerCache) GetCacheBefore(key string, time time.Time) playerConfig {
+	if key == s.key && s.expiredAt.After(time) {
 		return s.config
 	}
 	return nil
 }
 
 // Set : set cache with default expiration
-func (s *playerCache) Set(playerID string, operations playerConfig) {
-	s.setWithExpiredTime(playerID, operations, time.Now().Add(defaultCacheExpiration))
+func (s *playerCache) Set(key string, operations playerConfig) {
+	s.setWithExpiredTime(key, operations, time.Now().Add(defaultCacheExpiration))
 }
 
-func (s *playerCache) setWithExpiredTime(playerID string, config playerConfig, time time.Time) {
-	s.playerID = playerID
+func (s *playerCache) setWithExpiredTime(key string, config playerConfig, time time.Time) {
+	s.key = key
 	s.config = config
 	s.expiredAt = time
 }

@@ -19,8 +19,8 @@ type Client struct {
 	// If not set, http.DefaultClient will be used
 	HTTPClient *http.Client
 
-	// decipherOpsCache cache decipher operations
-	decipherOpsCache playerCache
+	// playerCache caches the JavaScript code of a player response
+	playerCache playerCache
 }
 
 // GetVideo fetches video metadata
@@ -120,7 +120,7 @@ const (
 )
 
 func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType ClientType) ([]byte, error) {
-	config, err := c.fetchPlayerConfig(ctx, id)
+	config, err := c.getPlayerConfig(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,6 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType
 	}
 
 	data, keyToken := prepareInnertubeData(id, sts, clientType)
-
 	reqData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
