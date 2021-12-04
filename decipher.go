@@ -1,11 +1,15 @@
 package youtube
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strconv"
+
+	"github.com/dop251/goja"
 )
 
 func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
@@ -18,6 +22,7 @@ func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 	if err != nil {
 		return "", err
 	}
+	query := uri.Query()
 
 	config, err := c.getPlayerConfig(ctx, videoID)
 	if err != nil {
@@ -29,9 +34,18 @@ func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 	if err != nil {
 		return "", err
 	}
-
-	query := uri.Query()
 	query.Add(params.Get("sp"), string(bs))
+
+	// decrypt n-parameter
+	nSig := query.Get("n")
+	if nSig != "" {
+		nDecoded, err := config.decodeNsig(nSig)
+		if err != nil {
+			return "", fmt.Errorf("unable to decode nSig: %w", err)
+		}
+		query.Set("n", nDecoded)
+	}
+
 	uri.RawQuery = query.Encode()
 
 	return uri.String(), nil
@@ -51,7 +65,8 @@ const (
 )
 
 var (
-	actionsObjRegexp = regexp.MustCompile(fmt.Sprintf(
+	nFunctionNameRegexp = regexp.MustCompile("\\.get\\(\"n\"\\)\\)&&\\(b=([a-zA-Z0-9]+)\\(b\\)")
+	actionsObjRegexp    = regexp.MustCompile(fmt.Sprintf(
 		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, swapStr, jsvarStr, spliceStr, jsvarStr, reverseStr))
 
 	actionsFuncRegexp = regexp.MustCompile(fmt.Sprintf(
@@ -65,6 +80,63 @@ var (
 	spliceRegexp  = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, spliceStr))
 	swapRegexp    = regexp.MustCompile(fmt.Sprintf("(?m)(?:^|,)(%s)%s", jsvarStr, swapStr))
 )
+
+func (config playerConfig) decodeNsig(encoded string) (string, error) {
+	fBody, err := config.getNFunction()
+	if err != nil {
+		return "", err
+	}
+
+	return evalJavascript(fBody, encoded)
+}
+
+func evalJavascript(jsFunction, arg string) (string, error) {
+	const myName = "myFunction"
+
+	vm := goja.New()
+	_, err := vm.RunString(myName + "=" + jsFunction)
+	if err != nil {
+		return "", err
+	}
+
+	var output func(string) string
+	err = vm.ExportTo(vm.Get(myName), &output)
+	if err != nil {
+		return "", err
+	}
+
+	return output(arg), nil
+}
+
+func (config playerConfig) getNFunction() (string, error) {
+	nameResult := nFunctionNameRegexp.FindSubmatch(config)
+	if len(nameResult) == 0 {
+		return "", errors.New("unable to extract n-function name")
+	}
+	name := string(nameResult[1])
+
+	// find the beginning of the function
+	def := []byte(name + "=function(")
+	start := bytes.Index(config, def)
+	if start < 1 {
+		return "", fmt.Errorf("unable to extract n-function body: looking for '%s'", def)
+	}
+
+	// start after the first curly bracket
+	pos := start + bytes.IndexByte(config[start:], '{') + 1
+
+	// find the bracket closing the function
+	for brackets := 1; brackets > 0; pos++ {
+		switch config[pos] {
+		case '{':
+			brackets++
+		case '}':
+			brackets--
+		}
+	}
+
+	return string(config[start:pos]), nil
+}
 
 func (config playerConfig) decrypt(cyphertext []byte) ([]byte, error) {
 	operations, err := config.parseDecipherOps()

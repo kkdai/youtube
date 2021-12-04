@@ -117,12 +117,17 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 func TestGetStream(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
-	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=BaW_jenozKc")
+	// Download should not last longer than a minute.
+	// Otherwise we assume Youtube is throtteling us.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	video, err := testClient.GetVideoContext(ctx, "https://www.youtube.com/watch?v=BaW_jenozKc")
 	require.NoError(err)
 	require.NotNil(video)
 	require.Greater(len(video.Formats), 0)
 
-	reader, size, err := testClient.GetStream(video, &video.Formats[0])
+	reader, size, err := testClient.GetStreamContext(ctx, video, &video.Formats[0])
 	require.NoError(err)
 	assert.EqualValues(2208750, size)
 
