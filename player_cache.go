@@ -1,7 +1,6 @@
 package youtube
 
 import (
-	"log"
 	"time"
 )
 
@@ -15,13 +14,7 @@ type playerCache struct {
 
 // Get : get cache  when it has same video id and not expired
 func (s playerCache) Get(key string) playerConfig {
-	result := s.GetCacheBefore(key, time.Now())
-	if result == nil {
-		log.Println("Cache miss for", key)
-	} else {
-		log.Println("Cache hit for", key)
-	}
-	return result
+	return s.GetCacheBefore(key, time.Now())
 }
 
 // GetCacheBefore : can pass time for testing
