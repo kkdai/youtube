@@ -6,6 +6,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func ExampleClient_GetStream() {
+	client := Client{Debug: true}
+
+	video, err := client.GetVideo("https://www.youtube.com/watch?v=BaW_jenozKc")
+	if err != nil {
+		panic(err)
+	}
+
+	// Typically youtube only provides separate streams for video and audio.
+	// If you want audio and video combined, take a look a the downloader package.
+	format := video.Formats.FindByQuality("medium")
+	reader, _, err := client.GetStream(video, format)
+	if err != nil {
+		panic(err)
+	}
+
+	// do something with the reader
+
+	reader.Close()
+}
+
 func TestDownload_Regular(t *testing.T) {
 
 	testcases := []struct {
