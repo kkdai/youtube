@@ -38,7 +38,7 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 }
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
-	body, err := c.videoDataByInnertube(ctx, id, Web)
+	body, err := c.videoDataByInnertube(ctx, id, Android)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +115,8 @@ type innertubeClient struct {
 type ClientType string
 
 const (
-	Web            ClientType = "WEB"
-	EmbeddedClient ClientType = "WEB_EMBEDDED_PLAYER"
+	Android        ClientType = "ANDROID"
+	EmbeddedClient ClientType = "ANDROID_EMBEDDED_PLAYER"
 )
 
 func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType ClientType) ([]byte, error) {
@@ -157,13 +157,14 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType
 }
 
 var innertubeClientInfo = map[ClientType]map[string]string{
-	// might add ANDROID and other in future, but i don't see reason yet
-	Web: {
-		"version": "2.20210617.01.00",
+	// kanged from
+	// https://github.com/yt-dlp/yt-dlp/blob/11aa91a12f95821500fa064402a3e2c046b072fb/yt_dlp/extractor/youtube.py#L120-L140
+	Android: {
+		"version": "16.20",
 		"key":     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
 	},
 	EmbeddedClient: {
-		"version": "1.19700101",
+		"version": "16.20",
 		// seems like same key works for both clients
 		"key": "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
 	},
@@ -172,8 +173,8 @@ var innertubeClientInfo = map[ClientType]map[string]string{
 func prepareInnertubeData(videoID string, sts string, clientType ClientType) (innertubeRequest, string) {
 	cInfo, ok := innertubeClientInfo[clientType]
 	if !ok {
-		// if provided clientType not exist - use Web as fallback option
-		clientType = Web
+		// if provided clientType not exist - use Android as fallback option
+		clientType = Android
 		cInfo = innertubeClientInfo[clientType]
 	}
 
@@ -250,6 +251,13 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 	r, w := io.Pipe()
 
 	go c.download(req, w, format)
+
+	if format.ContentLength == 0 {
+		format.ContentLength, err = c.getStreamSize(video, format)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
 
 	return r, format.ContentLength, nil
 }
@@ -375,4 +383,15 @@ func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, erro
 	defer resp.Body.Close()
 
 	return io.ReadAll(resp.Body)
+}
+
+// credit @aykxt
+func (c *Client) getStreamSize(video *Video, format *Format) (int64, error) {
+	url, err := c.GetStreamURL(video, format)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := http.Head(url)
+	return resp.ContentLength, err
 }
