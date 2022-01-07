@@ -98,7 +98,7 @@ func (p *Playlist) parsePlaylistInfo(ctx context.Context, client *Client, body [
 	p.Videos = entries
 
 	for continuation != "" {
-		data, key := prepareInnertubePlaylistData(continuation, true, Web)
+		data, key := prepareInnertubePlaylistData(continuation, true, Android)
 
 		body, err := client.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+key, data)
 		if err != nil {

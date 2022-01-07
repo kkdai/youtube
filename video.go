@@ -94,18 +94,19 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	v.Title = prData.VideoDetails.Title
 	v.Description = prData.VideoDetails.ShortDescription
 	v.Author = prData.VideoDetails.Author
-	v.Thumbnails = prData.VideoDetails.Thumbnail.Thumbnails
+	v.Thumbnails = prData.VideoDetails.Thumbnails
 
-	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
+	if seconds, _ := strconv.Atoi(prData.VideoDetails.LengthSeconds); seconds > 0 {
 		v.Duration = time.Duration(seconds) * time.Second
 	}
 
-	if str := prData.Microformat.PlayerMicroformatRenderer.PublishDate; str != "" {
-		v.PublishDate, _ = time.Parse(dateFormat, str)
-	}
+	// couldn't find any publishdate for now, have to add an another request
+	// if str := prData.VideoDetails.Microformat.PlayerMicroformatRenderer.PublishDate; str != "" {
+	// 	v.PublishDate, _ = time.Parse(dateFormat, str)
+	// }
 
 	// Assign Streams
-	v.Formats = append(prData.StreamingData.Formats, prData.StreamingData.AdaptiveFormats...)
+	v.Formats = append(prData.StreamingData.Formats, prData.StreamingData.Formats...)
 	if len(v.Formats) == 0 {
 		return errors.New("no formats found in the server's answer")
 	}

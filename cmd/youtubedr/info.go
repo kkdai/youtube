@@ -58,10 +58,14 @@ var infoCmd = &cobra.Command{
 				bitrate = format.Bitrate
 			}
 
-			size := format.ContentLength
-			if size == 0 {
+			contentLength, err := strconv.ParseInt(format.ContentLength, 10, 64)
+			if err != nil {
+				return
+			}
+
+			if contentLength == 0 {
 				// Some formats don't have this information
-				size = int64(float64(bitrate) * video.Duration.Seconds() / 8)
+				contentLength = int64(float64(bitrate) * video.Duration.Seconds() / 8)
 			}
 
 			videoInfo.Formats = append(videoInfo.Formats, VideoFormat{
@@ -70,7 +74,7 @@ var infoCmd = &cobra.Command{
 				VideoQuality:  format.QualityLabel,
 				AudioQuality:  strings.ToLower(strings.TrimPrefix(format.AudioQuality, "AUDIO_QUALITY_")),
 				AudioChannels: format.AudioChannels,
-				Size:          size,
+				Size:          contentLength,
 				Bitrate:       bitrate,
 				MimeType:      format.MimeType,
 			})
