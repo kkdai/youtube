@@ -253,7 +253,7 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 	go c.download(req, w, format)
 
 	if format.ContentLength == 0 {
-		format.ContentLength, err = c.getStreamSize(video, format)
+		format.ContentLength, err = c.getStreamSize(video, format, url)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -386,11 +386,7 @@ func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, erro
 }
 
 // credit @aykxt
-func (c *Client) getStreamSize(video *Video, format *Format) (int64, error) {
-	url, err := c.GetStreamURL(video, format)
-	if err != nil {
-		return 0, err
-	}
+func (c *Client) getStreamSize(video *Video, format *Format, url string) (int64, error) {
 
 	resp, err := http.Head(url)
 	return resp.ContentLength, err
