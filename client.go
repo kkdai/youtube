@@ -253,7 +253,7 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 	go c.download(req, w, format)
 
 	if format.ContentLength == 0 {
-		format.ContentLength, err = c.getStreamSize(video, format, url)
+		format.ContentLength, err = c.httpGetContentLength(ctx, video, format, url)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -357,6 +357,11 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 
 // httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
 func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error) {
+	return c.httpDoWithoutBody(ctx, http.MethodGet, url)
+}
+
+// httpGet does a HTTP request, checks the response to be a 200 OK and returns it
+func (c *Client) httpDoWithoutBody(ctx context.Context, method, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -386,8 +391,8 @@ func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, erro
 }
 
 // credit @aykxt
-func (c *Client) getStreamSize(video *Video, format *Format, url string) (int64, error) {
-
-	resp, err := http.Head(url)
+func (c *Client) httpGetContentLength(ctx context.Context, video *Video, format *Format, url string) (int64, error) {
+	resp, err := c.httpDoWithoutBody(ctx, http.MethodHead, url)
+	resp.Body.Close()
 	return resp.ContentLength, err
 }
