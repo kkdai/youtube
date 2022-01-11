@@ -26,10 +26,11 @@ var (
 )
 
 type Playlist struct {
-	ID     string
-	Title  string
-	Author string
-	Videos []*PlaylistEntry
+	ID          string
+	Title       string
+	Description string
+	Author      string
+	Videos      []*PlaylistEntry
 }
 
 type PlaylistEntry struct {
@@ -104,6 +105,7 @@ func (p *Playlist) UnmarshalJSON(b []byte) (err error) {
 		}
 	}()
 	p.Title = j.GetPath("metadata", "playlistMetadataRenderer", "title").MustString()
+	p.Description = j.GetPath("metadata", "playlistMetadataRenderer", "description").MustString()
 	p.Author = j.GetPath("sidebar", "playlistSidebarRenderer", "items").GetIndex(1).
 		GetPath("playlistSidebarSecondaryInfoRenderer", "videoOwner", "videoOwnerRenderer", "title", "runs").
 		GetIndex(0).Get("text").MustString()
