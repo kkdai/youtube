@@ -1,12 +1,11 @@
 Tracking Youtube decipher change
 
-### 2021/02/24:
+### 2022/01/21:
 
 #### action objects:
 
-var Mx={nK:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}, IT:function(a,b){a.splice(0,b)}, Th:function(a)
-{a.reverse()}}
+var $z={fA:function(a){a.reverse()},S2:function(a,b){a.splice(0,b)},l6:function(a,b){var c=a[0];a[0]=a[b%a.length];a[b%a.length]=c}};
 #### actions function:
 
-Nx=function(a){a=a.split("");Mx.Th(a,74);Mx.IT(a,2);Mx.Th(a,8);Mx.nK(a,48);Mx.IT(a,1);Mx.nK(a,15);Mx.Th(a,15);return
-a.join("")};
+Npa=function(a){a=a.split("");$z.S2(a,3);$z.fA(a,45);$z.l6(a,31);$z.S2(a,1);$z.fA(a,63);$z.S2(a,2);$z.fA(a,68);return a.join("")};
+
