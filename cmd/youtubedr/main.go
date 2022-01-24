@@ -15,3 +15,12 @@ func exitOnError(err error) {
 		os.Exit(1)
 	}
 }
+
+func exitOnErrors(errors []error) {
+	for _, err := range errors {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	if len(errors) != 0 {
+		os.Exit(1)
+	}
+}

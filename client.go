@@ -204,7 +204,7 @@ func (c *Client) GetPlaylist(url string) (*Playlist, error) {
 // for these videos. Playlist entries cannot be downloaded, as they lack all the required metadata, but
 // can be used to enumerate all IDs, Authors, Titles, etc.
 func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist, error) {
-	id, err := extractPlaylistID(url)
+	id, err := ExtractPlaylistID(url)
 	if err != nil {
 		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
 	}
