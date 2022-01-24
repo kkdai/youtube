@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // Client offers methods to download video metadata and video streams.
@@ -252,14 +253,20 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 
 	go c.download(req, w, format)
 
-	if format.ContentLength == 0 {
-		format.ContentLength, err = c.httpGetContentLength(ctx, video, format, url)
+	contentLength, err := strconv.ParseInt(format.ContentLength, 10, 64)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if contentLength == 0 {
+		contentLength, err := c.httpGetContentLength(ctx, video, format, url)
+		format.ContentLength = fmt.Sprint(contentLength)
 		if err != nil {
 			return nil, 0, err
 		}
 	}
-
-	return r, format.ContentLength, nil
+	format.ContentLength = fmt.Sprint(contentLength)
+	return r, contentLength, nil
 }
 
 func (c *Client) download(req *http.Request, w *io.PipeWriter, format *Format) {
@@ -284,8 +291,14 @@ func (c *Client) download(req *http.Request, w *io.PipeWriter, format *Format) {
 	}
 
 	defer w.Close()
+
+	contentLength, err := strconv.ParseInt(format.ContentLength, 10, 64)
+	if err != nil {
+		return
+	}
+
 	//nolint:revive,errcheck
-	if format.ContentLength == 0 {
+	if contentLength == 0 {
 		resp, err := c.httpDo(req)
 		if err != nil {
 			w.CloseWithError(err)
@@ -300,7 +313,7 @@ func (c *Client) download(req *http.Request, w *io.PipeWriter, format *Format) {
 
 	//nolint:revive,errcheck
 	// load all the chunks
-	for pos := int64(0); pos < format.ContentLength; {
+	for pos := int64(0); pos < contentLength; {
 		written, err := loadChunk(pos)
 		if err != nil {
 			w.CloseWithError(err)

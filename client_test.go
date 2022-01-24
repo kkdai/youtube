@@ -87,8 +87,8 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	require.NotNil(video)
 
 	assert.NotEmpty(video.Thumbnails)
-	assert.Greater(len(video.Thumbnails), 0)
-	assert.NotEmpty(video.Thumbnails[0].URL)
+	assert.Greater(len(video.Thumbnails.Thumbnails), 0)
+	assert.NotEmpty(video.Thumbnails.Thumbnails[0].URL)
 	assert.Empty(video.HLSManifestURL)
 	assert.Empty(video.DASHManifestURL)
 
@@ -108,8 +108,8 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 	require.NotNil(video)
 
 	assert.NotEmpty(video.Thumbnails)
-	assert.Greater(len(video.Thumbnails), 0)
-	assert.NotEmpty(video.Thumbnails[0].URL)
+	assert.Greater(len(video.Thumbnails.Thumbnails), 0)
+	assert.NotEmpty(video.Thumbnails.Thumbnails[0].URL)
 	assert.NotEmpty(video.HLSManifestURL)
 	assert.NotEmpty(video.DASHManifestURL)
 }
