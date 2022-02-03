@@ -65,7 +65,7 @@ const (
 )
 
 var (
-	nFunctionNameRegexp = regexp.MustCompile("\\.get\\(\"n\"\\)\\)&&\\(b=([a-zA-Z0-9]+)\\(b\\)")
+	nFunctionNameRegexp = regexp.MustCompile("\\.get\\(\"n\"\\)\\)&&\\(b=([a-zA-Z0-9]{3})\\[(\\d+)\\](.+)\\|\\|([a-zA-Z0-9]{3})")
 	actionsObjRegexp    = regexp.MustCompile(fmt.Sprintf(
 		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, swapStr, jsvarStr, spliceStr, jsvarStr, reverseStr))
 
@@ -113,7 +113,13 @@ func (config playerConfig) getNFunction() (string, error) {
 	if len(nameResult) == 0 {
 		return "", errors.New("unable to extract n-function name")
 	}
-	name := string(nameResult[1])
+
+	var name string
+	if idx, _ := strconv.Atoi(string(nameResult[2])); idx == 0 {
+		name = string(nameResult[4])
+	} else {
+		name = string(nameResult[1])
+	}
 
 	// find the beginning of the function
 	def := []byte(name + "=function(")
