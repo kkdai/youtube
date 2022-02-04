@@ -26,17 +26,19 @@ var (
 )
 
 type Playlist struct {
-	ID     string
-	Title  string
-	Author string
-	Videos []*PlaylistEntry
+	ID          string
+	Title       string
+	Description string
+	Author      string
+	Videos      []*PlaylistEntry
 }
 
 type PlaylistEntry struct {
-	ID       string
-	Title    string
-	Author   string
-	Duration time.Duration
+	ID         string
+	Title      string
+	Author     string
+	Duration   time.Duration
+	Thumbnails Thumbnails
 }
 
 func extractPlaylistID(url string) (string, error) {
@@ -90,7 +92,6 @@ func extractPlaylistJSON(r io.Reader) ([]byte, error) {
 // Duration: .lengthSeconds
 
 // TODO?: Author thumbnails: sidebar.playlistSidebarRenderer.items[0].playlistSidebarPrimaryInfoRenderer.thumbnailRenderer.playlistVideoThumbnailRenderer.thumbnail.thumbnails
-// TODO? Video thumbnails: .thumbnail.thumbnails
 
 func (p *Playlist) UnmarshalJSON(b []byte) (err error) {
 	var j *sjson.Json
@@ -104,6 +105,7 @@ func (p *Playlist) UnmarshalJSON(b []byte) (err error) {
 		}
 	}()
 	p.Title = j.GetPath("metadata", "playlistMetadataRenderer", "title").MustString()
+	p.Description = j.GetPath("metadata", "playlistMetadataRenderer", "description").MustString()
 	p.Author = j.GetPath("sidebar", "playlistSidebarRenderer", "items").GetIndex(1).
 		GetPath("playlistSidebarSecondaryInfoRenderer", "videoOwner", "videoOwnerRenderer", "title", "runs").
 		GetIndex(0).Get("text").MustString()
@@ -128,10 +130,13 @@ func (p *Playlist) UnmarshalJSON(b []byte) (err error) {
 
 type videosJSONExtractor struct {
 	Renderer *struct {
-		ID       string   `json:"videoId"`
-		Title    withRuns `json:"title"`
-		Author   withRuns `json:"shortBylineText"`
-		Duration string   `json:"lengthSeconds"`
+		ID        string   `json:"videoId"`
+		Title     withRuns `json:"title"`
+		Author    withRuns `json:"shortBylineText"`
+		Duration  string   `json:"lengthSeconds"`
+		Thumbnail struct {
+			Thumbnails []Thumbnail `json:"thumbnails"`
+		} `json:"thumbnail"`
 	} `json:"playlistVideoRenderer"`
 }
 
@@ -141,10 +146,11 @@ func (vje videosJSONExtractor) PlaylistEntry() *PlaylistEntry {
 		panic("invalid video duration: " + vje.Renderer.Duration)
 	}
 	return &PlaylistEntry{
-		ID:       vje.Renderer.ID,
-		Title:    vje.Renderer.Title.String(),
-		Author:   vje.Renderer.Author.String(),
-		Duration: time.Second * time.Duration(ds),
+		ID:         vje.Renderer.ID,
+		Title:      vje.Renderer.Title.String(),
+		Author:     vje.Renderer.Author.String(),
+		Duration:   time.Second * time.Duration(ds),
+		Thumbnails: vje.Renderer.Thumbnail.Thumbnails,
 	}
 }
 
