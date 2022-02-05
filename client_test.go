@@ -139,16 +139,38 @@ func TestGetStream(t *testing.T) {
 func TestGetPlaylist(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
-	playlist, err := testClient.GetPlaylist("https://www.youtube.com/playlist?list=PL2F4AF82A41D0D2C6")
+	playlist, err := testClient.GetPlaylist("https://www.youtube.com/playlist?list=PL59FEE129ADFF2B12")
 	require.NoError(err)
 	require.NotNil(playlist)
 
-	if assert.Len(playlist.Videos, 1) {
-		assert.Equal("lDc63xu98cE", playlist.Videos[0].ID)
-		assert.Equal("Dazian Showroom 2010", playlist.Videos[0].Title)
-		assert.Equal("Dazian Creative Fabric", playlist.Videos[0].Author)
-		assert.Equal(173*time.Second, playlist.Videos[0].Duration)
-	}
+	assert.Equal(playlist.Title, "Test Playlist")
+	assert.Equal(playlist.Description, "")
+	assert.Equal(playlist.Author, "GoogleVoice")
+	assert.Equal(len(playlist.Videos), 8)
+
+	v := playlist.Videos[7]
+	assert.Equal(v.ID, "dsUXAEzaC3Q")
+	assert.Equal(v.Title, "Michael Jackson - Bad (Shortened Version)")
+	assert.Equal(v.Author, "Michael Jackson")
+	assert.Equal(v.Duration, 4*time.Minute+20*time.Second)
+
+	assert.NotEmpty(v.Thumbnails)
+	assert.NotEmpty(v.Thumbnails[0].URL)
+}
+
+func TestGetBigPlaylist(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+
+	playlist, err := testClient.GetPlaylist("https://www.youtube.com/playlist?list=PLTC7VQ12-9raqhLCx1S1E_ic35t94dj28")
+	require.NoError(err)
+	require.NotNil(playlist)
+
+	assert.NotEmpty(playlist.Title)
+	assert.NotEmpty(playlist.Description)
+	assert.NotEmpty(playlist.Author)
+
+	assert.Greater(len(playlist.Videos), 100)
+	assert.NotEmpty(playlist.Videos[100].ID)
 }
 
 func TestClient_httpGetBodyBytes(t *testing.T) {

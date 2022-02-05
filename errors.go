@@ -37,3 +37,11 @@ type ErrUnexpectedStatusCode int
 func (err ErrUnexpectedStatusCode) Error() string {
 	return fmt.Sprintf("unexpected status code: %d", err)
 }
+
+type ErrPlaylistStatus struct {
+	Reason string
+}
+
+func (err ErrPlaylistStatus) Error() string {
+	return fmt.Sprintf("could not load playlist: %s", err.Reason)
+}
