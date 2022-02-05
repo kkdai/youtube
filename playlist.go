@@ -1,23 +1,14 @@
 package youtube
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	sjson "github.com/bitly/go-simplejson"
-	"golang.org/x/net/html"
-)
-
-const (
-	playlistFetchURL string = "https://www.youtube.com/playlist?list=%s&hl=en"
-	// The following are used in tests but also for fetching test data
-	testPlaylistResponseDataFile = "./testdata/playlist_test_data.html"
-	testPlaylistID               = "PL59FEE129ADFF2B12"
 )
 
 var (
@@ -55,34 +46,10 @@ func extractPlaylistID(url string) (string, error) {
 	return "", ErrInvalidPlaylist
 }
 
-func extractPlaylistJSON(r io.Reader) ([]byte, error) {
-	const prefix = "var ytInitialData ="
-
-	doc, err := html.Parse(r)
-	if err != nil {
-		return nil, err
-	}
-	var data []byte
-	var f func(*html.Node)
-	f = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "script" && n.FirstChild != nil {
-			script := n.FirstChild.Data
-			if strings.HasPrefix(script, prefix) {
-				script = strings.TrimPrefix(script, prefix)
-				data = []byte(strings.Trim(script, ";"))
-			}
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			f(c)
-		}
-	}
-	f(doc)
-	return data, nil
-}
-
 // structs for playlist extraction
 
 // Title: metadata.playlistMetadataRenderer.title | sidebar.playlistSidebarRenderer.items[0].playlistSidebarPrimaryInfoRenderer.title.runs[0].text
+// Description: metadata.playlistMetadataRenderer.description
 // Author: sidebar.playlistSidebarRenderer.items[1].playlistSidebarSecondaryInfoRenderer.videoOwner.videoOwnerRenderer.title.runs[0].text
 
 // Videos: contents.twoColumnBrowseResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer.contents[0].itemSectionRenderer.contents[0].playlistVideoListRenderer.contents
@@ -90,20 +57,29 @@ func extractPlaylistJSON(r io.Reader) ([]byte, error) {
 // Title: title.runs[0].text
 // Author: .shortBylineText.runs[0].text
 // Duration: .lengthSeconds
+// Thumbnails .thumbnails
 
 // TODO?: Author thumbnails: sidebar.playlistSidebarRenderer.items[0].playlistSidebarPrimaryInfoRenderer.thumbnailRenderer.playlistVideoThumbnailRenderer.thumbnail.thumbnails
-
-func (p *Playlist) UnmarshalJSON(b []byte) (err error) {
+func (p *Playlist) parsePlaylistInfo(ctx context.Context, client *Client, body []byte) (err error) {
 	var j *sjson.Json
-	j, err = sjson.NewJson(b)
+	j, err = sjson.NewJson(body)
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("JSON parsing error: %v", r)
 		}
 	}()
+
+	renderer := j.GetPath("alerts").GetIndex(0).GetPath("alertRenderer")
+	if renderer != nil && renderer.GetPath("type").MustString() == "ERROR" {
+		message := renderer.GetPath("text", "runs").GetIndex(0).GetPath("text").MustString()
+
+		return ErrPlaylistStatus{Reason: message}
+	}
+
 	p.Title = j.GetPath("metadata", "playlistMetadataRenderer", "title").MustString()
 	p.Description = j.GetPath("metadata", "playlistMetadataRenderer", "description").MustString()
 	p.Author = j.GetPath("sidebar", "playlistSidebarRenderer", "items").GetIndex(1).
@@ -114,18 +90,67 @@ func (p *Playlist) UnmarshalJSON(b []byte) (err error) {
 		GetPath("itemSectionRenderer", "contents").GetIndex(0).
 		GetPath("playlistVideoListRenderer", "contents").MarshalJSON()
 
-	var vids []*videosJSONExtractor
-	if err := json.Unmarshal(vJSON, &vids); err != nil {
+	entries, continuation, err := extractPlaylistEntries(vJSON)
+	if err != nil {
 		return err
 	}
-	p.Videos = make([]*PlaylistEntry, 0, len(vids))
+
+	p.Videos = entries
+
+	for continuation != "" {
+		data, key := prepareInnertubePlaylistData(continuation, true, Web)
+
+		body, err := client.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+key, data)
+		if err != nil {
+			return err
+		}
+
+		j, err := sjson.NewJson(body)
+		if err != nil {
+			return err
+		}
+
+		vJSON, err := j.GetPath("onResponseReceivedActions").GetIndex(0).
+			GetPath("appendContinuationItemsAction", "continuationItems").MarshalJSON()
+
+		if err != nil {
+			return err
+		}
+
+		entries, token, err := extractPlaylistEntries(vJSON)
+		if err != nil {
+			return err
+		}
+
+		p.Videos, continuation = append(p.Videos, entries...), token
+	}
+
+	return err
+}
+
+func extractPlaylistEntries(data []byte) ([]*PlaylistEntry, string, error) {
+	var vids []*videosJSONExtractor
+
+	if err := json.Unmarshal(data, &vids); err != nil {
+		return nil, "", err
+	}
+
+	entries := make([]*PlaylistEntry, 0, len(vids))
+
+	var continuation string
 	for _, v := range vids {
-		if v.Renderer == nil { // items such as continuationItemRenderer can mess things up in that array
+		if v.Renderer == nil {
+			if v.Continuation.Endpoint.Command.Token != "" {
+				continuation = v.Continuation.Endpoint.Command.Token
+			}
+
 			continue
 		}
-		p.Videos = append(p.Videos, v.PlaylistEntry())
+
+		entries = append(entries, v.PlaylistEntry())
 	}
-	return nil
+
+	return entries, continuation, nil
 }
 
 type videosJSONExtractor struct {
@@ -138,6 +163,13 @@ type videosJSONExtractor struct {
 			Thumbnails []Thumbnail `json:"thumbnails"`
 		} `json:"thumbnail"`
 	} `json:"playlistVideoRenderer"`
+	Continuation struct {
+		Endpoint struct {
+			Command struct {
+				Token string `json:"token"`
+			} `json:"continuationCommand"`
+		} `json:"continuationEndpoint"`
+	} `json:"continuationItemRenderer"`
 }
 
 func (vje videosJSONExtractor) PlaylistEntry() *PlaylistEntry {

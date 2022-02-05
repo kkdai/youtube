@@ -88,9 +88,11 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 }
 
 type innertubeRequest struct {
-	VideoID         string            `json:"videoId"`
+	VideoID         string            `json:"videoId,omitempty"`
+	BrowseID        string            `json:"browseId,omitempty"`
+	Continuation    string            `json:"continuation,omitempty"`
 	Context         inntertubeContext `json:"context"`
-	PlaybackContext playbackContext   `json:"playbackContext"`
+	PlaybackContext playbackContext   `json:"playbackContext,omitempty"`
 }
 
 type playbackContext struct {
@@ -131,29 +133,8 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType
 		return nil, err
 	}
 
-	data, keyToken := prepareInnertubeData(id, sts, clientType)
-	reqData, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-
-	u := fmt.Sprintf("https://www.youtube.com/youtubei/v1/player?key=%s", keyToken)
-
-	req, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(reqData))
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpDo(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	return io.ReadAll(resp.Body)
+	data, keyToken := prepareInnertubeVideoData(id, sts, clientType)
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+keyToken, data)
 }
 
 var innertubeClientInfo = map[ClientType]map[string]string{
@@ -169,7 +150,7 @@ var innertubeClientInfo = map[ClientType]map[string]string{
 	},
 }
 
-func prepareInnertubeData(videoID string, sts string, clientType ClientType) (innertubeRequest, string) {
+func prepareInnertubeContext(clientType ClientType) (inntertubeContext, string) {
 	cInfo, ok := innertubeClientInfo[clientType]
 	if !ok {
 		// if provided clientType not exist - use Web as fallback option
@@ -177,22 +158,38 @@ func prepareInnertubeData(videoID string, sts string, clientType ClientType) (in
 		cInfo = innertubeClientInfo[clientType]
 	}
 
+	return inntertubeContext{
+		Client: innertubeClient{
+			HL:            "en",
+			GL:            "US",
+			ClientName:    string(clientType),
+			ClientVersion: cInfo["version"],
+		},
+	}, cInfo["key"]
+}
+
+func prepareInnertubeVideoData(videoID string, sts string, clientType ClientType) (innertubeRequest, string) {
+	context, key := prepareInnertubeContext(clientType)
+
 	return innertubeRequest{
 		VideoID: videoID,
-		Context: inntertubeContext{
-			Client: innertubeClient{
-				HL:            "en",
-				GL:            "US",
-				ClientName:    string(clientType),
-				ClientVersion: cInfo["version"],
-			},
-		},
+		Context: context,
 		PlaybackContext: playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
 				SignatureTimestamp: sts,
 			},
 		},
-	}, cInfo["key"]
+	}, key
+}
+
+func prepareInnertubePlaylistData(ID string, continuation bool, clientType ClientType) (innertubeRequest, string) {
+	context, key := prepareInnertubeContext(clientType)
+
+	if continuation {
+		return innertubeRequest{Context: context, Continuation: ID}, key
+	}
+
+	return innertubeRequest{Context: context, BrowseID: "VL" + ID}, key
 }
 
 // GetPlaylist fetches playlist metadata
@@ -208,18 +205,15 @@ func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist,
 	if err != nil {
 		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
 	}
-	requestURL := fmt.Sprintf(playlistFetchURL, id)
-	resp, err := c.httpGet(ctx, requestURL)
+
+	data, key := prepareInnertubePlaylistData(id, false, Web)
+	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+key, data)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	data, err := extractPlaylistJSON(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+
 	p := &Playlist{ID: id}
-	return p, json.Unmarshal(data, p)
+	return p, p.parsePlaylistInfo(ctx, c, body)
 }
 
 func (c *Client) VideoFromPlaylistEntry(entry *PlaylistEntry) (*Video, error) {
@@ -369,6 +363,41 @@ func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error
 // httpGetBodyBytes reads the whole HTTP body and returns it
 func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, error) {
 	resp, err := c.httpGet(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return io.ReadAll(resp.Body)
+}
+
+// httpPost does a HTTP POST request with a body, checks the response to be a 200 OK and returns it
+func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*http.Response, error) {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.httpDo(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
+	}
+	return resp, nil
+}
+
+// httpPostBodyBytes reads the whole HTTP body and returns it
+func (c *Client) httpPostBodyBytes(ctx context.Context, url string, body interface{}) ([]byte, error) {
+	resp, err := c.httpPost(ctx, url, body)
 	if err != nil {
 		return nil, err
 	}
