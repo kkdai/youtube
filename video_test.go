@@ -127,3 +127,9 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 		})
 	}
 }
+
+func TestDownload_SensitiveContent(t *testing.T) {
+	video, err := testClient.GetVideo("MS91knuzoOA")
+	require.NoError(t, err)
+	require.NotNil(t, video)
+}

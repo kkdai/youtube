@@ -73,6 +73,10 @@ func (v *Video) isVideoDownloadable(prData playerResponseData, isVideoPage bool)
 		return nil
 	}
 
+	if prData.PlayabilityStatus.Status == "CONTENT_CHECK_REQUIRED" {
+		return ErrSensitiveContent
+	}
+
 	if prData.PlayabilityStatus.Status == "LOGIN_REQUIRED" {
 		// for some reason they use same status message for age-restricted and private videos
 		if strings.HasPrefix(prData.PlayabilityStatus.Reason, "This video is private") {
