@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -111,6 +112,7 @@ func evalJavascript(jsFunction, arg string) (string, error) {
 func (config playerConfig) getNFunction() (string, error) {
 	nameResult := nFunctionNameRegexp.FindSubmatch(config)
 	if len(nameResult) == 0 {
+		log.Println("playerConfig:", string(config))
 		return "", errors.New("unable to extract n-function name")
 	}
 
