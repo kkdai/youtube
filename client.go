@@ -248,9 +248,12 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 
 	go c.download(req, w, format)
 
-	contentLength, err := strconv.ParseInt(format.ContentLength, 10, 64)
-	if err != nil {
-		return nil, 0, err
+	var contentLength int64
+	if format.ContentLength != "" {
+		contentLength, err = strconv.ParseInt(format.ContentLength, 10, 64)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	if contentLength == 0 {

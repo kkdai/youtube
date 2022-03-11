@@ -178,11 +178,11 @@ func (vje videosJSONExtractor) PlaylistEntry() *PlaylistEntry {
 		panic("invalid video duration: " + vje.Renderer.Duration)
 	}
 	return &PlaylistEntry{
-		ID:         vje.Renderer.ID,
-		Title:      vje.Renderer.Title.String(),
-		Author:     vje.Renderer.Author.String(),
-		Duration:   time.Second * time.Duration(ds),
-		Thumbnails: vje.Renderer.Thumbnail.Thumbnails,
+		ID:       vje.Renderer.ID,
+		Title:    vje.Renderer.Title.String(),
+		Author:   vje.Renderer.Author.String(),
+		Duration: time.Second * time.Duration(ds),
+		//	Thumbnails: vje.Renderer.Thumbnail.Thumbnails,
 	}
 }
 

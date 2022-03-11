@@ -95,7 +95,7 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert.Equal("rFejpH_tAHM", video.ID)
 	assert.Equal("dotGo 2015 - Rob Pike - Simplicity is Complicated", video.Title)
 	assert.Equal("dotconferences", video.Author)
-	assert.Equal(1392*time.Second, video.Duration)
+	assert.Equal(1391*time.Second, video.Duration)
 	assert.Contains(video.Description, "Go is often described as a simple language.")
 	assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
 }
@@ -143,19 +143,20 @@ func TestGetPlaylist(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(playlist)
 
-	assert.Equal(playlist.Title, "Test Playlist")
-	assert.Equal(playlist.Description, "")
-	assert.Equal(playlist.Author, "GoogleVoice")
-	assert.Equal(len(playlist.Videos), 8)
+	assert.Equal("Test Playlist", playlist.Title)
+	assert.Equal("", playlist.Description)
+	assert.Equal("GoogleVoice", playlist.Author)
+	if assert.Len(playlist.Videos, 8) {
+		v := playlist.Videos[7]
+		assert.Equal("dsUXAEzaC3Q", v.ID)
+		assert.Equal("Michael Jackson - Bad (Shortened Version)", v.Title)
+		assert.Equal("Michael Jackson", v.Author)
+		assert.Equal(4*time.Minute+20*time.Second, v.Duration)
 
-	v := playlist.Videos[7]
-	assert.Equal(v.ID, "dsUXAEzaC3Q")
-	assert.Equal(v.Title, "Michael Jackson - Bad (Shortened Version)")
-	assert.Equal(v.Author, "Michael Jackson")
-	assert.Equal(v.Duration, 4*time.Minute+20*time.Second)
-
-	assert.NotEmpty(v.Thumbnails)
-	assert.NotEmpty(v.Thumbnails[0].URL)
+		if assert.NotEmpty(v.Thumbnails) {
+			assert.NotEmpty(v.Thumbnails.Thumbnails[0].URL)
+		}
+	}
 }
 
 func TestGetBigPlaylist(t *testing.T) {
@@ -169,8 +170,9 @@ func TestGetBigPlaylist(t *testing.T) {
 	assert.NotEmpty(playlist.Description)
 	assert.NotEmpty(playlist.Author)
 
-	assert.Greater(len(playlist.Videos), 100)
-	assert.NotEmpty(playlist.Videos[100].ID)
+	if assert.Greater(len(playlist.Videos), 100) {
+		assert.NotEmpty(playlist.Videos[100].ID)
+	}
 }
 
 func TestClient_httpGetBodyBytes(t *testing.T) {
