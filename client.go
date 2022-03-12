@@ -38,7 +38,7 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 }
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
-	body, err := c.videoDataByInnertube(ctx, id, Web)
+	body, err := c.videoDataByInnertube(ctx, id, webClient)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 	// If the uploader marked the video as inappropriate for some ages, use embed player
 	if err == ErrLoginRequired {
-		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id, EmbeddedClient)
+		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id, embeddedClient)
 		if errEmbed == nil {
 			errEmbed = v.parseVideoInfo(bodyEmbed)
 		}
@@ -115,14 +115,29 @@ type innertubeClient struct {
 	ClientVersion string `json:"clientVersion"`
 }
 
-type ClientType string
+// client info for the innertube API
+type clientInfo struct {
+	name    string
+	key     string
+	version string
+}
 
-const (
-	Web            ClientType = "WEB"
-	EmbeddedClient ClientType = "WEB_EMBEDDED_PLAYER"
+var (
+	// might add ANDROID and other in future, but i don't see reason yet
+	webClient = clientInfo{
+		name:    "WEB",
+		version: "2.20210617.01.00",
+		key:     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+	}
+
+	embeddedClient = clientInfo{
+		name:    "WEB_EMBEDDED_PLAYER",
+		version: "1.19700101",
+		key:     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", // seems like same key works for both clients
+	}
 )
 
-func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType ClientType) ([]byte, error) {
+func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientInfo clientInfo) ([]byte, error) {
 	config, err := c.getPlayerConfig(ctx, id)
 	if err != nil {
 		return nil, err
@@ -134,63 +149,40 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientType
 		return nil, err
 	}
 
-	data, keyToken := prepareInnertubeVideoData(id, sts, clientType)
-	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+keyToken, data)
-}
+	context := prepareInnertubeContext(clientInfo)
 
-var innertubeClientInfo = map[ClientType]map[string]string{
-	// might add ANDROID and other in future, but i don't see reason yet
-	Web: {
-		"version": "2.20210617.01.00",
-		"key":     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
-	},
-	EmbeddedClient: {
-		"version": "1.19700101",
-		// seems like same key works for both clients
-		"key": "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
-	},
-}
-
-func prepareInnertubeContext(clientType ClientType) (inntertubeContext, string) {
-	cInfo, ok := innertubeClientInfo[clientType]
-	if !ok {
-		// if provided clientType not exist - use Web as fallback option
-		clientType = Web
-		cInfo = innertubeClientInfo[clientType]
-	}
-
-	return inntertubeContext{
-		Client: innertubeClient{
-			HL:            "en",
-			GL:            "US",
-			ClientName:    string(clientType),
-			ClientVersion: cInfo["version"],
-		},
-	}, cInfo["key"]
-}
-
-func prepareInnertubeVideoData(videoID string, sts string, clientType ClientType) (innertubeRequest, string) {
-	context, key := prepareInnertubeContext(clientType)
-
-	return innertubeRequest{
-		VideoID: videoID,
+	data := innertubeRequest{
+		VideoID: id,
 		Context: context,
 		PlaybackContext: playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
 				SignatureTimestamp: sts,
 			},
 		},
-	}, key
-}
-
-func prepareInnertubePlaylistData(ID string, continuation bool, clientType ClientType) (innertubeRequest, string) {
-	context, key := prepareInnertubeContext(clientType)
-
-	if continuation {
-		return innertubeRequest{Context: context, Continuation: ID}, key
 	}
 
-	return innertubeRequest{Context: context, BrowseID: "VL" + ID}, key
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+clientInfo.key, data)
+}
+
+func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
+	return inntertubeContext{
+		Client: innertubeClient{
+			HL:            "en",
+			GL:            "US",
+			ClientName:    clientInfo.name,
+			ClientVersion: clientInfo.version,
+		},
+	}
+}
+
+func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clientInfo) innertubeRequest {
+	context := prepareInnertubeContext(clientInfo)
+
+	if continuation {
+		return innertubeRequest{Context: context, Continuation: ID}
+	}
+
+	return innertubeRequest{Context: context, BrowseID: "VL" + ID}
 }
 
 // GetPlaylist fetches playlist metadata
@@ -207,8 +199,8 @@ func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist,
 		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
 	}
 
-	data, key := prepareInnertubePlaylistData(id, false, Web)
-	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+key, data)
+	data := prepareInnertubePlaylistData(id, false, webClient)
+	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+webClient.key, data)
 	if err != nil {
 		return nil, err
 	}
