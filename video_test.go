@@ -130,7 +130,6 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 
 // See https://github.com/kkdai/youtube/pull/238
 func TestDownload_SensitiveContent(t *testing.T) {
-	video, err := testClient.GetVideo("MS91knuzoOA")
-	require.NoError(t, err)
-	require.NotNil(t, video)
+	_, err := testClient.GetVideo("MS91knuzoOA")
+	require.EqualError(t, err, "can't bypass age restriction: embedding of this video has been disabled")
 }
