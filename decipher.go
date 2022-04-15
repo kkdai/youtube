@@ -66,7 +66,7 @@ const (
 )
 
 var (
-	nFunctionNameRegexp = regexp.MustCompile("\\.get\\(\"n\"\\)\\)&&\\(b=([a-zA-Z0-9]{3})\\[(\\d+)\\](.+)\\|\\|([a-zA-Z0-9]{3})")
+	nFunctionNameRegexp = regexp.MustCompile("\\.get\\(\"n\"\\)\\)&&\\(b=([a-zA-Z0-9$]{0,3})\\[(\\d+)\\](.+)\\|\\|([a-zA-Z0-9]{0,3})")
 	actionsObjRegexp    = regexp.MustCompile(fmt.Sprintf(
 		"var (%s)=\\{((?:(?:%s%s|%s%s|%s%s),?\\n?)+)\\};", jsvarStr, jsvarStr, swapStr, jsvarStr, spliceStr, jsvarStr, reverseStr))
 
