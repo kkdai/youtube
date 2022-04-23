@@ -37,19 +37,53 @@ func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string)
 	}
 	query.Add(params.Get("sp"), string(bs))
 
-	// decrypt n-parameter
-	nSig := query.Get("n")
-	if nSig != "" {
-		nDecoded, err := config.decodeNsig(nSig)
-		if err != nil {
-			return "", fmt.Errorf("unable to decode nSig: %w", err)
-		}
-		query.Set("n", nDecoded)
+	query, err = c.decryptNParam(ctx, config, query)
+	if err != nil {
+		return "", err
 	}
 
 	uri.RawQuery = query.Encode()
 
 	return uri.String(), nil
+}
+
+// see https://github.com/kkdai/youtube/pull/244
+func (c *Client) unThrottle(ctx context.Context, videoID string, urlString string) (string, error) {
+	config, err := c.getPlayerConfig(ctx, videoID)
+	if err != nil {
+		return "", err
+	}
+
+	uri, err := url.Parse(urlString)
+	if err != nil {
+		return "", err
+	}
+
+	query, err := c.decryptNParam(ctx, config, uri.Query())
+	if err != nil {
+		return "", err
+	}
+
+	uri.RawQuery = query.Encode()
+	return uri.String(), nil
+}
+
+func (c *Client) decryptNParam(ctx context.Context, config playerConfig, query url.Values) (url.Values, error) {
+	// decrypt n-parameter
+	nSig := query.Get("n")
+	if nSig != "" {
+		nDecoded, err := config.decodeNsig(nSig)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode nSig: %w", err)
+		}
+		query.Set("n", nDecoded)
+	}
+
+	if c.Debug {
+		log.Printf("[nParam] n: %s; nDecoded: %s\nQuery: %v\n", nSig, query.Get("n"), query)
+	}
+
+	return query, nil
 }
 
 const (

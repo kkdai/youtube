@@ -298,7 +298,7 @@ func (c *Client) GetStreamURL(video *Video, format *Format) (string, error) {
 // GetStreamURLContext returns the url for a specific format with a context
 func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *Format) (string, error) {
 	if format.URL != "" {
-		return format.URL, nil
+		return c.unThrottle(ctx, video.ID, format.URL)
 	}
 
 	cipher := format.Cipher
