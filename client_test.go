@@ -107,11 +107,23 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(video)
 
+	assert.NotEmpty(video.Formats)
 	assert.NotEmpty(video.Thumbnails)
 	assert.Greater(len(video.Thumbnails), 0)
 	assert.NotEmpty(video.Thumbnails[0].URL)
 	assert.NotEmpty(video.HLSManifestURL)
 	assert.NotEmpty(video.DASHManifestURL)
+
+	// no size available?
+	format := video.Formats[0]
+	assert.Zero(format.ContentLength)
+
+	// We should get a size now
+	r, size, err := testClient.GetStream(video, &format)
+	if assert.NoError(err) {
+		r.Close()
+	}
+	assert.NotZero(size)
 }
 
 func TestGetStream(t *testing.T) {
