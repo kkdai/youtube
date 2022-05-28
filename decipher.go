@@ -129,7 +129,7 @@ func evalJavascript(jsFunction, arg string) (string, error) {
 	const myName = "myFunction"
 
 	vm := goja.New()
-	_, err := vm.RunString(myName + jsFunction)
+	_, err := vm.RunString(myName + "=" + jsFunction)
 	if err != nil {
 		return "", err
 	}
