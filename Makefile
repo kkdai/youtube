@@ -24,11 +24,9 @@ deps:
 ## lint: Run golangci-lint check
 .PHONY: lint
 lint:
-	if [ ! -f ./bin/golangci-lint ]; then \
-		curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s $(GOLANGCI_LINT_VERSION); \
-	fi;
+	command -v golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
 	echo "golangci-lint checking..."
-	./bin/golangci-lint run --deadline=30m --enable=misspell --enable=gosec --enable=gofmt --enable=goimports --enable=revive ./cmd/... ./...
+	golangci-lint run --deadline=30m --enable=misspell --enable=gosec --enable=gofmt --enable=goimports --enable=revive ./cmd/... ./...
 	go vet ./...
 
 ## format: Formats Go code
