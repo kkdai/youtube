@@ -59,6 +59,11 @@ func (c *Client) unThrottle(ctx context.Context, videoID string, urlString strin
 		return "", err
 	}
 
+	// for debugging
+	if artifactsFolder != "" {
+		writeArtifact("video-"+videoID+".url", []byte(uri.String()))
+	}
+
 	query, err := c.decryptNParam(ctx, config, uri.Query())
 	if err != nil {
 		return "", err
@@ -146,7 +151,6 @@ func evalJavascript(jsFunction, arg string) (string, error) {
 func (config playerConfig) getNFunction() (string, error) {
 	nameResult := nFunctionNameRegexp.FindSubmatch(config)
 	if len(nameResult) == 0 {
-		log.Println("playerConfig:", string(config))
 		return "", errors.New("unable to extract n-function name")
 	}
 

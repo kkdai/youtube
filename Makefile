@@ -43,7 +43,9 @@ test-unit:
 ## test-integration: Run all Youtube Go integration tests
 .PHONY: test-integration
 test-integration:
-	go test -race -covermode=atomic -coverprofile=coverage.out -tags=integration ./...
+	mkdir -p output
+	rm -f output/*
+	ARTIFACTS=output go test -race -covermode=atomic -coverprofile=coverage.out -tags=integration ./...
 
 .PHONY: coverage.out
 coverage.out:
