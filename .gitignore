@@ -3,4 +3,5 @@
 download_test
 /bin
 /dist
+/output
 *.out

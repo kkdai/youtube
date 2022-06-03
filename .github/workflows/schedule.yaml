@@ -1,0 +1,43 @@
+name: scheduler
+
+on:
+  schedule:
+    - cron: '0 0 */1 * *'
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        platform: [ubuntu-20.04]
+        go-version: [1.18.x]
+    runs-on: ${{ matrix.platform }}
+    name: integration tests
+    env:
+      GOBIN: /tmp/.bin
+    steps:
+      - name: Install Go.
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Check out code into the Go module directory.
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install ffmpeg
+
+      - name: Run tests
+        run: make test-integration
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: output
