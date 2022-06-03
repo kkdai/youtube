@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -69,8 +70,15 @@ func (v *Video) isVideoFromPageDownloadable(prData playerResponseData) error {
 
 func (v *Video) isVideoDownloadable(prData playerResponseData, isVideoPage bool) error {
 	// Check if video is downloadable
-	if prData.PlayabilityStatus.Status == "OK" {
+	switch prData.PlayabilityStatus.Status {
+	case "OK":
 		return nil
+	case "LOGIN_REQUIRED":
+		// for some reason they use same status message for age-restricted and private videos
+		if strings.HasPrefix(prData.PlayabilityStatus.Reason, "This video is private") {
+			return ErrVideoPrivate
+		}
+		return ErrLoginRequired
 	}
 
 	if !isVideoPage && !prData.PlayabilityStatus.PlayableInEmbed {

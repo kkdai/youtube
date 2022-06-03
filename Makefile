@@ -18,18 +18,16 @@ build:
 ## deps: Ensures fresh go.mod and go.sum
 .PHONY: deps
 deps:
-	@go mod tidy
-	@go mod verify
+	go mod tidy
+	go mod verify
 
 ## lint: Run golangci-lint check
 .PHONY: lint
 lint:
-	@if [ ! -f ./bin/golangci-lint ]; then \
-		curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s $(GOLANGCI_LINT_VERSION); \
-	fi;
-	@echo "golangci-lint checking..."
-	@./bin/golangci-lint run --deadline=30m --enable=misspell --enable=gosec --enable=gofmt --enable=goimports --enable=revive ./cmd/... ./...
-	@go vet ./...
+	command -v golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
+	echo "golangci-lint checking..."
+	golangci-lint run --deadline=30m --enable=misspell --enable=gosec --enable=gofmt --enable=goimports --enable=revive ./cmd/... ./...
+	go vet ./...
 
 ## format: Formats Go code
 .PHONY: format
@@ -40,18 +38,19 @@ format:
 ## test-unit: Run all Youtube Go unit tests
 .PHONY: test-unit
 test-unit:
-	@go test -v -cover ./...
-
+	go test -v -cover ./...
 
 ## test-integration: Run all Youtube Go integration tests
 .PHONY: test-integration
 test-integration:
-	echo 'mode: atomic' > coverage.out
-	go list ./... | xargs -n1 -I{} sh -c 'go test -race -tags=integration -covermode=atomic -coverprofile=coverage.tmp -coverpkg $(go list ./... | tr "\n" ",") {} && tail -n +2 coverage.tmp >> coverage.out || exit 255'
-	rm coverage.tmp
+	mkdir -p output
+	rm -f output/*
+	ARTIFACTS=output go test -race -covermode=atomic -coverprofile=coverage.out -tags=integration ./...
 
+.PHONY: coverage.out
+coverage.out:
 
 ## clean: Clean files and downloaded videos from builds during development
 .PHONY: clean
 clean:
-	@rm -rf dist *.mp4 *.mkv
+	rm -rf dist *.mp4 *.mkv

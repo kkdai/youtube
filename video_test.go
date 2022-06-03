@@ -6,6 +6,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func ExampleClient_GetStream() {
+	client := Client{Debug: true}
+
+	video, err := client.GetVideo("https://www.youtube.com/watch?v=BaW_jenozKc")
+	if err != nil {
+		panic(err)
+	}
+
+	// Typically youtube only provides separate streams for video and audio.
+	// If you want audio and video combined, take a look a the downloader package.
+	format := video.Formats.FindByQuality("medium")
+	reader, _, err := client.GetStream(video, format)
+	if err != nil {
+		panic(err)
+	}
+
+	// do something with the reader
+
+	reader.Close()
+}
+
 func TestDownload_Regular(t *testing.T) {
 
 	testcases := []struct {
@@ -94,7 +115,7 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 		{
 			issue:   "issue#59",
 			videoID: "nINQjT7Zr9w",
-			err:     `status: LOGIN_REQUIRED`,
+			err:     ErrVideoPrivate.Error(),
 		},
 	}
 
@@ -105,4 +126,10 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 			require.Contains(t, err.Error(), tc.err)
 		})
 	}
+}
+
+// See https://github.com/kkdai/youtube/pull/238
+func TestDownload_SensitiveContent(t *testing.T) {
+	_, err := testClient.GetVideo("MS91knuzoOA")
+	require.EqualError(t, err, "can't bypass age restriction: embedding of this video has been disabled")
 }

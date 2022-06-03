@@ -19,7 +19,8 @@ func ExampleClient() {
 		panic(err)
 	}
 
-	stream, _, err := client.GetStream(video, &video.Formats[0])
+	formats := video.Formats.WithAudioChannels() // only get videos with audio
+	stream, _, err := client.GetStream(video, &formats[0])
 	if err != nil {
 		panic(err)
 	}
