@@ -14,7 +14,7 @@ var testClient = Client{Debug: true}
 
 const (
 	dwlURL    string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
-	streamURL string = "https://www.youtube.com/watch?v=5qap5aO4i9A"
+	streamURL string = "https://www.youtube.com/watch?v=a9LDPn-MO4I"
 	errURL    string = "https://www.youtube.com/watch?v=I8oGsuQ"
 )
 
@@ -111,14 +111,8 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 	assert.NotEmpty(video.Thumbnails)
 	assert.Greater(len(video.Thumbnails), 0)
 	assert.NotEmpty(video.Thumbnails[0].URL)
-	assert.NotEmpty(video.HLSManifestURL)
-	assert.NotEmpty(video.DASHManifestURL)
 
-	// no size available?
 	format := video.Formats[0]
-	assert.Zero(format.ContentLength)
-
-	// We should get a size now
 	r, size, err := testClient.GetStream(video, &format)
 	if assert.NoError(err) {
 		r.Close()

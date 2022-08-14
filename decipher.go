@@ -75,17 +75,17 @@ func (c *Client) unThrottle(ctx context.Context, videoID string, urlString strin
 
 func (c *Client) decryptNParam(ctx context.Context, config playerConfig, query url.Values) (url.Values, error) {
 	// decrypt n-parameter
-	nSig := query.Get("n")
+	nSig := query.Get("v")
 	if nSig != "" {
 		nDecoded, err := config.decodeNsig(nSig)
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode nSig: %w", err)
 		}
-		query.Set("n", nDecoded)
+		query.Set("v", nDecoded)
 	}
 
 	if c.Debug {
-		log.Printf("[nParam] n: %s; nDecoded: %s\nQuery: %v\n", nSig, query.Get("n"), query)
+		log.Printf("[nParam] n: %s; nDecoded: %s\nQuery: %v\n", nSig, query.Get("v"), query)
 	}
 
 	return query, nil
