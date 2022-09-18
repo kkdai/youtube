@@ -171,13 +171,29 @@ func (config playerConfig) getNFunction() (string, error) {
 	// start after the first curly bracket
 	pos := start + bytes.IndexByte(config[start:], '{') + 1
 
+	var strChar byte
+
 	// find the bracket closing the function
 	for brackets := 1; brackets > 0; pos++ {
-		switch config[pos] {
+		b := config[pos]
+		switch b {
 		case '{':
-			brackets++
+			if strChar == 0 {
+				brackets++
+			}
 		case '}':
-			brackets--
+			if strChar == 0 {
+				brackets--
+			}
+		case '`', '"', '\'':
+			if config[pos-1] == '\\' && config[pos-2] != '\\' {
+				continue
+			}
+			if strChar == 0 {
+				strChar = b
+			} else if strChar == b {
+				strChar = 0
+			}
 		}
 	}
 
