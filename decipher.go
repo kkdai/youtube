@@ -161,6 +161,11 @@ func (config playerConfig) getNFunction() (string, error) {
 		name = string(nameResult[1])
 	}
 
+	return config.extraFunction(name)
+
+}
+
+func (config playerConfig) extraFunction(name string) (string, error) {
 	// find the beginning of the function
 	def := []byte(name + "=function(")
 	start := bytes.Index(config, def)
