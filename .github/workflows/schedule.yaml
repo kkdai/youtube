@@ -8,8 +8,8 @@ jobs:
   test:
     strategy:
       matrix:
-        platform: [ubuntu-20.04]
-        go-version: [1.18.x]
+        platform: [ubuntu-22.04]
+        go-version: [1.19.x]
     runs-on: ${{ matrix.platform }}
     name: integration tests
     env:

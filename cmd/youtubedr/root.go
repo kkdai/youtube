@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -33,7 +33,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(func() {
 		if !verbose {
-			log.SetOutput(ioutil.Discard)
+			log.SetOutput(io.Discard)
 		}
 	})
 

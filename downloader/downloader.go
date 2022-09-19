@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -71,14 +70,14 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	outputDir := filepath.Dir(destFile)
 
 	// Create temporary video file
-	videoFile, err := ioutil.TempFile(outputDir, "youtube_*.m4v")
+	videoFile, err := os.CreateTemp(outputDir, "youtube_*.m4v")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(videoFile.Name())
 
 	// Create temporary audio file
-	audioFile, err := ioutil.TempFile(outputDir, "youtube_*.m4a")
+	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
 	if err != nil {
 		return err
 	}
