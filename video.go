@@ -16,6 +16,7 @@ type Video struct {
 	Title           string
 	Description     string
 	Author          string
+	ChannelID       string
 	Views           int
 	Duration        time.Duration
 	PublishDate     time.Time
@@ -96,6 +97,7 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	v.Description = prData.VideoDetails.ShortDescription
 	v.Author = prData.VideoDetails.Author
 	v.Thumbnails = prData.VideoDetails.Thumbnail.Thumbnails
+	v.ChannelID = prData.VideoDetails.ChannelID
 
 	if views, _ := strconv.Atoi(prData.VideoDetails.ViewCount); views > 0 {
 		v.Views = views
