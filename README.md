@@ -25,7 +25,6 @@ This tool is meant to be used to download CC0 licenced content, we do not suppor
 Please ensure you have installed Go 1.18 or later.
 
 ```shell
-go install github.com/kkdai/youtube/v2@latest
 ```
 
 ### From source code
