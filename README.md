@@ -13,9 +13,8 @@ This package is a Youtube video download package, for more detail refer [https:/
 This tool is meant to be used to download CC0 licenced content, we do not support nor recommend using it for illegal activities.
 
 ## Overview
-  * [Install](#install)
+  * [Install](#installation)
   * [Usage](#usage)
-  * [Options](#options)
   * [Example: Download video from \[dotGo 2015 - Rob Pike - Simplicity is Complicated\]](#download-dotGo-2015-rob-pike-video)
 
 ## Installation
