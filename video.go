@@ -24,6 +24,7 @@ type Video struct {
 	Thumbnails      Thumbnails
 	DASHManifestURL string // URI of the DASH manifest file
 	HLSManifestURL  string // URI of the HLS manifest file
+	CaptionsURL     string // URI of the captions file
 }
 
 const dateFormat = "2006-01-02"
@@ -122,6 +123,9 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 
 	v.HLSManifestURL = prData.StreamingData.HlsManifestURL
 	v.DASHManifestURL = prData.StreamingData.DashManifestURL
+	if len(prData.Captions.PlayerCaptionsTracklistRenderer.CaptionTracks) > 0 {
+		v.CaptionsURL = prData.Captions.PlayerCaptionsTracklistRenderer.CaptionTracks[0].BaseURL
+	}
 
 	return nil
 }

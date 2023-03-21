@@ -39,6 +39,34 @@ type playerResponseData struct {
 		IsUnpluggedCorpus bool    `json:"isUnpluggedCorpus"`
 		IsLiveContent     bool    `json:"isLiveContent"`
 	} `json:"videoDetails"`
+	Captions struct {
+		PlayerCaptionsRenderer struct {
+			BaseURL    string `json:"baseUrl"`
+			Visibility string `json:"visibility"`
+		} `json:"playerCaptionsRenderer"`
+		PlayerCaptionsTracklistRenderer struct {
+			CaptionTracks []struct {
+				BaseURL string `json:"baseUrl"`
+				Name    struct {
+					SimpleText string `json:"simpleText"`
+				} `json:"name"`
+				VssID          string `json:"vssId"`
+				LanguageCode   string `json:"languageCode"`
+				Kind           string `json:"kind"`
+				IsTranslatable bool   `json:"isTranslatable"`
+			} `json:"captionTracks"`
+			AudioTracks []struct {
+				CaptionTrackIndices []int `json:"captionTrackIndices"`
+			} `json:"audioTracks"`
+			TranslationLanguages []struct {
+				LanguageCode string `json:"languageCode"`
+				LanguageName struct {
+					SimpleText string `json:"simpleText"`
+				} `json:"languageName"`
+			} `json:"translationLanguages"`
+			DefaultAudioTrackIndex int `json:"defaultAudioTrackIndex"`
+		} `json:"playerCaptionsTracklistRenderer"`
+	} `json:"captions"`
 	Microformat struct {
 		PlayerMicroformatRenderer struct {
 			Thumbnail struct {
