@@ -7,10 +7,7 @@ import (
 	"context"
 	"testing"
 
-<<<<<<< HEAD
 	"github.com/ezoic/youtube/v2"
-=======
->>>>>>> 5cf77233d83ec2cb059d30423dc495872a42ca03
 	"github.com/stretchr/testify/require"
 )
 
