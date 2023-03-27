@@ -1,4 +1,4 @@
-module github.com/ezoic/youtube/v2
+module github.com/ezoic/youtube
 
 go 1.17
 

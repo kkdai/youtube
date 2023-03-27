@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ezoic/youtube/v2"
+	"github.com/ezoic/youtube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
