@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ezoic/youtube"
+	"github.com/ezoic/youtube/v2"
 )
 
 // ExampleDownload : Example code for how to use this package for download video.

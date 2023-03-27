@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ezoic/youtube"
-	ytdl "github.com/ezoic/youtube/downloader"
+	"github.com/ezoic/youtube/v2"
+	ytdl "github.com/ezoic/youtube/v2/downloader"
 	"github.com/spf13/pflag"
 	"golang.org/x/net/http/httpproxy"
 )
