@@ -1,5 +1,7 @@
 package youtube
 
+//go:generate sh -c "./client_infos.py | gofmt /dev/stdin > client_infos.go"
+
 import (
 	"bytes"
 	"context"
@@ -36,107 +38,63 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 		return nil, fmt.Errorf("extractVideoID failed: %w", err)
 	}
 	return c.videoFromID(ctx, id)
-}
 
+}
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
-	body, err := c.videoDataByInnertube(ctx, id, webClient)
-	if err != nil {
-		return nil, err
-	}
 
 	v := &Video{
 		ID: id,
 	}
 
-	err = v.parseVideoInfo(body)
-	// return early if all good
-	if err == nil {
-		return v, nil
-	}
-
-	// If the uploader has disabled embedding the video on other sites, parse video page
-	if err == ErrNotPlayableInEmbed {
-		// additional parameters are required to access clips with sensitiv content
-		html, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/watch?v="+id+"&bpctr=9999999999&has_verified=1")
+	for _, client := range getClientInfos(defaultClients) {
+		body, err := c.videoDataByInnertube(ctx, id, client)
 		if err != nil {
 			return nil, err
 		}
 
-		return v, v.parseVideoPage(html)
-	}
-
-	// If the uploader marked the video as inappropriate for some ages, use embed player
-	if err == ErrLoginRequired {
-		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id, embeddedClient)
-		if errEmbed == nil {
-			errEmbed = v.parseVideoInfo(bodyEmbed)
+		err = v.parseVideoInfo(body)
+		// return early if all good
+		if err == nil {
+			continue
 		}
 
-		if errEmbed == nil {
-			return v, nil
+		// If the uploader has disabled embedding the video on other sites, parse video page
+		if err == ErrNotPlayableInEmbed {
+			// additional parameters are required to access clips with sensitiv content
+			html, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/watch?v="+id+"&bpctr=9999999999&has_verified=1")
+			if err != nil {
+				return nil, err
+			}
+
+			return v, v.parseVideoPage(html)
 		}
 
-		// private video clearly not age-restricted and thus should be explicit
-		if errEmbed == ErrVideoPrivate {
-			return v, errEmbed
+		// If the uploader marked the video as inappropriate for some ages, use embed player
+		if err == ErrLoginRequired {
+			bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id, embeddedClient)
+			if errEmbed == nil {
+				errEmbed = v.parseVideoInfo(bodyEmbed)
+			}
+
+			if errEmbed == nil {
+				return v, nil
+			}
+
+			// private video clearly not age-restricted and thus should be explicit
+			if errEmbed == ErrVideoPrivate {
+				return v, errEmbed
+			}
+
+			// wrapping error so its clear whats happened
+			return v, fmt.Errorf("can't bypass age restriction: %w", errEmbed)
 		}
 
-		// wrapping error so its clear whats happened
-		return v, fmt.Errorf("can't bypass age restriction: %w", errEmbed)
+		// undefined error
+		return v, err
 	}
 
-	// undefined error
-	return v, err
+	return v, nil
 }
-
-type innertubeRequest struct {
-	VideoID         string            `json:"videoId,omitempty"`
-	BrowseID        string            `json:"browseId,omitempty"`
-	Continuation    string            `json:"continuation,omitempty"`
-	Context         inntertubeContext `json:"context"`
-	PlaybackContext playbackContext   `json:"playbackContext,omitempty"`
-}
-
-type playbackContext struct {
-	ContentPlaybackContext contentPlaybackContext `json:"contentPlaybackContext"`
-}
-
-type contentPlaybackContext struct {
-	SignatureTimestamp string `json:"signatureTimestamp"`
-}
-
-type inntertubeContext struct {
-	Client innertubeClient `json:"client"`
-}
-
-type innertubeClient struct {
-	HL            string `json:"hl"`
-	GL            string `json:"gl"`
-	ClientName    string `json:"clientName"`
-	ClientVersion string `json:"clientVersion"`
-}
-
-// client info for the innertube API
-type clientInfo struct {
-	name    string
-	key     string
-	version string
-}
-
-var (
-	// might add ANDROID and other in future, but i don't see reason yet
-	webClient = clientInfo{
-		name:    "WEB",
-		version: "2.20210617.01.00",
-		key:     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
-	}
-
-	embeddedClient = clientInfo{
-		name:    "WEB_EMBEDDED_PLAYER",
-		version: "1.19700101",
-		key:     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", // seems like same key works for both clients
-	}
-)
 
 func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientInfo clientInfo) ([]byte, error) {
 	config, err := c.getPlayerConfig(ctx, id)
@@ -150,11 +108,9 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientInfo
 		return nil, err
 	}
 
-	context := prepareInnertubeContext(clientInfo)
-
 	data := innertubeRequest{
 		VideoID: id,
-		Context: context,
+		Context: clientInfo.innertubeContext,
 		PlaybackContext: playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
 				SignatureTimestamp: sts,
@@ -162,22 +118,11 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientInfo
 		},
 	}
 
-	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+clientInfo.key, data)
-}
-
-func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
-	return inntertubeContext{
-		Client: innertubeClient{
-			HL:            "en",
-			GL:            "US",
-			ClientName:    clientInfo.name,
-			ClientVersion: clientInfo.version,
-		},
-	}
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+clientInfo.innertubeApiKey, data)
 }
 
 func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clientInfo) innertubeRequest {
-	context := prepareInnertubeContext(clientInfo)
+	context := clientInfo.innertubeContext
 
 	if continuation {
 		return innertubeRequest{Context: context, Continuation: ID}
@@ -201,7 +146,7 @@ func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist,
 	}
 
 	data := prepareInnertubePlaylistData(id, false, webClient)
-	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+webClient.key, data)
+	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+webClient.innertubeApiKey, data)
 	if err != nil {
 		return nil, err
 	}
