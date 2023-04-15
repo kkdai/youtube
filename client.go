@@ -249,7 +249,7 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 	return r, contentLength, nil
 }
 
-func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, format *Format) int64 {
+func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, _ *Format) int64 {
 	resp, err := c.httpDo(req)
 	if err != nil {
 		//nolint:errcheck
@@ -269,9 +269,9 @@ func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, format *Forma
 	}()
 
 	contentLength := resp.Header.Get("Content-Length")
-	len, _ := strconv.ParseInt(contentLength, 10, 64)
+	length, _ := strconv.ParseInt(contentLength, 10, 64)
 
-	return len
+	return length
 }
 
 func (c *Client) downloadChunked(req *http.Request, w *io.PipeWriter, format *Format) {

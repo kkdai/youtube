@@ -164,7 +164,11 @@ func TestFormatList_Sort(t *testing.T) {
 
 	list.Sort()
 
-	// TODO add more tests here
+	assert.Equal(t, FormatList{
+		{Width: 768, MimeType: "mp4"},
+		{Width: 768, MimeType: "opus"},
+		{Width: 512},
+	}, list)
 }
 
 func TestFormatList_WithAudioChannels(t *testing.T) {
