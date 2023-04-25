@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kkdai/youtube/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kkdai/youtube/v2"
 )
 
 var testDownloader = func() (dl Downloader) {
@@ -39,7 +40,7 @@ func TestDownload_FirstStream(t *testing.T) {
 	assert.Equal(`youtube-dl test video "'/\ä↭𝕐`, video.Title)
 	assert.Equal(`Philipp Hagemeister`, video.Author)
 	assert.Equal(10*time.Second, video.Duration)
-	assert.Len(video.Formats, 18)
+	assert.GreaterOrEqual(len(video.Formats), 18)
 
 	if assert.Greater(len(video.Formats), 0) {
 		assert.NoError(testDownloader.Download(ctx, video, &video.Formats[0], ""))

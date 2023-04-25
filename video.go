@@ -103,6 +103,10 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 		v.Views = views
 	}
 
+	if seconds, _ := strconv.Atoi(prData.VideoDetails.LengthSeconds); seconds > 0 {
+		v.Duration = time.Duration(seconds) * time.Second
+	}
+
 	if seconds, _ := strconv.Atoi(prData.Microformat.PlayerMicroformatRenderer.LengthSeconds); seconds > 0 {
 		v.Duration = time.Duration(seconds) * time.Second
 	}
