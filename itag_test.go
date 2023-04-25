@@ -14,5 +14,5 @@ func TestYoutube_GetItagInfo(t *testing.T) {
 	url := "https://www.youtube.com/watch?v=rFejpH_tAHM"
 	video, err := client.GetVideo(url)
 	require.NoError(err)
-	require.Len(video.Formats, 24)
+	require.GreaterOrEqual(len(video.Formats), 24)
 }

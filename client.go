@@ -4,11 +4,24 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
+	"sync"
+)
+
+const (
+	Size1Kb  = 1024
+	Size1Mb  = Size1Kb * 1024
+	Size10Mb = Size1Mb * 10
+)
+
+var (
+	ErrNoFormat = errors.New("no video format provided")
 )
 
 // Client offers methods to download video metadata and video streams.
@@ -20,8 +33,18 @@ type Client struct {
 	// If not set, http.DefaultClient will be used
 	HTTPClient *http.Client
 
+	// MaxRoutines to use when downloading a video.
+	MaxRoutines int
+
+	// ChunkSize to use when downloading videos in chunks. Default is Size10Mb.
+	ChunkSize int64
+
 	// playerCache caches the JavaScript code of a player response
 	playerCache playerCache
+
+	client *clientInfo
+
+	consentID string
 }
 
 // GetVideo fetches video metadata
@@ -35,58 +58,62 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	if err != nil {
 		return nil, fmt.Errorf("extractVideoID failed: %w", err)
 	}
+
 	return c.videoFromID(ctx, id)
 }
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
-	body, err := c.videoDataByInnertube(ctx, id, webClient)
+	c.client = &androidClient
+
+	body, err := c.videoDataByInnertube(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	v := &Video{
+	v := Video{
 		ID: id,
 	}
 
-	err = v.parseVideoInfo(body)
 	// return early if all good
-	if err == nil {
-		return v, nil
+	if err = v.parseVideoInfo(body); err == nil {
+		return &v, nil
 	}
 
 	// If the uploader has disabled embedding the video on other sites, parse video page
-	if err == ErrNotPlayableInEmbed {
+	if errors.Is(err, ErrNotPlayableInEmbed) {
 		// additional parameters are required to access clips with sensitiv content
 		html, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/watch?v="+id+"&bpctr=9999999999&has_verified=1")
 		if err != nil {
 			return nil, err
 		}
 
-		return v, v.parseVideoPage(html)
+		return &v, v.parseVideoPage(html)
 	}
 
 	// If the uploader marked the video as inappropriate for some ages, use embed player
-	if err == ErrLoginRequired {
-		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id, embeddedClient)
+	if errors.Is(err, ErrLoginRequired) {
+		c.client = &embeddedClient
+
+		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id)
 		if errEmbed == nil {
 			errEmbed = v.parseVideoInfo(bodyEmbed)
 		}
 
 		if errEmbed == nil {
-			return v, nil
+			return &v, nil
 		}
 
 		// private video clearly not age-restricted and thus should be explicit
 		if errEmbed == ErrVideoPrivate {
-			return v, errEmbed
+			return &v, errEmbed
 		}
 
 		// wrapping error so its clear whats happened
-		return v, fmt.Errorf("can't bypass age restriction: %w", errEmbed)
+		return &v, fmt.Errorf("can't bypass age restriction: %w", errEmbed)
 	}
 
 	// undefined error
-	return v, err
+	return &v, err
 }
 
 type innertubeRequest struct {
@@ -95,6 +122,9 @@ type innertubeRequest struct {
 	Continuation    string            `json:"continuation,omitempty"`
 	Context         inntertubeContext `json:"context"`
 	PlaybackContext playbackContext   `json:"playbackContext,omitempty"`
+	ContentCheckOK  bool              `json:"contentCheckOk"`
+	racyCheckOk     bool              `json:"racyCheckOk"`
+	Params          string            `json:"params"`
 }
 
 type playbackContext struct {
@@ -102,7 +132,8 @@ type playbackContext struct {
 }
 
 type contentPlaybackContext struct {
-	SignatureTimestamp string `json:"signatureTimestamp"`
+	// SignatureTimestamp string `json:"signatureTimestamp"`
+	html5Preference string `json:"html5Preference"`
 }
 
 type inntertubeContext struct {
@@ -110,68 +141,78 @@ type inntertubeContext struct {
 }
 
 type innertubeClient struct {
-	HL            string `json:"hl"`
-	GL            string `json:"gl"`
-	ClientName    string `json:"clientName"`
-	ClientVersion string `json:"clientVersion"`
+	HL                string `json:"hl"`
+	GL                string `json:"gl"`
+	ClientName        string `json:"clientName"`
+	ClientVersion     string `json:"clientVersion"`
+	AndroidSDKVersion int    `json:"androidSDKVersion,omitempty"`
+	UserAgent         string `json:"userAgent,omitempty"`
+	TimeZone          string `json:"timeZone"`
+	UTCOffset         int    `json:"utcOffsetMinutes"`
 }
 
 // client info for the innertube API
 type clientInfo struct {
-	name    string
-	key     string
-	version string
+	name           string
+	key            string
+	version        string
+	userAgent      string
+	androidVersion int
 }
 
 var (
 	// might add ANDROID and other in future, but i don't see reason yet
 	webClient = clientInfo{
-		name:    "WEB",
-		version: "2.20210617.01.00",
-		key:     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+		name:      "WEB",
+		version:   "2.20210617.01.00",
+		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+		userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+	}
+
+	androidClient = clientInfo{
+		name:           "ANDROID",
+		version:        "17.31.35",
+		key:            "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
+		userAgent:      "com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip",
+		androidVersion: 30,
 	}
 
 	embeddedClient = clientInfo{
-		name:    "WEB_EMBEDDED_PLAYER",
-		version: "1.19700101",
-		key:     "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", // seems like same key works for both clients
+		name:      "WEB_EMBEDDED_PLAYER",
+		version:   "1.19700101",
+		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", // seems like same key works for both clients
+		userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
 	}
 )
 
-func (c *Client) videoDataByInnertube(ctx context.Context, id string, clientInfo clientInfo) ([]byte, error) {
-	config, err := c.getPlayerConfig(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// fetch sts first
-	sts, err := config.getSignatureTimestamp()
-	if err != nil {
-		return nil, err
-	}
-
-	context := prepareInnertubeContext(clientInfo)
-
+func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, error) {
 	data := innertubeRequest{
-		VideoID: id,
-		Context: context,
+		VideoID:        id,
+		Context:        prepareInnertubeContext(*c.client),
+		ContentCheckOK: true,
+		racyCheckOk:    true,
+		Params:         "8AEB",
 		PlaybackContext: playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
-				SignatureTimestamp: sts,
+				// SignatureTimestamp: sts,
+				html5Preference: "HTML5_PREF_WANTS",
 			},
 		},
 	}
 
-	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+clientInfo.key, data)
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+c.client.key, data)
 }
 
 func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
 	return inntertubeContext{
 		Client: innertubeClient{
-			HL:            "en",
-			GL:            "US",
-			ClientName:    clientInfo.name,
-			ClientVersion: clientInfo.version,
+			HL:                "en",
+			GL:                "US",
+			TimeZone:          "UTC",
+			ClientName:        clientInfo.name,
+			ClientVersion:     clientInfo.version,
+			AndroidSDKVersion: clientInfo.androidVersion,
+			UserAgent:         clientInfo.userAgent,
 		},
 	}
 }
@@ -180,10 +221,22 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clien
 	context := prepareInnertubeContext(clientInfo)
 
 	if continuation {
-		return innertubeRequest{Context: context, Continuation: ID}
+		return innertubeRequest{
+			Context:        context,
+			Continuation:   ID,
+			ContentCheckOK: true,
+			racyCheckOk:    true,
+			Params:         "8AEB",
+		}
 	}
 
-	return innertubeRequest{Context: context, BrowseID: "VL" + ID}
+	return innertubeRequest{
+		Context:        context,
+		BrowseID:       "VL" + ID,
+		ContentCheckOK: true,
+		racyCheckOk:    true,
+		Params:         "8AEB",
+	}
 }
 
 // GetPlaylist fetches playlist metadata
@@ -195,13 +248,15 @@ func (c *Client) GetPlaylist(url string) (*Playlist, error) {
 // for these videos. Playlist entries cannot be downloaded, as they lack all the required metadata, but
 // can be used to enumerate all IDs, Authors, Titles, etc.
 func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist, error) {
+	c.client = &androidClient
+
 	id, err := extractPlaylistID(url)
 	if err != nil {
 		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
 	}
 
-	data := prepareInnertubePlaylistData(id, false, webClient)
-	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+webClient.key, data)
+	data := prepareInnertubePlaylistData(id, false, *c.client)
+	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+c.client.key, data)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +298,19 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 		contentLength = c.downloadOnce(req, w, format)
 	} else {
 		// we have length information, let's download by chunks!
-		go c.downloadChunked(req, w, format)
+		data, err := c.downloadChunked(ctx, req, format)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		go func() {
+			if _, err := w.Write(data); err != nil {
+				w.CloseWithError(err)
+				return
+			}
+
+			w.Close() //nolint:errcheck
+		}()
 	}
 
 	return r, contentLength, nil
@@ -274,40 +341,98 @@ func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, _ *Format) in
 	return length
 }
 
-func (c *Client) downloadChunked(req *http.Request, w *io.PipeWriter, format *Format) {
-	const chunkSize int64 = 10_000_000
-	// Loads a chunk a returns the written bytes.
-	// Downloading in multiple chunks is much faster:
-	// https://github.com/kkdai/youtube/pull/190
-	loadChunk := func(pos int64) (int64, error) {
-		req.Header.Set("Range", fmt.Sprintf("bytes=%v-%v", pos, pos+chunkSize-1))
+type chunkData struct {
+	index int
+	data  []byte
+}
 
-		resp, err := c.httpDo(req)
-		if err != nil {
-			return 0, err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusPartialContent {
-			return 0, ErrUnexpectedStatusCode(resp.StatusCode)
-		}
-
-		return io.Copy(w, resp.Body)
+func (c *Client) getChunkSize() int64 {
+	if c.ChunkSize > 0 {
+		return c.ChunkSize
 	}
 
-	defer w.Close()
+	return Size1Mb
+}
 
-	//nolint:revive,errcheck
-	// load all the chunks
-	for pos := int64(0); pos < format.ContentLength; {
-		written, err := loadChunk(pos)
-		if err != nil {
-			w.CloseWithError(err)
-			return
-		}
+func (c *Client) getMaxRoutines(limit int) int {
+	routines := 10
 
-		pos += written
+	if c.MaxRoutines > 0 {
+		routines = c.MaxRoutines
 	}
+
+	if limit > 0 && routines > limit {
+		routines = limit
+	}
+
+	return routines
+}
+
+func (c *Client) downloadChunked(ctx context.Context, req *http.Request, format *Format) ([]byte, error) {
+	chunks := getChunks(format.ContentLength, c.getChunkSize())
+	maxRoutines := c.getMaxRoutines(len(chunks))
+
+	chunkChan := make(chan chunk, len(chunks))
+	chunkDataChan := make(chan chunkData, len(chunks))
+	errChan := make(chan error, 1)
+
+	for _, c := range chunks {
+		chunkChan <- c
+	}
+	close(chunkChan)
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < maxRoutines; i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for {
+				select {
+				case <-ctx.Done():
+					errChan <- context.DeadlineExceeded
+					return
+				case ch, open := <-chunkChan:
+					if !open {
+						return
+					}
+
+					data, err := c.downloadChunk(req.Clone(ctx), ch)
+					if err != nil {
+						errChan <- err
+						return
+					}
+
+					chunkDataChan <- chunkData{ch.index, data}
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	close(errChan)
+	close(chunkDataChan)
+
+	for err := range errChan {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	chunkDatas := make([]chunkData, len(chunks))
+
+	for cd := range chunkDataChan {
+		chunkDatas[cd.index] = cd
+	}
+
+	data := make([]byte, 0, format.ContentLength)
+	for _, chunk := range chunkDatas {
+		data = append(data, chunk.data...)
+	}
+
+	return data, nil
 }
 
 // GetStreamURL returns the url for a specific format
@@ -317,9 +442,16 @@ func (c *Client) GetStreamURL(video *Video, format *Format) (string, error) {
 
 // GetStreamURLContext returns the url for a specific format with a context
 func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *Format) (string, error) {
-	if format.URL != "" {
-		return c.unThrottle(ctx, video.ID, format.URL)
+	if format == nil {
+		return "", ErrNoFormat
 	}
+
+	if format.URL != "" {
+		return format.URL, nil
+		// return c.unThrottle(ctx, video.ID, format.URL)
+	}
+
+	// TODO: check rest of this function, is it redundant?
 
 	cipher := format.Cipher
 	if cipher == "" {
@@ -344,6 +476,21 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	if c.Debug {
 		log.Println(req.Method, req.URL)
 	}
+
+	req.Header.Set("User-Agent", c.client.userAgent)
+	req.Header.Set("Origin", "https://youtube.com")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+
+	if len(c.consentID) == 0 {
+		c.consentID = strconv.Itoa(rand.Intn(899) + 100)
+	}
+
+	req.AddCookie(&http.Cookie{
+		Name:   "CONSENT",
+		Value:  "YES+cb.20210328-17-p0.en+FX+" + c.consentID,
+		Path:   "/",
+		Domain: ".youtube.com",
+	})
 
 	res, err := client.Do(req)
 
@@ -396,6 +543,11 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 		return nil, err
 	}
 
+	req.Header.Set("X-Youtube-Client-Name", "3")
+	req.Header.Set("X-Youtube-Client-Version", c.client.version)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+
 	resp, err := c.httpDo(req)
 	if err != nil {
 		return nil, err
@@ -417,4 +569,30 @@ func (c *Client) httpPostBodyBytes(ctx context.Context, url string, body interfa
 	defer resp.Body.Close()
 
 	return io.ReadAll(resp.Body)
+}
+
+// downloadChunk returns the chunk bytes.
+// Downloading in multiple chunks is much faster:
+// https://github.com/kkdai/youtube/pull/190
+func (c *Client) downloadChunk(req *http.Request, chunk chunk) ([]byte, error) {
+	q := req.URL.Query()
+	q.Set("range", fmt.Sprintf("%d-%d", chunk.start, chunk.end))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := c.httpDo(req)
+	if err != nil {
+		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK && resp.StatusCode >= 300 {
+		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read chunk body: %w", err)
+	}
+
+	return b, nil
 }

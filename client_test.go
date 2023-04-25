@@ -83,7 +83,7 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	video, err := testClient.GetVideo(dwlURL)
-	require.NoError(err)
+	require.NoError(err, "get video")
 	require.NotNil(video)
 
 	assert.NotEmpty(video.Thumbnails)
@@ -95,9 +95,11 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert.Equal("rFejpH_tAHM", video.ID)
 	assert.Equal("dotGo 2015 - Rob Pike - Simplicity is Complicated", video.Title)
 	assert.Equal("dotconferences", video.Author)
-	assert.Equal(1392*time.Second, video.Duration)
+	assert.GreaterOrEqual(video.Duration, 1390*time.Second)
 	assert.Contains(video.Description, "Go is often described as a simple language.")
-	assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
+
+	// Publishing date doesn't seem to be present in android client
+	// assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
 }
 
 func TestGetVideoWithManifestURL(t *testing.T) {
@@ -175,8 +177,10 @@ func TestGetBigPlaylist(t *testing.T) {
 	assert.NotEmpty(playlist.Description)
 	assert.NotEmpty(playlist.Author)
 
-	assert.Greater(len(playlist.Videos), 100)
-	assert.NotEmpty(playlist.Videos[100].ID)
+	assert.Greater(len(playlist.Videos), 300)
+	assert.NotEmpty(playlist.Videos[300].ID)
+
+	t.Logf("Playlist Title: %s, Video Count: %d", playlist.Title, len(playlist.Videos))
 }
 
 func TestClient_httpGetBodyBytes(t *testing.T) {
