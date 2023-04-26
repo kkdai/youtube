@@ -32,8 +32,11 @@ func ExampleClient_GetStream() {
 func TestSimpleTest(t *testing.T) {
 	client := Client{Debug: true, ChunkSize: Size10Mb}
 
-	video, err := client.GetVideo("https://www.youtube.com/watch?v=BaW_jenozKc")
+	video, err := client.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
 	require.NoError(t, err, "get body")
+
+	_, err = client.GetTranscript(video)
+	require.NoError(t, err, "get transcript")
 
 	// Typically youtube only provides separate streams for video and audio.
 	// If you want audio and video combined, take a look a the downloader package.

@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"encoding/base64"
 	"math"
 
 	sjson "github.com/bitly/go-simplejson"
@@ -28,7 +29,7 @@ func getChunks(totalSize, chunkSize int64) []chunk {
 	return chunks
 }
 
-func getFistKey(j *sjson.Json) *sjson.Json {
+func getFirstKeyJSON(j *sjson.Json) *sjson.Json {
 	m, err := j.Map()
 	if err != nil {
 		return j
@@ -41,7 +42,7 @@ func getFistKey(j *sjson.Json) *sjson.Json {
 	return j
 }
 
-func isValid(j *sjson.Json) bool {
+func isValidJSON(j *sjson.Json) bool {
 	b, err := j.MarshalJSON()
 	if err != nil {
 		return false
@@ -54,9 +55,9 @@ func isValid(j *sjson.Json) bool {
 	return true
 }
 
-func getText(j *sjson.Json, paths ...string) string {
+func sjsonGetText(j *sjson.Json, paths ...string) string {
 	for _, path := range paths {
-		if isValid(j.Get(path)) {
+		if isValidJSON(j.Get(path)) {
 			j = j.Get(path)
 		}
 	}
@@ -65,15 +66,15 @@ func getText(j *sjson.Json, paths ...string) string {
 		return text
 	}
 
-	if isValid(j.Get("text")) {
+	if isValidJSON(j.Get("text")) {
 		return j.Get("text").MustString()
 	}
 
-	if p := j.Get("runs"); isValid(p) {
+	if p := j.Get("runs"); isValidJSON(p) {
 		var text string
 
 		for i := 0; i < len(p.MustArray()); i++ {
-			if textNode := p.GetIndex(i).Get("text"); isValid(textNode) {
+			if textNode := p.GetIndex(i).Get("text"); isValidJSON(textNode) {
 				text += textNode.MustString()
 			}
 		}
@@ -84,22 +85,15 @@ func getText(j *sjson.Json, paths ...string) string {
 	return ""
 }
 
-func getKeys(j *sjson.Json) []string {
-	var keys []string
-
-	m, err := j.Map()
-	if err != nil {
-		return keys
-	}
-
-	for key := range m {
-		keys = append(keys, key)
-	}
-
-	return keys
-}
-
 func getContinuation(j *sjson.Json) string {
 	return j.GetPath("continuations").
 		GetIndex(0).GetPath("nextContinuationData", "continuation").MustString()
+}
+
+func base64PadEnc(str string) string {
+	return base64.StdEncoding.EncodeToString([]byte(str))
+}
+
+func base64Enc(str string) string {
+	return base64.RawStdEncoding.EncodeToString([]byte(str))
 }

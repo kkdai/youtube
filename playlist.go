@@ -94,14 +94,14 @@ func (p *Playlist) parsePlaylistInfo(ctx context.Context, client *Client, body [
 
 	metadata = metadata.Get("playlistHeaderRenderer")
 
-	p.Title = getText(metadata, "title")
-	p.Description = getText(metadata, "description", "descriptionText")
+	p.Title = sjsonGetText(metadata, "title")
+	p.Description = sjsonGetText(metadata, "description", "descriptionText")
 	p.Author = j.GetPath("sidebar", "playlistSidebarRenderer", "items").GetIndex(1).
 		GetPath("playlistSidebarSecondaryInfoRenderer", "videoOwner", "videoOwnerRenderer", "title", "runs").
 		GetIndex(0).Get("text").MustString()
 
 	if len(p.Author) == 0 {
-		p.Author = getText(metadata, "owner", "ownerText")
+		p.Author = sjsonGetText(metadata, "owner", "ownerText")
 	}
 
 	contents, ok := j.CheckGet("contents")
@@ -110,11 +110,11 @@ func (p *Playlist) parsePlaylistInfo(ctx context.Context, client *Client, body [
 	}
 
 	// contents can have different keys with same child structure
-	firstPart := getFistKey(contents).GetPath("tabs").GetIndex(0).
+	firstPart := getFirstKeyJSON(contents).GetPath("tabs").GetIndex(0).
 		GetPath("tabRenderer", "content", "sectionListRenderer", "contents").GetIndex(0)
 
 	// This extra nested item is only set with the web client
-	if n := firstPart.GetPath("itemSectionRenderer", "contents").GetIndex(0); isValid(n) {
+	if n := firstPart.GetPath("itemSectionRenderer", "contents").GetIndex(0); isValidJSON(n) {
 		firstPart = n
 	}
 
@@ -155,12 +155,11 @@ func (p *Playlist) parsePlaylistInfo(ctx context.Context, client *Client, body [
 			return err
 		}
 
-		var next *sjson.Json
-		if next = j.GetPath("onResponseReceivedActions").GetIndex(0).
-			GetPath("appendContinuationItemsAction", "continuationItems"); isValid(next) {
-		} else if next = j.GetPath("continuationContents", "playlistVideoListContinuation", "contents"); isValid(next) {
-		} else {
-			return fmt.Errorf("failed to extract continuation data")
+		next := j.GetPath("onResponseReceivedActions").GetIndex(0).
+			GetPath("appendContinuationItemsAction", "continuationItems")
+
+		if !isValidJSON(next) {
+			next = j.GetPath("continuationContents", "playlistVideoListContinuation", "contents")
 		}
 
 		vJSON, err := next.MarshalJSON()
