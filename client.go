@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 )
@@ -23,6 +24,9 @@ const (
 var (
 	ErrNoFormat = errors.New("no video format provided")
 )
+
+// DefaultClient type to use. No reason to change but you could if you wanted to.
+var DefaultClient = AndroidClient
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
@@ -47,6 +51,12 @@ type Client struct {
 	consentID string
 }
 
+func (c *Client) assureClient() {
+	if c.client == nil {
+		c.client = &DefaultClient
+	}
+}
+
 // GetVideo fetches video metadata
 func (c *Client) GetVideo(url string) (*Video, error) {
 	return c.GetVideoContext(context.Background(), url)
@@ -63,7 +73,7 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 }
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
-	c.client = &androidClient
+	c.assureClient()
 
 	body, err := c.videoDataByInnertube(ctx, id)
 	if err != nil {
@@ -92,7 +102,7 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 	// If the uploader marked the video as inappropriate for some ages, use embed player
 	if errors.Is(err, ErrLoginRequired) {
-		c.client = &embeddedClient
+		c.client = &EmbeddedClient
 
 		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id)
 		if errEmbed == nil {
@@ -121,9 +131,9 @@ type innertubeRequest struct {
 	BrowseID        string            `json:"browseId,omitempty"`
 	Continuation    string            `json:"continuation,omitempty"`
 	Context         inntertubeContext `json:"context"`
-	PlaybackContext playbackContext   `json:"playbackContext,omitempty"`
-	ContentCheckOK  bool              `json:"contentCheckOk"`
-	racyCheckOk     bool              `json:"racyCheckOk"`
+	PlaybackContext *playbackContext  `json:"playbackContext,omitempty"`
+	ContentCheckOK  bool              `json:"contentCheckOk,omitempty"`
+	RacyCheckOk     bool              `json:"racyCheckOk,omitempty"`
 	Params          string            `json:"params"`
 }
 
@@ -133,7 +143,7 @@ type playbackContext struct {
 
 type contentPlaybackContext struct {
 	// SignatureTimestamp string `json:"signatureTimestamp"`
-	html5Preference string `json:"html5Preference"`
+	HTML5Preference string `json:"html5Preference"`
 }
 
 type inntertubeContext struct {
@@ -161,15 +171,16 @@ type clientInfo struct {
 }
 
 var (
-	// might add ANDROID and other in future, but i don't see reason yet
-	webClient = clientInfo{
+	// WebClient, better to use Android client but go ahead.
+	WebClient = clientInfo{
 		name:      "WEB",
 		version:   "2.20210617.01.00",
 		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
 		userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
 	}
 
-	androidClient = clientInfo{
+	// AndroidClient, download go brrrrrr.
+	AndroidClient = clientInfo{
 		name:           "ANDROID",
 		version:        "17.31.35",
 		key:            "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
@@ -177,7 +188,8 @@ var (
 		androidVersion: 30,
 	}
 
-	embeddedClient = clientInfo{
+	// EmbeddedClient, not really tested.
+	EmbeddedClient = clientInfo{
 		name:      "WEB_EMBEDDED_PLAYER",
 		version:   "1.19700101",
 		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", // seems like same key works for both clients
@@ -190,17 +202,26 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, e
 		VideoID:        id,
 		Context:        prepareInnertubeContext(*c.client),
 		ContentCheckOK: true,
-		racyCheckOk:    true,
+		RacyCheckOk:    true,
 		Params:         "8AEB",
-		PlaybackContext: playbackContext{
+		PlaybackContext: &playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
 				// SignatureTimestamp: sts,
-				html5Preference: "HTML5_PREF_WANTS",
+				HTML5Preference: "HTML5_PREF_WANTS",
 			},
 		},
 	}
 
 	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+c.client.key, data)
+}
+
+func (c *Client) transcriptDataByInnertube(ctx context.Context, id string) ([]byte, error) {
+	data := innertubeRequest{
+		Context: prepareInnertubeContext(*c.client),
+		Params:  transcriptVideoID(id),
+	}
+
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/get_transcript?key="+c.client.key, data)
 }
 
 func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
@@ -225,7 +246,7 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clien
 			Context:        context,
 			Continuation:   ID,
 			ContentCheckOK: true,
-			racyCheckOk:    true,
+			RacyCheckOk:    true,
 			Params:         "8AEB",
 		}
 	}
@@ -234,9 +255,25 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clien
 		Context:        context,
 		BrowseID:       "VL" + ID,
 		ContentCheckOK: true,
-		racyCheckOk:    true,
+		RacyCheckOk:    true,
 		Params:         "8AEB",
 	}
+}
+
+// transcriptVideoID encodes the video ID to the param used to fetch transcripts.
+func transcriptVideoID(videoID string) string {
+	langCode := encTranscriptLang("en")
+
+	// This can be optionally appened to the Sprintf str, not sure what it means
+	// *3engagement-panel-searchable-transcript-search-panel\x30\x00\x38\x01\x40\x01
+	return base64Enc(fmt.Sprintf("\n\x0b%s\x12\x12%s\x18\x01", videoID, langCode))
+}
+
+func encTranscriptLang(languageCode string) string {
+	s := fmt.Sprintf("\n\x03asr\x12\x02%s\x1a\x00", languageCode)
+	s = base64PadEnc(s)
+
+	return url.QueryEscape(s)
 }
 
 // GetPlaylist fetches playlist metadata
@@ -248,7 +285,7 @@ func (c *Client) GetPlaylist(url string) (*Playlist, error) {
 // for these videos. Playlist entries cannot be downloaded, as they lack all the required metadata, but
 // can be used to enumerate all IDs, Authors, Titles, etc.
 func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist, error) {
-	c.client = &androidClient
+	c.assureClient()
 
 	id, err := extractPlaylistID(url)
 	if err != nil {
@@ -319,8 +356,7 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, _ *Format) int64 {
 	resp, err := c.httpDo(req)
 	if err != nil {
-		//nolint:errcheck
-		w.CloseWithError(err)
+		w.CloseWithError(err) //nolint:errcheck
 		return 0
 	}
 
@@ -330,8 +366,7 @@ func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, _ *Format) in
 		if err == nil {
 			w.Close()
 		} else {
-			//nolint:errcheck
-			w.CloseWithError(err)
+			w.CloseWithError(err) //nolint:errcheck
 		}
 	}()
 
@@ -447,8 +482,11 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 	}
 
 	if format.URL != "" {
-		return format.URL, nil
-		// return c.unThrottle(ctx, video.ID, format.URL)
+		if c.client.androidVersion > 0 {
+			return format.URL, nil
+		}
+
+		return c.unThrottle(ctx, video.ID, format.URL)
 	}
 
 	// TODO: check rest of this function, is it redundant?
@@ -482,7 +520,7 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Sec-Fetch-Mode", "navigate")
 
 	if len(c.consentID) == 0 {
-		c.consentID = strconv.Itoa(rand.Intn(899) + 100)
+		c.consentID = strconv.Itoa(rand.Intn(899) + 100) //nolint:gosec
 	}
 
 	req.AddCookie(&http.Cookie{
@@ -517,6 +555,7 @@ func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error
 		resp.Body.Close()
 		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
 	}
+
 	return resp, nil
 }
 
@@ -557,6 +596,7 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 		resp.Body.Close()
 		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
 	}
+
 	return resp, nil
 }
 
