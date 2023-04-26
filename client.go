@@ -351,7 +351,7 @@ func (c *Client) getChunkSize() int64 {
 		return c.ChunkSize
 	}
 
-	return Size1Mb
+	return Size10Mb
 }
 
 func (c *Client) getMaxRoutines(limit int) int {
