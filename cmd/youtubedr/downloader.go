@@ -11,10 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kkdai/youtube/v2"
-	ytdl "github.com/kkdai/youtube/v2/downloader"
 	"github.com/spf13/pflag"
 	"golang.org/x/net/http/httpproxy"
+
+	"github.com/kkdai/youtube/v2"
+	ytdl "github.com/kkdai/youtube/v2/downloader"
 )
 
 var (
@@ -94,7 +95,7 @@ func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
 		}
 
 	case outputQuality != "":
-		format = formats.WithAudioChannels().FindByQuality(outputQuality)
+		format = formats.FindByQuality(outputQuality)
 		if format == nil {
 			return nil, nil, fmt.Errorf("unable to find format with quality %s", outputQuality)
 		}
