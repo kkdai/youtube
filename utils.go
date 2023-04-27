@@ -2,7 +2,6 @@ package youtube
 
 import (
 	"encoding/base64"
-	"fmt"
 	"math"
 
 	sjson "github.com/bitly/go-simplejson"
@@ -37,7 +36,6 @@ func getFirstKeyJSON(j *sjson.Json) *sjson.Json {
 	}
 
 	for key := range m {
-		fmt.Println("returning item")
 		return j.Get(key)
 	}
 
