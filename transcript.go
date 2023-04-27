@@ -90,7 +90,7 @@ func parseTranscript(body []byte) (VideoTranscript, error) {
 		// Web client response
 		if web := resp.Actions[0].WebSegment; web != nil {
 			// return getSegments(web)
-			return nil, fmt.Errorf("no implemented")
+			return nil, fmt.Errorf("not implemented")
 		}
 	}
 
@@ -197,7 +197,6 @@ func (s *webData) ParseSegments() []TranscriptSegment {
 	cues := s.Content.TR.Body.TBR.Cues
 	segments := make([]TranscriptSegment, 0, len(cues))
 
-	fmt.Println(len(cues))
 	for _, s := range cues {
 		formatted := s.Transcript.FormattedStartOffset.SimpleText
 		segment := s.Transcript.Cues[0].TranscriptCueRenderer
