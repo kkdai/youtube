@@ -1,7 +1,9 @@
 package youtube
 
 import (
+	"io"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -9,7 +11,7 @@ import (
 func ExampleClient_GetStream() {
 	client := Client{Debug: true}
 
-	video, err := client.GetVideo("https://www.youtube.com/watch?v=BaW_jenozKc")
+	video, err := client.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
 	if err != nil {
 		panic(err)
 	}
@@ -25,6 +27,32 @@ func ExampleClient_GetStream() {
 	// do something with the reader
 
 	reader.Close()
+}
+
+func TestSimpleTest(t *testing.T) {
+	client := Client{Debug: true, ChunkSize: Size10Mb}
+
+	video, err := client.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
+	require.NoError(t, err, "get body")
+
+	_, err = client.GetTranscript(video)
+	require.NoError(t, err, "get transcript")
+
+	// Typically youtube only provides separate streams for video and audio.
+	// If you want audio and video combined, take a look a the downloader package.
+	format := video.Formats.FindByQuality("hd1080")
+
+	start := time.Now()
+	reader, _, err := client.GetStream(video, format)
+	require.NoError(t, err, "get stream")
+
+	t.Log("Duration Milliseconds: ", time.Since(start).Milliseconds())
+
+	// do something with the reader
+	b, err := io.ReadAll(reader)
+	require.NoError(t, err, "read body")
+
+	t.Log("Downloaded ", len(b))
 }
 
 func TestDownload_Regular(t *testing.T) {

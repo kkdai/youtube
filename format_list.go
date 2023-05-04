@@ -9,6 +9,8 @@ import (
 type FormatList []Format
 
 // FindByQuality returns the first format matching Quality or QualityLabel
+//
+// Examples: tiny, small, medium, large, 720p, hd720, hd1080
 func (list FormatList) FindByQuality(quality string) *Format {
 	for i := range list {
 		if list[i].Quality == quality || list[i].QualityLabel == quality {
