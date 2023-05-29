@@ -481,6 +481,8 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 		return "", ErrNoFormat
 	}
 
+	c.assureClient()
+
 	if format.URL != "" {
 		if c.client.androidVersion > 0 {
 			return format.URL, nil
