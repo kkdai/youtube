@@ -4,11 +4,11 @@ type playerResponseData struct {
 	Captions struct {
 		PlayerCaptionsTracklistRenderer struct {
 			CaptionTracks []struct {
-				BaseUrl string `json:"baseUrl"`
+				BaseURL string `json:"baseUrl"`
 				Name    struct {
 					SimpleText string `json:"simpleText"`
 				} `json:"name"`
-				VssId          string `json:"vssId"`
+				VssID          string `json:"vssId"`
 				LanguageCode   string `json:"languageCode"`
 				Kind           string `json:"kind,omitempty"`
 				IsTranslatable bool   `json:"isTranslatable"`
