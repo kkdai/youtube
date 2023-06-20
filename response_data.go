@@ -1,6 +1,31 @@
 package youtube
 
 type playerResponseData struct {
+	Captions struct {
+		PlayerCaptionsTracklistRenderer struct {
+			CaptionTracks []struct {
+				BaseUrl string `json:"baseUrl"`
+				Name    struct {
+					SimpleText string `json:"simpleText"`
+				} `json:"name"`
+				VssId          string `json:"vssId"`
+				LanguageCode   string `json:"languageCode"`
+				Kind           string `json:"kind,omitempty"`
+				IsTranslatable bool   `json:"isTranslatable"`
+			} `json:"captionTracks"`
+			AudioTracks []struct {
+				CaptionTrackIndices []int `json:"captionTrackIndices"`
+			} `json:"audioTracks"`
+			TranslationLanguages []struct {
+				LanguageCode string `json:"languageCode"`
+				LanguageName struct {
+					SimpleText string `json:"simpleText"`
+				} `json:"languageName"`
+			} `json:"translationLanguages"`
+			DefaultAudioTrackIndex int `json:"defaultAudioTrackIndex"`
+		} `json:"playerCaptionsTracklistRenderer"`
+	} `json:"captions"`
+
 	PlayabilityStatus struct {
 		Status          string `json:"status"`
 		Reason          string `json:"reason"`
