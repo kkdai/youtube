@@ -92,6 +92,9 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert.Empty(video.HLSManifestURL)
 	assert.Empty(video.DASHManifestURL)
 
+	assert.Greater(len(video.CaptionTracks), 0)
+	assert.NotEmpty(len(video.CaptionTracks[0].BaseURL))
+
 	assert.Equal("rFejpH_tAHM", video.ID)
 	assert.Equal("dotGo 2015 - Rob Pike - Simplicity is Complicated", video.Title)
 	assert.Equal("dotconferences", video.Author)
