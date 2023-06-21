@@ -92,6 +92,7 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert.Empty(video.HLSManifestURL)
 	assert.Empty(video.DASHManifestURL)
 
+	assert.NotEmpty(video.CaptionTracks)
 	assert.Greater(len(video.CaptionTracks), 0)
 	assert.NotEmpty(video.CaptionTracks[0].BaseURL)
 
