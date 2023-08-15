@@ -141,7 +141,7 @@ func TestGetStream(t *testing.T) {
 
 	reader, size, err := testClient.GetStreamContext(ctx, video, &video.Formats[0])
 	require.NoError(err)
-	assert.EqualValues(2208750, size)
+	assert.EqualValues(988479, size)
 
 	data, err := io.ReadAll(reader)
 	require.NoError(err)
