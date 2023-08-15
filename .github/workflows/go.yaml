@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-22.04]
-        go-version: [1.20.x, 1.19.x]
+        go-version: [1.21.x, 1.20.x]
     runs-on: ${{ matrix.platform }}
     name: Linters (Static Analysis) for Go
     steps:
@@ -32,7 +32,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-22.04]
-        go-version: [1.20.x, 1.19.x]
+        go-version: [1.21.x, 1.20.x]
     runs-on: ${{ matrix.platform }}
     name: integration tests
     env:
@@ -66,6 +66,6 @@ jobs:
           path: output
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           file: coverage.out
