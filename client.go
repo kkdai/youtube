@@ -203,7 +203,7 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, e
 		Context:        prepareInnertubeContext(*c.client),
 		ContentCheckOK: true,
 		RacyCheckOk:    true,
-		Params:         "8AEB",
+		Params:         "CgIQBg==",
 		PlaybackContext: &playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
 				// SignatureTimestamp: sts,
@@ -247,7 +247,7 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clien
 			Continuation:   ID,
 			ContentCheckOK: true,
 			RacyCheckOk:    true,
-			Params:         "8AEB",
+			Params:         "CgIQBg==",
 		}
 	}
 
@@ -256,7 +256,7 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clien
 		BrowseID:       "VL" + ID,
 		ContentCheckOK: true,
 		RacyCheckOk:    true,
-		Params:         "8AEB",
+		Params:         "CgIQBg==",
 	}
 }
 
