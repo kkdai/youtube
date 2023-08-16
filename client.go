@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -337,19 +337,8 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 		contentLength = c.downloadOnce(req, w, format)
 	} else {
 		// we have length information, let's download by chunks!
-		data, err := c.downloadChunked(ctx, req, format)
-		if err != nil {
-			return nil, 0, err
-		}
+		c.downloadChunked(ctx, req, w, format)
 
-		go func() {
-			if _, err := w.Write(data); err != nil {
-				w.CloseWithError(err)
-				return
-			}
-
-			w.Close() //nolint:errcheck
-		}()
 	}
 
 	return r, contentLength, nil
@@ -378,11 +367,6 @@ func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, _ *Format) in
 	return length
 }
 
-type chunkData struct {
-	index int
-	data  []byte
-}
-
 func (c *Client) getChunkSize() int64 {
 	if c.ChunkSize > 0 {
 		return c.ChunkSize
@@ -405,71 +389,54 @@ func (c *Client) getMaxRoutines(limit int) int {
 	return routines
 }
 
-func (c *Client) downloadChunked(ctx context.Context, req *http.Request, format *Format) ([]byte, error) {
+func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.PipeWriter, format *Format) {
 	chunks := getChunks(format.ContentLength, c.getChunkSize())
 	maxRoutines := c.getMaxRoutines(len(chunks))
 
-	chunkChan := make(chan chunk, len(chunks))
-	chunkDataChan := make(chan chunkData, len(chunks))
-	errChan := make(chan error, 1)
-
-	for _, c := range chunks {
-		chunkChan <- c
+	cancelCtx, cancel := context.WithCancel(ctx)
+	abort := func(err error) {
+		w.CloseWithError(err)
+		cancel()
 	}
-	close(chunkChan)
 
-	var wg sync.WaitGroup
-
+	currentChunk := atomic.Uint32{}
 	for i := 0; i < maxRoutines; i++ {
-		wg.Add(1)
-
 		go func() {
-			defer wg.Done()
+			i := int(currentChunk.Add(1)) - 1
+			if i > len(chunks) {
+				// no more chunks
+				return
+			}
 
-			for {
-				select {
-				case <-ctx.Done():
-					errChan <- context.DeadlineExceeded
-					return
-				case ch, open := <-chunkChan:
-					if !open {
-						return
-					}
+			chunk := &chunks[i]
+			err := c.downloadChunk(req.Clone(cancelCtx), chunk)
+			close(chunk.data)
 
-					data, err := c.downloadChunk(req.Clone(ctx), ch)
-					if err != nil {
-						errChan <- err
-						return
-					}
-
-					chunkDataChan <- chunkData{ch.index, data}
-				}
+			if err != nil {
+				abort(err)
+				return
 			}
 		}()
 	}
-	wg.Wait()
 
-	close(errChan)
-	close(chunkDataChan)
+	go func() {
+		// copy chunks into the PipeWriter
+		for i := 0; i < len(chunks); i++ {
+			select {
+			case <-cancelCtx.Done():
+				return
+			case data := <-chunks[i].data:
+				_, err := io.Copy(w, bytes.NewBuffer(data))
 
-	for err := range errChan {
-		if err != nil {
-			return nil, err
+				if err != nil {
+					abort(err)
+				}
+			}
 		}
-	}
 
-	chunkDatas := make([]chunkData, len(chunks))
-
-	for cd := range chunkDataChan {
-		chunkDatas[cd.index] = cd
-	}
-
-	data := make([]byte, 0, format.ContentLength)
-	for _, chunk := range chunkDatas {
-		data = append(data, chunk.data...)
-	}
-
-	return data, nil
+		// everything succeeded
+		w.Close()
+	}()
 }
 
 // GetStreamURL returns the url for a specific format
@@ -615,28 +582,37 @@ func (c *Client) httpPostBodyBytes(ctx context.Context, url string, body interfa
 	return io.ReadAll(resp.Body)
 }
 
-// downloadChunk returns the chunk bytes.
+// downloadChunk writes the response data into the data channel of the chunk.
 // Downloading in multiple chunks is much faster:
 // https://github.com/kkdai/youtube/pull/190
-func (c *Client) downloadChunk(req *http.Request, chunk chunk) ([]byte, error) {
+func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
 	q := req.URL.Query()
 	q.Set("range", fmt.Sprintf("%d-%d", chunk.start, chunk.end))
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := c.httpDo(req)
 	if err != nil {
-		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
+		return ErrUnexpectedStatusCode(resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < http.StatusOK && resp.StatusCode >= 300 {
-		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
+		return ErrUnexpectedStatusCode(resp.StatusCode)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	expected := int(chunk.end-chunk.start) + 1
+	data, err := io.ReadAll(resp.Body)
+	n := len(data)
+
 	if err != nil {
-		return nil, fmt.Errorf("read chunk body: %w", err)
+		return err
 	}
 
-	return b, nil
+	if n != expected {
+		return fmt.Errorf("chunk at offset %d has invalid size: expected=%d actual=%d", chunk.start, expected, n)
+	}
+
+	chunk.data <- data
+
+	return nil
 }

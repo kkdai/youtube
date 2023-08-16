@@ -7,9 +7,9 @@ import (
 )
 
 type chunk struct {
-	index int
 	start int64
 	end   int64
+	data  chan []byte
 }
 
 func getChunks(totalSize, chunkSize int64) []chunk {
@@ -21,7 +21,7 @@ func getChunks(totalSize, chunkSize int64) []chunk {
 			end = totalSize - 1
 		}
 
-		chunks = append(chunks, chunk{i, start, end})
+		chunks = append(chunks, chunk{start, end, make(chan []byte)})
 	}
 
 	return chunks
