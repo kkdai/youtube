@@ -19,6 +19,8 @@ const (
 	Size1Kb  = 1024
 	Size1Mb  = Size1Kb * 1024
 	Size10Mb = Size1Mb * 10
+
+	playerParams = "CgIQBg=="
 )
 
 var (
@@ -203,7 +205,7 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, e
 		Context:        prepareInnertubeContext(*c.client),
 		ContentCheckOK: true,
 		RacyCheckOk:    true,
-		Params:         "CgIQBg==",
+		Params:         playerParams,
 		PlaybackContext: &playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
 				// SignatureTimestamp: sts,
@@ -247,7 +249,7 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clien
 			Continuation:   ID,
 			ContentCheckOK: true,
 			RacyCheckOk:    true,
-			Params:         "CgIQBg==",
+			Params:         playerParams,
 		}
 	}
 
@@ -256,7 +258,7 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clien
 		BrowseID:       "VL" + ID,
 		ContentCheckOK: true,
 		RacyCheckOk:    true,
-		Params:         "CgIQBg==",
+		Params:         playerParams,
 	}
 }
 
