@@ -2,7 +2,6 @@ package youtube
 
 import (
 	"encoding/base64"
-	"math"
 
 	sjson "github.com/bitly/go-simplejson"
 )
@@ -16,10 +15,9 @@ type chunk struct {
 func getChunks(totalSize, chunkSize int64) []chunk {
 	var chunks []chunk
 
-	for i := 0; i < int(math.Ceil(float64(totalSize)/float64(chunkSize))); i++ {
-		start := int64(i) * chunkSize
-		end := start + chunkSize - 1
-		if end >= totalSize {
+	for start := int64(0); start < totalSize; start += chunkSize {
+		end := chunkSize + start - 1
+		if end > totalSize-1 {
 			end = totalSize - 1
 		}
 
