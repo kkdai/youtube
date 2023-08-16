@@ -21,7 +21,7 @@ func getChunks(totalSize, chunkSize int64) []chunk {
 			end = totalSize - 1
 		}
 
-		chunks = append(chunks, chunk{start, end, make(chan []byte)})
+		chunks = append(chunks, chunk{start, end, make(chan []byte, 1)})
 	}
 
 	return chunks
