@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,7 +37,12 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, ou
 
 // Download : Starting download video by arguments.
 func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
-	dl.logf("Video '%s' - Quality '%s' - Codec '%s'", v.Title, format.QualityLabel, format.MimeType)
+	youtube.Logger.Info(
+		"Downloading video",
+		"id", v.ID,
+		"quality", format.Quality,
+		"mimeType", format.MimeType,
+	)
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
 		return err
@@ -51,7 +55,6 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	}
 	defer out.Close()
 
-	dl.logf("Download to file=%s", destFile)
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
@@ -62,7 +65,15 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 		return err1
 	}
 
-	dl.logf("Video '%s' - Quality '%s' - Video Codec '%s' - Audio Codec '%s'", v.Title, videoFormat.QualityLabel, videoFormat.MimeType, audioFormat.MimeType)
+	log := youtube.Logger.With("id", v.ID)
+
+	log.Info(
+		"Downloading composite video",
+		"videoQuality", videoFormat.QualityLabel,
+		"videoMimeType", videoFormat.MimeType,
+		"audioMimeType", audioFormat.MimeType,
+	)
+
 	destFile, err := dl.getOutputFile(v, videoFormat, outputFile)
 	if err != nil {
 		return err
@@ -83,13 +94,13 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	}
 	defer os.Remove(audioFile.Name())
 
-	dl.logf("Downloading video file...")
+	log.Debug("Downloading video file...")
 	err = dl.videoDLWorker(ctx, videoFile, v, videoFormat)
 	if err != nil {
 		return err
 	}
 
-	dl.logf("Downloading audio file...")
+	log.Debug("Downloading audio file...")
 	err = dl.videoDLWorker(ctx, audioFile, v, audioFormat)
 	if err != nil {
 		return err
@@ -106,7 +117,7 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	)
 	ffmpegVersionCmd.Stderr = os.Stderr
 	ffmpegVersionCmd.Stdout = os.Stdout
-	dl.logf("merging video and audio to %s", destFile)
+	log.Info("merging video and audio", "output", destFile)
 
 	return ffmpegVersionCmd.Run()
 }
@@ -183,10 +194,4 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 
 	progress.Wait()
 	return nil
-}
-
-func (dl *Downloader) logf(format string, v ...interface{}) {
-	if dl.Debug {
-		log.Printf(format, v...)
-	}
 }

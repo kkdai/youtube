@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -54,8 +53,10 @@ func getDownloader() *ytdl.Downloader {
 		}).DialContext,
 	}
 
+	youtube.SetLogLevel(logLevel)
+
 	if insecureSkipVerify {
-		log.Println("Skip server certificate verification")
+		youtube.Logger.Info("Skip server certificate verification")
 		httpTransport.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
@@ -64,7 +65,6 @@ func getDownloader() *ytdl.Downloader {
 	downloader = &ytdl.Downloader{
 		OutputDir: outputDir,
 	}
-	downloader.Client.Debug = verbose
 	downloader.HTTPClient = &http.Client{Transport: httpTransport}
 
 	return downloader

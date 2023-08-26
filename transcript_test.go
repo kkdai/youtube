@@ -8,11 +8,9 @@ import (
 )
 
 func TestTranscript(t *testing.T) {
-	client := Client{Debug: true}
-
 	video := &Video{ID: "9_MbW9FK1fA"}
 
-	transcript, err := client.GetTranscript(video)
+	transcript, err := testClient.GetTranscript(video)
 	require.NoError(t, err, "get transcript")
 	require.Greater(t, len(transcript), 0, "no transcript segments found")
 

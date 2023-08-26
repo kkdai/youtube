@@ -9,9 +9,7 @@ import (
 )
 
 func ExampleClient_GetStream() {
-	client := Client{Debug: true}
-
-	video, err := client.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
+	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
 	if err != nil {
 		panic(err)
 	}
@@ -19,7 +17,7 @@ func ExampleClient_GetStream() {
 	// Typically youtube only provides separate streams for video and audio.
 	// If you want audio and video combined, take a look a the downloader package.
 	format := video.Formats.FindByQuality("medium")
-	reader, _, err := client.GetStream(video, format)
+	reader, _, err := testClient.GetStream(video, format)
 	if err != nil {
 		panic(err)
 	}
@@ -30,12 +28,11 @@ func ExampleClient_GetStream() {
 }
 
 func TestSimpleTest(t *testing.T) {
-	client := Client{Debug: true, ChunkSize: Size10Mb}
 
-	video, err := client.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
+	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
 	require.NoError(t, err, "get body")
 
-	_, err = client.GetTranscript(video)
+	_, err = testClient.GetTranscript(video)
 	require.NoError(t, err, "get transcript")
 
 	// Typically youtube only provides separate streams for video and audio.
@@ -43,7 +40,7 @@ func TestSimpleTest(t *testing.T) {
 	format := video.Formats.FindByQuality("hd1080")
 
 	start := time.Now()
-	reader, _, err := client.GetStream(video, format)
+	reader, _, err := testClient.GetStream(video, format)
 	require.NoError(t, err, "get stream")
 
 	t.Log("Duration Milliseconds: ", time.Since(start).Milliseconds())

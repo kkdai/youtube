@@ -2,7 +2,6 @@ package downloader
 
 import (
 	"context"
-	"log"
 	"os"
 	"testing"
 	"time"
@@ -15,7 +14,7 @@ import (
 
 var testDownloader = func() (dl Downloader) {
 	dl.OutputDir = "download_test"
-	dl.Debug = true
+
 	return
 }()
 
@@ -23,7 +22,7 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	// the following code doesn't work under debugger, please delete download files manually
 	if err := os.RemoveAll(testDownloader.OutputDir); err != nil {
-		log.Fatal(err.Error())
+		panic(err)
 	}
 	os.Exit(exitCode)
 }

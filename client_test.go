@@ -10,14 +10,14 @@ import (
 	"golang.org/x/net/context"
 )
 
-var testClient = Client{Debug: true}
-var testWebClient = Client{Debug: true, client: &WebClient}
-
 const (
 	dwlURL    string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
 	streamURL string = "https://www.youtube.com/watch?v=a9LDPn-MO4I"
 	errURL    string = "https://www.youtube.com/watch?v=I8oGsuQ"
 )
+
+var testClient = Client{}
+var testWebClient = Client{client: &WebClient}
 
 func TestParseVideo(t *testing.T) {
 	video, err := testClient.GetVideo(dwlURL)
@@ -162,7 +162,6 @@ func TestGetStream(t *testing.T) {
 
 	// Create testclient to enforce re-using of routines
 	testClient := Client{
-		Debug:       true,
 		MaxRoutines: 10,
 		ChunkSize:   int64(expectedSize) / 11,
 	}

@@ -7,12 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync/atomic"
+
+	"log/slog"
 )
 
 const (
@@ -32,9 +33,6 @@ var DefaultClient = AndroidClient
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
-	// Debug enables debugging output through log package
-	Debug bool
-
 	// HTTPClient can be used to set a custom HTTP client.
 	// If not set, http.DefaultClient will be used
 	HTTPClient *http.Client
@@ -484,10 +482,6 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 		client = http.DefaultClient
 	}
 
-	if c.Debug {
-		log.Println(req.Method, req.URL)
-	}
-
 	req.Header.Set("User-Agent", c.client.userAgent)
 	req.Header.Set("Origin", "https://youtube.com")
 	req.Header.Set("Sec-Fetch-Mode", "navigate")
@@ -505,8 +499,12 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 
 	res, err := client.Do(req)
 
-	if c.Debug && res != nil {
-		log.Println(res.Status)
+	log := slog.With("method", req.Method, "url", req.URL)
+
+	if err != nil {
+		log.Debug("HTTP request failed", "error", err)
+	} else {
+		log.Debug("HTTP request succeeded", "status", res.Status)
 	}
 
 	return res, err

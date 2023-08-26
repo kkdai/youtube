@@ -1,4 +1,5 @@
 FILES_TO_FMT      ?= $(shell find . -path ./vendor -prune -o -name '*.go' -print)
+LOGLEVEL	?= debug
 
 ## help: Show makefile commands
 .PHONY: help
@@ -38,14 +39,14 @@ format:
 ## test-unit: Run all Youtube Go unit tests
 .PHONY: test-unit
 test-unit:
-	go test -v -cover ./...
+	LOGLEVEL=${LOGLEVEL} go test -v -cover ./...
 
 ## test-integration: Run all Youtube Go integration tests
 .PHONY: test-integration
 test-integration:
 	mkdir -p output
 	rm -f output/*
-	ARTIFACTS=output go test -race -covermode=atomic -coverprofile=coverage.out -tags=integration ./...
+	LOGLEVEL=${LOGLEVEL} ARTIFACTS=output go test -v -race -covermode=atomic -coverprofile=coverage.out -tags=integration ./...
 
 .PHONY: coverage.out
 coverage.out:

@@ -1,6 +1,6 @@
 module github.com/kkdai/youtube/v2
 
-go 1.20
+go 1.21
 
 require (
 	github.com/bitly/go-simplejson v0.5.1
