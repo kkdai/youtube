@@ -375,23 +375,9 @@ func (c *Client) getChunkSize() int64 {
 	return Size10Mb
 }
 
-func (c *Client) getMaxRoutines(limit int) int {
-	routines := 10
-
-	if c.MaxRoutines > 0 {
-		routines = c.MaxRoutines
-	}
-
-	if limit > 0 && routines > limit {
-		routines = limit
-	}
-
-	return routines
-}
-
 func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.PipeWriter, format *Format) {
 	chunks := getChunks(format.ContentLength, c.getChunkSize())
-	maxRoutines := c.getMaxRoutines(len(chunks))
+	maxRoutines := len(chunks)
 
 	cancelCtx, cancel := context.WithCancel(ctx)
 	abort := func(err error) {
