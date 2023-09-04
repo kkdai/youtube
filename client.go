@@ -402,20 +402,23 @@ func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.P
 	currentChunk := atomic.Uint32{}
 	for i := 0; i < maxRoutines; i++ {
 		go func() {
-			i := int(currentChunk.Add(1)) - 1
-			if i > len(chunks) {
-				// no more chunks
-				return
+			for {
+				chunkIndex := int(currentChunk.Add(1)) - 1
+				if chunkIndex >= len(chunks) {
+					// no more chunks
+					return
+				}
+
+				chunk := &chunks[chunkIndex]
+				err := c.downloadChunk(req.Clone(cancelCtx), chunk)
+				close(chunk.data)
+
+				if err != nil {
+					abort(err)
+					return
+				}
 			}
 
-			chunk := &chunks[i]
-			err := c.downloadChunk(req.Clone(cancelCtx), chunk)
-			close(chunk.data)
-
-			if err != nil {
-				abort(err)
-				return
-			}
 		}()
 	}
 
