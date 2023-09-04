@@ -338,7 +338,6 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 	} else {
 		// we have length information, let's download by chunks!
 		c.downloadChunked(ctx, req, w, format)
-
 	}
 
 	return r, contentLength, nil
@@ -402,19 +401,21 @@ func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.P
 	currentChunk := atomic.Uint32{}
 	for i := 0; i < maxRoutines; i++ {
 		go func() {
-			i := int(currentChunk.Add(1)) - 1
-			if i > len(chunks) {
-				// no more chunks
-				return
-			}
+			for {
+				chunkIndex := int(currentChunk.Add(1)) - 1
+				if chunkIndex >= len(chunks) {
+					// no more chunks
+					return
+				}
 
-			chunk := &chunks[i]
-			err := c.downloadChunk(req.Clone(cancelCtx), chunk)
-			close(chunk.data)
+				chunk := &chunks[chunkIndex]
+				err := c.downloadChunk(req.Clone(cancelCtx), chunk)
+				close(chunk.data)
 
-			if err != nil {
-				abort(err)
-				return
+				if err != nil {
+					abort(err)
+					return
+				}
 			}
 		}()
 	}
@@ -424,6 +425,7 @@ func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.P
 		for i := 0; i < len(chunks); i++ {
 			select {
 			case <-cancelCtx.Done():
+				abort(context.Canceled)
 				return
 			case data := <-chunks[i].data:
 				_, err := io.Copy(w, bytes.NewBuffer(data))

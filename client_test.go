@@ -129,6 +129,15 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 func TestGetStream(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
+	expectedSize := 988479
+
+	// Create testclient to enforce re-using of routines
+	testClient := Client{
+		Debug:       true,
+		MaxRoutines: 10,
+		ChunkSize:   int64(expectedSize) / 11,
+	}
+
 	// Download should not last longer than a minute.
 	// Otherwise we assume Youtube is throtteling us.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -141,7 +150,7 @@ func TestGetStream(t *testing.T) {
 
 	reader, size, err := testClient.GetStreamContext(ctx, video, &video.Formats[0])
 	require.NoError(err)
-	assert.EqualValues(988479, size)
+	assert.EqualValues(expectedSize, size)
 
 	data, err := io.ReadAll(reader)
 	require.NoError(err)
