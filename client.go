@@ -592,7 +592,7 @@ func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
 
 	resp, err := c.httpDo(req)
 	if err != nil {
-		return ErrUnexpectedStatusCode(resp.StatusCode)
+		return err
 	}
 	defer resp.Body.Close()
 
