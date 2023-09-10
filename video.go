@@ -119,8 +119,8 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 		v.PublishDate, _ = time.Parse(dateFormat, str)
 	}
 
-	if profileUrl, err := url.Parse(prData.Microformat.PlayerMicroformatRenderer.OwnerProfileURL); err == nil && len(profileUrl.Path) > 1 {
-		v.ChannelHandle = profileUrl.Path[1:]
+	if profileURL, err := url.Parse(prData.Microformat.PlayerMicroformatRenderer.OwnerProfileURL); err == nil && len(profileURL.Path) > 1 {
+		v.ChannelHandle = profileURL.Path[1:]
 	}
 
 	// Assign Streams
