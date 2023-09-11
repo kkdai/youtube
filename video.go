@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
@@ -17,6 +18,7 @@ type Video struct {
 	Description     string
 	Author          string
 	ChannelID       string
+	ChannelHandle   string
 	Views           int
 	Duration        time.Duration
 	PublishDate     time.Time
@@ -115,6 +117,10 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 
 	if str := prData.Microformat.PlayerMicroformatRenderer.PublishDate; str != "" {
 		v.PublishDate, _ = time.Parse(dateFormat, str)
+	}
+
+	if profileURL, err := url.Parse(prData.Microformat.PlayerMicroformatRenderer.OwnerProfileURL); err == nil && len(profileURL.Path) > 1 {
+		v.ChannelHandle = profileURL.Path[1:]
 	}
 
 	// Assign Streams
