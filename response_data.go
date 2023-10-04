@@ -5,7 +5,8 @@ type playerResponseData struct {
 		PlayerCaptionsTracklistRenderer struct {
 			CaptionTracks []CaptionTrack `json:"captionTracks"`
 			AudioTracks   []struct {
-				CaptionTrackIndices []int `json:"captionTrackIndices"`
+				CaptionTrackIndices []int  `json:"captionTrackIndices"`
+				AudioTrackId        string `json:"audioTrackId"`
 			} `json:"audioTracks"`
 			TranslationLanguages []struct {
 				LanguageCode string `json:"languageCode"`
@@ -106,6 +107,11 @@ type Format struct {
 	AudioSampleRate  string `json:"audioSampleRate"`
 	AudioChannels    int    `json:"audioChannels"`
 
+	AudioTrack *struct {
+		DisplayName    string `json:"displayName"`
+		Id             string `json:"id"`
+		AudioIsDefault bool   `json:"audioIsDefault"`
+	}
 	// InitRange is only available for adaptive formats
 	InitRange *struct {
 		Start string `json:"start"`
