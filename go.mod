@@ -1,4 +1,4 @@
-module github.com/kkdai/youtube/v2
+module github.com/takefy-dev/youtube/v2
 
 go 1.20
 
@@ -41,3 +41,5 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/kkdai/youtube/v2 => github.com/takefy-dev/youtube v0.0.0-20231004090225-9bf201342408
