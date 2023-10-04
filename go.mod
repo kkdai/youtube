@@ -1,4 +1,4 @@
-module github.com/takefy-dev/youtube/v2
+module github.com/takefy-dev/youtube
 
 go 1.20
 
