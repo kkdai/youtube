@@ -42,4 +42,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/kkdai/youtube/v2 => github.com/takefy-dev/youtube v0.0.0-20231004090225-9bf201342408
+replace github.com/takefy-dev/youtube => github.com/takefy-dev/youtube v0.0.0-20231004090225-9bf201342408

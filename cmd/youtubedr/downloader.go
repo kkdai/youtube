@@ -14,8 +14,8 @@ import (
 	"github.com/spf13/pflag"
 	"golang.org/x/net/http/httpproxy"
 
-	"github.com/kkdai/youtube/v2"
-	ytdl "github.com/kkdai/youtube/v2/downloader"
+	"github.com/takefy-dev/youtube"
+	ytdl "github.com/takefy-dev/youtube/downloader"
 )
 
 var (

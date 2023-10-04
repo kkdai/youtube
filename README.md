@@ -2,7 +2,7 @@ Download Youtube Video in Golang
 ==================
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/kkdai/youtube/master/LICENSE)
-[![Go Reference](https://pkg.go.dev/badge/github.com/kkdai/youtube.svg)](https://pkg.go.dev/github.com/kkdai/youtube/v2)
+[![Go Reference](https://pkg.go.dev/badge/github.com/kkdai/youtube.svg)](https://pkg.go.dev/github.com/takefy-dev/youtube)
 [![Build Status](https://github.com/kkdai/youtube/workflows/go/badge.svg?branch=master)](https://github.com/kkdai/youtube/actions)
 [![Coverage](https://codecov.io/gh/kkdai/youtube/branch/master/graph/badge.svg)](https://codecov.io/gh/kkdai/youtube)
 [![](https://goreportcard.com/badge/github.com/kkdai/youtube)](https://goreportcard.com/badge/github.com/kkdai/youtube)
@@ -24,7 +24,7 @@ This tool is meant to be used to download CC0 licenced content, we do not suppor
 Please ensure you have installed Go 1.18 or later.
 
 ```shell
-go get github.com/kkdai/youtube/v2
+go get github.com/takefy-dev/youtube
 ```
 
 ### From source code
@@ -69,7 +69,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 ## Example:
  * ### Get information of dotGo-2015-rob-pike video for downloading
 
-    `go get github.com/kkdai/youtube/v2/youtubedr`
+    `go get github.com/takefy-dev/youtube/youtubedr`
 
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
@@ -87,7 +87,7 @@ Please check out the [example_test.go](example_test.go) for example code.
     ```
  * ### Download dotGo-2015-rob-pike-video
 
-    `go get github.com/kkdai/youtube/v2/youtubedr`
+    `go get github.com/takefy-dev/youtube/youtubedr`
 
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
@@ -97,7 +97,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 
  * ### Download video to specific folder and name
 
-	`go get github.com/kkdai/youtube/v2/youtubedr`
+	`go get github.com/takefy-dev/youtube/youtubedr`
 
 	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) to current directory and name the file to simplicity-is-complicated.mp4
 
@@ -107,7 +107,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 
  * ### Download video with specific quality
 
-	`go get github.com/kkdai/youtube/v2/youtubedr`
+	`go get github.com/takefy-dev/youtube/youtubedr`
 
 	Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) with specific quality
 
@@ -125,7 +125,7 @@ Please check out the [example_test.go](example_test.go) for example code.
 
  * ### Download video with specific itag
 
-    `go get github.com/kkdai/youtube/v2/youtubedr`
+    `go get github.com/takefy-dev/youtube/youtubedr`
 
     Download video from [dotGo 2015 - Rob Pike - Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM)
 
