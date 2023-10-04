@@ -143,6 +143,9 @@ func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*y
 				break
 			}
 		}
+		if audioFormat == nil {
+			audioFormat = &audioFormats[0]
+		}
 	}
 
 	if videoFormat == nil {

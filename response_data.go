@@ -5,8 +5,8 @@ type playerResponseData struct {
 		PlayerCaptionsTracklistRenderer struct {
 			CaptionTracks []CaptionTrack `json:"captionTracks"`
 			AudioTracks   []struct {
-				CaptionTrackIndices []int  `json:"captionTrackIndices"`
-				AudioTrackId        string `json:"audioTrackId"`
+				CaptionTrackIndices []int   `json:"captionTrackIndices"`
+				AudioTrackId        *string `json:"audioTrackId"`
 			} `json:"audioTracks"`
 			TranslationLanguages []struct {
 				LanguageCode string `json:"languageCode"`
