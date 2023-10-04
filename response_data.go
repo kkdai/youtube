@@ -108,9 +108,9 @@ type Format struct {
 	AudioChannels    int    `json:"audioChannels"`
 
 	AudioTrack *struct {
-		DisplayName    string `json:"displayName"`
-		Id             string `json:"id"`
-		AudioIsDefault bool   `json:"audioIsDefault"`
+		DisplayName    string  `json:"displayName"`
+		Id             *string `json:"id"`
+		AudioIsDefault bool    `json:"audioIsDefault"`
 	}
 	// InitRange is only available for adaptive formats
 	InitRange *struct {

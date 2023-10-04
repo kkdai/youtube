@@ -25,7 +25,7 @@ type Video struct {
 	Thumbnails          Thumbnails
 	DASHManifestURL     string // URI of the DASH manifest file
 	HLSManifestURL      string // URI of the HLS manifest file
-	DefaultAudioTrackId string
+	DefaultAudioTrackId *string
 	CaptionTracks       []CaptionTrack
 }
 
