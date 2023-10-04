@@ -13,7 +13,7 @@ import (
 var testClient = Client{Debug: true}
 
 const (
-	dwlURL    string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
+	dwlURL    string = "https://www.youtube.com/watch?v=1WEAJ-DFkHE&t=1s&ab_channel=MrBeast"
 	streamURL string = "https://www.youtube.com/watch?v=a9LDPn-MO4I"
 	errURL    string = "https://www.youtube.com/watch?v=I8oGsuQ"
 )

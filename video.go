@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"sort"
 	"strconv"
@@ -12,19 +13,20 @@ import (
 )
 
 type Video struct {
-	ID              string
-	Title           string
-	Description     string
-	Author          string
-	ChannelID       string
-	Views           int
-	Duration        time.Duration
-	PublishDate     time.Time
-	Formats         FormatList
-	Thumbnails      Thumbnails
-	DASHManifestURL string // URI of the DASH manifest file
-	HLSManifestURL  string // URI of the HLS manifest file
-	CaptionTracks   []CaptionTrack
+	ID                     string
+	Title                  string
+	Description            string
+	Author                 string
+	ChannelID              string
+	Views                  int
+	Duration               time.Duration
+	PublishDate            time.Time
+	Formats                FormatList
+	Thumbnails             Thumbnails
+	DASHManifestURL        string // URI of the DASH manifest file
+	HLSManifestURL         string // URI of the HLS manifest file
+	DefaultAudioTrackIndex int
+	CaptionTracks          []CaptionTrack
 }
 
 const dateFormat = "2006-01-02"
@@ -34,7 +36,7 @@ func (v *Video) parseVideoInfo(body []byte) error {
 	if err := json.Unmarshal(body, &prData); err != nil {
 		return fmt.Errorf("unable to parse player response JSON: %w", err)
 	}
-
+	log.Println(prData.VideoDetails.Thumbnail)
 	if err := v.isVideoFromInfoDownloadable(prData); err != nil {
 		return err
 	}
@@ -100,7 +102,7 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	v.Thumbnails = prData.VideoDetails.Thumbnail.Thumbnails
 	v.ChannelID = prData.VideoDetails.ChannelID
 	v.CaptionTracks = prData.Captions.PlayerCaptionsTracklistRenderer.CaptionTracks
-
+	v.DefaultAudioTrackIndex = prData.Captions.PlayerCaptionsTracklistRenderer.DefaultAudioTrackIndex
 	if views, _ := strconv.Atoi(prData.VideoDetails.ViewCount); views > 0 {
 		v.Views = views
 	}
