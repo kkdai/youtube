@@ -102,7 +102,10 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	v.Thumbnails = prData.VideoDetails.Thumbnail.Thumbnails
 	v.ChannelID = prData.VideoDetails.ChannelID
 	v.CaptionTracks = prData.Captions.PlayerCaptionsTracklistRenderer.CaptionTracks
-	v.DefaultAudioTrackId = prData.Captions.PlayerCaptionsTracklistRenderer.AudioTracks[prData.Captions.PlayerCaptionsTracklistRenderer.DefaultAudioTrackIndex].AudioTrackId
+	if len(prData.Captions.PlayerCaptionsTracklistRenderer.AudioTracks) > 0 {
+		v.DefaultAudioTrackId = prData.Captions.PlayerCaptionsTracklistRenderer.AudioTracks[prData.Captions.PlayerCaptionsTracklistRenderer.DefaultAudioTrackIndex].AudioTrackId
+
+	}
 	if views, _ := strconv.Atoi(prData.VideoDetails.ViewCount); views > 0 {
 		v.Views = views
 	}
