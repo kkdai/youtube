@@ -138,7 +138,7 @@ func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*y
 			if format.AudioTrack == nil || format.AudioTrack.Id == nil {
 				continue
 			}
-			if format.AudioTrack.Id == v.DefaultAudioTrackId {
+			if *format.AudioTrack.Id == *v.DefaultAudioTrackId {
 				audioFormat = &format
 				break
 			}
