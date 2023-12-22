@@ -86,7 +86,7 @@ func (list FormatList) Sort() {
 }
 
 // sortFormat sorts video by resolution, FPS, codec (av01, vp9, avc1), bitrate
-// sorts audio by codec (mp4, opus), channels, bitrate, sample rate
+// sorts audio by default, codec (mp4, opus), channels, bitrate, sample rate
 func sortFormat(i int, j int, formats FormatList) bool {
 
 	// Sort by Width
@@ -104,28 +104,34 @@ func sortFormat(i int, j int, formats FormatList) bool {
 		if formats[i].FPS == formats[j].FPS {
 			if formats[i].FPS == 0 && formats[i].AudioChannels > 0 && formats[j].AudioChannels > 0 {
 				// Audio
-				// Sort by codec
-				codec := map[int]int{}
-				for _, index := range []int{i, j} {
-					if strings.Contains(formats[index].MimeType, "mp4") {
-						codec[index] = 1
-					} else if strings.Contains(formats[index].MimeType, "opus") {
-						codec[index] = 2
-					}
-				}
-				if codec[i] == codec[j] {
-					// Sort by Audio Channel
-					if formats[i].AudioChannels == formats[j].AudioChannels {
-						// Sort by Audio Bitrate
-						if formats[i].Bitrate == formats[j].Bitrate {
-							// Sort by Audio Sample Rate
-							return formats[i].AudioSampleRate > formats[j].AudioSampleRate
+				// Sort by default
+				if (formats[i].AudioTrack == nil && formats[j].AudioTrack == nil) || (formats[i].AudioTrack != nil && formats[j].AudioTrack != nil && formats[i].AudioTrack.AudioIsDefault == formats[j].AudioTrack.AudioIsDefault) {
+					// Sort by codec
+					codec := map[int]int{}
+					for _, index := range []int{i, j} {
+						if strings.Contains(formats[index].MimeType, "mp4") {
+							codec[index] = 1
+						} else if strings.Contains(formats[index].MimeType, "opus") {
+							codec[index] = 2
 						}
-						return formats[i].Bitrate > formats[j].Bitrate
 					}
-					return formats[i].AudioChannels > formats[j].AudioChannels
+					if codec[i] == codec[j] {
+						// Sort by Audio Channel
+						if formats[i].AudioChannels == formats[j].AudioChannels {
+							// Sort by Audio Bitrate
+							if formats[i].Bitrate == formats[j].Bitrate {
+								// Sort by Audio Sample Rate
+								return formats[i].AudioSampleRate > formats[j].AudioSampleRate
+							}
+							return formats[i].Bitrate > formats[j].Bitrate
+						}
+						return formats[i].AudioChannels > formats[j].AudioChannels
+					}
+					return codec[i] < codec[j]
+				} else if formats[i].AudioTrack != nil && formats[i].AudioTrack.AudioIsDefault {
+					return true
 				}
-				return codec[i] < codec[j]
+				return false
 			}
 			// Video
 			// Sort by codec
