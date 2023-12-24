@@ -16,6 +16,5 @@ func TestDownload_HighQuality(t *testing.T) {
 
 	video, err := testDownloader.Client.GetVideoContext(ctx, "BaW_jenozKc")
 	require.NoError(err)
-
-	require.NoError(testDownloader.DownloadComposite(ctx, "", video, "hd1080", "mp4"))
+	require.NoError(testDownloader.DownloadComposite(ctx, "", video, "hd1080", "mp4", ""))
 }

@@ -69,7 +69,7 @@ func TestYoutube_DownloadWithHighQualityFails(t *testing.T) {
 				Formats: tt.formats,
 			}
 
-			err := testDownloader.DownloadComposite(context.Background(), "", video, "hd1080", "")
+			err := testDownloader.DownloadComposite(context.Background(), "", video, "hd1080", "", "")
 			assert.EqualError(t, err, tt.message)
 		})
 	}
@@ -101,7 +101,7 @@ func Test_getVideoAudioFormats(t *testing.T) {
 		{ItagNo: 249, MimeType: "audio/webm; codecs=\"opus\"", Quality: "tiny", Bitrate: 72862, FPS: 0, Width: 0, Height: 0, LastModified: "1540474783513282", ContentLength: 24839529, QualityLabel: "", ProjectionType: "RECTANGULAR", AverageBitrate: 55914, AudioQuality: "AUDIO_QUALITY_LOW", ApproxDurationMs: "3553941", AudioSampleRate: "48000", AudioChannels: 2},
 	}}
 	{
-		videoFormat, audioFormat, err := getVideoAudioFormats(v, "hd720", "mp4")
+		videoFormat, audioFormat, err := getVideoAudioFormats(v, "hd720", "mp4", "")
 		require.NoError(err)
 		require.NotNil(videoFormat)
 		require.Equal(398, videoFormat.ItagNo)
@@ -110,7 +110,7 @@ func Test_getVideoAudioFormats(t *testing.T) {
 	}
 
 	{
-		videoFormat, audioFormat, err := getVideoAudioFormats(v, "large", "webm")
+		videoFormat, audioFormat, err := getVideoAudioFormats(v, "large", "webm", "")
 		require.NoError(err)
 		require.NotNil(videoFormat)
 		require.Equal(244, videoFormat.ItagNo)

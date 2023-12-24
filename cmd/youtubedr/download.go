@@ -32,8 +32,7 @@ func init() {
 
 	downloadCmd.Flags().StringVarP(&outputFile, "filename", "o", "", "The output file, the default is genated by the video title.")
 	downloadCmd.Flags().StringVarP(&outputDir, "directory", "d", ".", "The output directory.")
-	addQualityFlag(downloadCmd.Flags())
-	addMimeTypeFlag(downloadCmd.Flags())
+	addVideoSelectionFlags(downloadCmd.Flags())
 }
 
 func download(id string) error {
@@ -48,7 +47,7 @@ func download(id string) error {
 		if err := checkFFMPEG(); err != nil {
 			return err
 		}
-		return downloader.DownloadComposite(context.Background(), outputFile, video, outputQuality, mimetype)
+		return downloader.DownloadComposite(context.Background(), outputFile, video, outputQuality, mimetype, language)
 	}
 
 	return downloader.Download(context.Background(), video, format, outputFile)

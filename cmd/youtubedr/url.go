@@ -23,7 +23,6 @@ var urlCmd = &cobra.Command{
 }
 
 func init() {
-	addQualityFlag(urlCmd.Flags())
-	addMimeTypeFlag(urlCmd.Flags())
+	addVideoSelectionFlags(urlCmd.Flags())
 	rootCmd.AddCommand(urlCmd)
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,16 +19,15 @@ import (
 var (
 	insecureSkipVerify bool   // skip TLS server validation
 	outputQuality      string // itag number or quality string
-	mimetype           string // mimetype
+	mimetype           string
+	language           string
 	downloader         *ytdl.Downloader
 )
 
-func addQualityFlag(flagSet *pflag.FlagSet) {
+func addVideoSelectionFlags(flagSet *pflag.FlagSet) {
 	flagSet.StringVarP(&outputQuality, "quality", "q", "medium", "The itag number or quality label (hd720, medium)")
-}
-
-func addMimeTypeFlag(flagSet *pflag.FlagSet) {
-	flagSet.StringVarP(&mimetype, "mimetype", "m", "mp4", "Mime-Type to filter (mp4, webm, av01, avc1) - applicable if --quality used is quality label")
+	flagSet.StringVarP(&mimetype, "mimetype", "m", "", "Mime-Type to filter (mp4, webm, av01, avc1) - applicable if --quality used is quality label")
+	flagSet.StringVarP(&language, "language", "l", "", "Language to filter")
 }
 
 func getDownloader() *ytdl.Downloader {
@@ -70,41 +68,34 @@ func getDownloader() *ytdl.Downloader {
 	return downloader
 }
 
-func getVideoWithFormat(id string) (*youtube.Video, *youtube.Format, error) {
+func getVideoWithFormat(videoID string) (*youtube.Video, *youtube.Format, error) {
 	dl := getDownloader()
-	video, err := dl.GetVideo(id)
+	video, err := dl.GetVideo(videoID)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	itag, _ := strconv.Atoi(outputQuality)
 	formats := video.Formats
+
+	if language != "" {
+		formats = formats.Language(language)
+	}
 	if mimetype != "" {
 		formats = formats.Type(mimetype)
 	}
-	if len(formats) == 0 {
-		return nil, nil, errors.New("no formats found")
+	if outputQuality != "" {
+		formats = formats.Quality(outputQuality)
+	}
+	if itag > 0 {
+		formats = formats.Itag(itag)
+	}
+	if formats == nil {
+		return nil, nil, fmt.Errorf("unable to find the specified format")
 	}
 
-	var format *youtube.Format
-	itag, _ := strconv.Atoi(outputQuality)
-	switch {
-	case itag > 0:
-		// When an itag is specified, do not filter format with mime-type
-		format = video.Formats.FindByItag(itag)
-		if format == nil {
-			return nil, nil, fmt.Errorf("unable to find format with itag %d", itag)
-		}
+	formats.Sort()
 
-	case outputQuality != "":
-		format = formats.FindByQuality(outputQuality)
-		if format == nil {
-			return nil, nil, fmt.Errorf("unable to find format with quality %s", outputQuality)
-		}
-
-	default:
-		// select the first format
-		formats.Sort()
-		format = &formats[0]
-	}
-
-	return video, format, nil
+	// select the first format
+	return video, &formats[0], nil
 }

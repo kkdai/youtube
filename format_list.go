@@ -8,68 +8,59 @@ import (
 
 type FormatList []Format
 
-// FindByQuality returns the first format matching Quality or QualityLabel
-//
-// Examples: tiny, small, medium, large, 720p, hd720, hd1080
-func (list FormatList) FindByQuality(quality string) *Format {
+// Type returns a new FormatList filtered by itag
+func (list FormatList) Select(f func(Format) bool) (result FormatList) {
 	for i := range list {
-		if list[i].Quality == quality || list[i].QualityLabel == quality {
-			return &list[i]
-		}
-	}
-	return nil
-}
-
-// FindByItag returns the first format matching the itag number
-func (list FormatList) FindByItag(itagNo int) *Format {
-	for i := range list {
-		if list[i].ItagNo == itagNo {
-			return &list[i]
-		}
-	}
-	return nil
-}
-
-// Type returns a new FormatList filtered by mime type of video
-func (list FormatList) Type(t string) (result FormatList) {
-	for i := range list {
-		if strings.Contains(list[i].MimeType, t) {
+		if f(list[i]) {
 			result = append(result, list[i])
 		}
 	}
 	return result
 }
 
+// Type returns a new FormatList filtered by itag
+func (list FormatList) Itag(itagNo int) FormatList {
+	return list.Select(func(f Format) bool {
+		return f.ItagNo == itagNo
+	})
+}
+
+// Type returns a new FormatList filtered by mime type
+func (list FormatList) Type(value string) FormatList {
+	return list.Select(func(f Format) bool {
+		return strings.Contains(f.MimeType, value)
+	})
+}
+
+// Type returns a new FormatList filtered by display name
+func (list FormatList) Language(displayName string) FormatList {
+	return list.Select(func(f Format) bool {
+		return f.LanguageDisplayName() == displayName
+	})
+}
+
 // Quality returns a new FormatList filtered by quality, quality label or itag,
 // but not audio quality
-func (list FormatList) Quality(quality string) (result FormatList) {
-	for _, f := range list {
-		itag, _ := strconv.Atoi(quality)
-		if itag == f.ItagNo || strings.Contains(f.Quality, quality) || strings.Contains(f.QualityLabel, quality) {
-			result = append(result, f)
-		}
-	}
-	return result
+func (list FormatList) Quality(quality string) FormatList {
+	itag, _ := strconv.Atoi(quality)
+
+	return list.Select(func(f Format) bool {
+		return itag == f.ItagNo || strings.Contains(f.Quality, quality) || strings.Contains(f.QualityLabel, quality)
+	})
 }
 
 // AudioChannels returns a new FormatList filtered by the matching AudioChannels
-func (list FormatList) AudioChannels(n int) (result FormatList) {
-	for _, f := range list {
-		if f.AudioChannels == n {
-			result = append(result, f)
-		}
-	}
-	return result
+func (list FormatList) AudioChannels(n int) FormatList {
+	return list.Select(func(f Format) bool {
+		return f.AudioChannels == n
+	})
 }
 
 // AudioChannels returns a new FormatList filtered by the matching AudioChannels
-func (list FormatList) WithAudioChannels() (result FormatList) {
-	for _, f := range list {
-		if f.AudioChannels > 0 {
-			result = append(result, f)
-		}
-	}
-	return result
+func (list FormatList) WithAudioChannels() FormatList {
+	return list.Select(func(f Format) bool {
+		return f.AudioChannels > 0
+	})
 }
 
 // FilterQuality reduces the format list to formats matching the quality

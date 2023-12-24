@@ -156,6 +156,30 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 	assert.NotZero(size)
 }
 
+func TestGetVideo_MultiLanguage(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=pU9sHwNKc2c")
+	require.NoError(err)
+	require.NotNil(video)
+
+	// collect languages
+	var languageNames, lanaguageIDs []string
+	for _, format := range video.Formats {
+		if format.AudioTrack != nil {
+			languageNames = append(languageNames, format.LanguageDisplayName())
+			lanaguageIDs = append(lanaguageIDs, format.AudioTrack.ID)
+		}
+	}
+
+	assert.Contains(languageNames, "English original")
+	assert.Contains(languageNames, "Portuguese (Brazil)")
+	assert.Contains(lanaguageIDs, "en.4")
+	assert.Contains(lanaguageIDs, "pt-BR.3")
+
+	assert.Empty(video.Formats.Language("Does not exist"))
+	assert.NotEmpty(video.Formats.Language("English original"))
+}
+
 func TestGetStream(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 

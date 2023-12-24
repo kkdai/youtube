@@ -126,6 +126,13 @@ type Format struct {
 	}
 }
 
+func (f *Format) LanguageDisplayName() string {
+	if f.AudioTrack == nil {
+		return ""
+	}
+	return f.AudioTrack.DisplayName
+}
+
 type Thumbnails []Thumbnail
 
 type Thumbnail struct {

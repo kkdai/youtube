@@ -6,156 +6,130 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFormatList_FindByQuality(t *testing.T) {
-	list := []Format{{
-		ItagNo:       0,
+type filter struct {
+	Quality       string
+	ItagNo        int
+	MimeType      string
+	Language      string
+	AudioChannels int
+}
+
+func (list FormatList) Filter(filter filter) FormatList {
+	if filter.ItagNo > 0 {
+		list = list.Itag(filter.ItagNo)
+	}
+	if filter.AudioChannels > 0 {
+		list = list.AudioChannels(filter.AudioChannels)
+	}
+	if filter.Quality != "" {
+		list = list.Quality(filter.Quality)
+	}
+	if filter.MimeType != "" {
+		list = list.Type(filter.MimeType)
+	}
+	if filter.Language != "" {
+		list = list.Language(filter.Language)
+	}
+	return list
+}
+
+func TestFormatList_Filter(t *testing.T) {
+	t.Parallel()
+
+	format1 := Format{
+		ItagNo:       1,
 		Quality:      "medium",
 		QualityLabel: "360p",
-	},
-		{
-			ItagNo:       1,
-			Quality:      "large",
-			QualityLabel: "480p",
-		},
 	}
-	type args struct {
-		quality string
-	}
-	tests := []struct {
-		name string
-		list FormatList
-		args args
-		want *Format
-	}{
-		{
-			name: "find by quality, get correct one",
-			list: list,
-			args: args{
-				quality: "medium",
-			},
-			want: &Format{
-				ItagNo:       0,
-				Quality:      "medium",
-				QualityLabel: "360p",
-			},
-		},
-		{
-			name: "find by quality label, get correct one",
-			list: list,
-			args: args{
-				quality: "480p",
-			},
-			want: &Format{
-				ItagNo:       1,
-				Quality:      "large",
-				QualityLabel: "480p",
-			},
-		},
-		{
-			name: "find nothing with quality",
-			list: list,
-			args: args{
-				quality: "small",
-			},
-			want: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			format := tt.list.FindByQuality(tt.args.quality)
-			assert.Equal(t, format, tt.want)
-		})
-	}
-}
 
-func TestFormatList_FindByItag(t *testing.T) {
-	list := []Format{{
-		ItagNo: 18,
-	},
-		{
-			ItagNo: 135,
-		},
+	format2 := Format{
+		ItagNo:        2,
+		Quality:       "large",
+		QualityLabel:  "480p",
+		MimeType:      `video/mp4; codecs="avc1.42001E, mp4a.40.2"`,
+		AudioChannels: 1,
 	}
-	type args struct {
-		itagNo int
-	}
-	tests := []struct {
-		name string
-		list FormatList
-		args args
-		want *Format
-	}{
-		{
-			name: "find itag 18",
-			list: list,
-			args: args{
-				itagNo: 18,
-			},
-			want: &Format{
-				ItagNo: 18,
-			},
-		},
-		{
-			name: "find itag 135",
-			list: list,
-			args: args{
-				itagNo: 135,
-			},
-			want: &Format{
-				ItagNo: 135,
-			},
-		},
-		{
-			name: "find nothing",
-			list: list,
-			args: args{
-				itagNo: 9999,
-			},
-			want: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			format := tt.list.FindByItag(tt.args.itagNo)
-			assert.Equal(t, format, tt.want)
-		})
-	}
-}
 
-func TestFormatList_Type(t *testing.T) {
-	list := []Format{{
-		MimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
-	},
+	formatStereo := Format{
+		ItagNo:        3,
+		URL:           "stereo",
+		AudioChannels: 2,
 	}
-	type args struct {
-		mimeType string
+
+	list := FormatList{
+		format1,
+		format2,
+		formatStereo,
 	}
+
 	tests := []struct {
 		name string
-		list FormatList
-		args args
-		want FormatList
+		args filter
+		want []Format
 	}{
 		{
-			name: "find video",
-			list: list,
-			args: args{
-				mimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+			name: "empty list with quality small",
+			args: filter{
+				Quality: "small",
 			},
-			want: []Format{{
-				MimeType: "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
-			}},
+		},
+		{
+			name: "empty list with other itagNo",
+			args: filter{
+				ItagNo: 99,
+			},
+		},
+		{
+			name: "empty list with other mimeType",
+			args: filter{
+				MimeType: "other",
+			},
+		},
+		{
+			name: "empty list with other audioChannels",
+			args: filter{
+				AudioChannels: 7,
+			},
+		},
+		{
+			name: "audioChannels stereo",
+			args: filter{
+				AudioChannels: formatStereo.AudioChannels,
+			},
+			want: []Format{formatStereo},
+		},
+		{
+			name: "find by medium quality",
+			args: filter{
+				Quality: "medium",
+			},
+			want: []Format{format1},
+		},
+		{
+			name: "find by 480p",
+			args: filter{
+				Quality: "480p",
+			},
+			want: []Format{format2},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			format := tt.list.Type("video")
-			assert.Equal(t, format, tt.want)
+			formats := list.Filter(tt.args)
+
+			if tt.want == nil {
+				assert.Empty(t, formats)
+			} else {
+				assert.Equal(t, tt.want, []Format(formats))
+			}
 		})
 	}
 }
 
 func TestFormatList_Sort(t *testing.T) {
+	t.Parallel()
+
 	list := FormatList{
 		{Width: 512},
 		{Width: 768, MimeType: "mp4"},
@@ -169,42 +143,4 @@ func TestFormatList_Sort(t *testing.T) {
 		{Width: 768, MimeType: "opus"},
 		{Width: 512},
 	}, list)
-}
-
-func TestFormatList_WithAudioChannels(t *testing.T) {
-	list := []Format{
-		{
-			AudioChannels: 0,
-			Quality:       "medium",
-			QualityLabel:  "360p",
-		},
-		{
-			AudioChannels: 1,
-			Quality:       "large",
-			QualityLabel:  "480p",
-		},
-	}
-	tests := []struct {
-		name string
-		list FormatList
-		want FormatList
-	}{
-		{
-			name: "find all formats with Audio Channels",
-			list: list,
-			want: []Format{
-				{
-					AudioChannels: 1,
-					Quality:       "large",
-					QualityLabel:  "480p",
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			format := tt.list.WithAudioChannels()
-			assert.Equal(t, format, tt.want)
-		})
-	}
 }
