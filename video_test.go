@@ -139,7 +139,7 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 		},
 		{
 			issue:   "issue#59",
-			videoID: "nINQjT7Zr9w",
+			videoID: "yZIXLfi8CZQ",
 			err:     ErrVideoPrivate.Error(),
 		},
 	}
