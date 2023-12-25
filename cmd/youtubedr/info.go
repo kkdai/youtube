@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -51,6 +52,9 @@ var infoCmd = &cobra.Command{
 			Duration:    video.Duration.String(),
 			Description: video.Description,
 		}
+
+		log.Println("DASH", video.DASHManifestURL)
+		log.Println("HLS", video.HLSManifestURL)
 
 		for _, format := range video.Formats {
 			bitrate := format.AverageBitrate

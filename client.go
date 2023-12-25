@@ -29,7 +29,7 @@ var (
 )
 
 // DefaultClient type to use. No reason to change but you could if you wanted to.
-var DefaultClient = AndroidClient
+var DefaultClient = IosClient
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
@@ -72,6 +72,19 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	return c.videoFromID(ctx, id)
 }
 
+func (c *Client) fetchHLS(ctx context.Context, v *Video) error {
+	resp, err := c.httpGet(ctx, v.HLSManifestURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	formats, err := parseM3U8(resp.Body)
+
+	v.Formats = append(v.Formats, formats...)
+
+	return err
+}
+
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	c.assureClient()
 
@@ -86,6 +99,11 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 	// return early if all good
 	if err = v.parseVideoInfo(body); err == nil {
+
+		if v.HLSManifestURL != "" {
+			c.fetchHLS(ctx, &v)
+		}
+
 		return &v, nil
 	}
 
