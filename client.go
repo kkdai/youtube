@@ -475,16 +475,26 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 	return uri, err
 }
 
+func (c *Client) SetCookiesFromFile(path string) error {
+	if c.HTTPClient == nil {
+		c.HTTPClient = http.DefaultClient
+	}
+
+	jar, err := readCookies(path)
+	if err != nil {
+		return err
+	}
+	c.HTTPClient.Jar = jar
+
+	return nil
+}
+
 // httpDo sends an HTTP request and returns an HTTP response.
 func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	client := c.HTTPClient
 	if client == nil {
 		client = http.DefaultClient
 	}
-
-	req.Header.Set("User-Agent", c.client.userAgent)
-	req.Header.Set("Origin", "https://youtube.com")
-	req.Header.Set("Sec-Fetch-Mode", "navigate")
 
 	if len(c.consentID) == 0 {
 		c.consentID = strconv.Itoa(rand.Intn(899) + 100) //nolint:gosec

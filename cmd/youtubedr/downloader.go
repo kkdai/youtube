@@ -6,8 +6,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
+
+	"log/slog"
 
 	"github.com/spf13/pflag"
 	"golang.org/x/net/http/httpproxy"
@@ -64,6 +67,14 @@ func getDownloader() *ytdl.Downloader {
 		OutputDir: outputDir,
 	}
 	downloader.HTTPClient = &http.Client{Transport: httpTransport}
+
+	// load cookies
+	if cookiesPath != "" {
+		if err := downloader.SetCookiesFromFile(cookiesPath); err != nil {
+			slog.Error("unable to read cookie file", "error", err)
+			os.Exit(1)
+		}
+	}
 
 	return downloader
 }
