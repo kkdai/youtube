@@ -156,6 +156,7 @@ type innertubeClient struct {
 	ClientName        string `json:"clientName"`
 	ClientVersion     string `json:"clientVersion"`
 	AndroidSDKVersion int    `json:"androidSDKVersion,omitempty"`
+	DeviceModel       string `json:"deviceModel,omitempty"`
 	UserAgent         string `json:"userAgent,omitempty"`
 	TimeZone          string `json:"timeZone"`
 	UTCOffset         int    `json:"utcOffsetMinutes"`
@@ -167,7 +168,8 @@ type clientInfo struct {
 	key            string
 	version        string
 	userAgent      string
-	androidVersion int
+	deviceModel    string // used for IOS
+	androidVersion int    // used for Android
 }
 
 var (
@@ -186,6 +188,15 @@ var (
 		key:            "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
 		userAgent:      "com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip",
 		androidVersion: 30,
+	}
+
+	// AndroidClient, download go brrrrrr.
+	IosClient = clientInfo{
+		name:        "IOS",
+		version:     "17.33.2",
+		key:         "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
+		userAgent:   "com.google.ios.youtube/17.33.2 (iPhone14,3; U; CPU iOS 15_6 like Mac OS X)",
+		deviceModel: "iPhone14,3",
 	}
 
 	// EmbeddedClient, not really tested.
@@ -233,6 +244,7 @@ func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
 			ClientName:        clientInfo.name,
 			ClientVersion:     clientInfo.version,
 			AndroidSDKVersion: clientInfo.androidVersion,
+			DeviceModel:       clientInfo.deviceModel,
 			UserAgent:         clientInfo.userAgent,
 		},
 	}
