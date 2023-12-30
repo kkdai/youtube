@@ -47,22 +47,22 @@ func (vt VideoTranscript) String() string {
 //
 // Not all videos have transcripts, only relatively new videos.
 // If transcripts are disabled or not available, ErrTranscriptDisabled is returned.
-func (c *Client) GetTranscript(video *Video) (VideoTranscript, error) {
-	return c.GetTranscriptCtx(context.Background(), video)
+func (c *Client) GetTranscript(video *Video, lang string) (VideoTranscript, error) {
+	return c.GetTranscriptCtx(context.Background(), video, lang)
 }
 
 // GetTranscriptCtx fetches the video transcript if available.
 //
 // Not all videos have transcripts, only relatively new videos.
 // If transcripts are disabled or not available, ErrTranscriptDisabled is returned.
-func (c *Client) GetTranscriptCtx(ctx context.Context, video *Video) (VideoTranscript, error) {
+func (c *Client) GetTranscriptCtx(ctx context.Context, video *Video, lang string) (VideoTranscript, error) {
 	c.assureClient()
 
 	if video == nil || video.ID == "" {
 		return nil, fmt.Errorf("no video provided")
 	}
 
-	body, err := c.transcriptDataByInnertube(ctx, video.ID)
+	body, err := c.transcriptDataByInnertube(ctx, video.ID, lang)
 	if err != nil {
 		return nil, err
 	}
