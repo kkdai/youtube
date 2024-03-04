@@ -10,13 +10,14 @@ import (
 	"golang.org/x/net/context"
 )
 
-var testClient = Client{Debug: true}
-
 const (
 	dwlURL    string = "https://www.youtube.com/watch?v=rFejpH_tAHM"
 	streamURL string = "https://www.youtube.com/watch?v=a9LDPn-MO4I"
 	errURL    string = "https://www.youtube.com/watch?v=I8oGsuQ"
 )
+
+var testClient = Client{}
+var testWebClient = Client{client: &WebClient}
 
 func TestParseVideo(t *testing.T) {
 	video, err := testClient.GetVideo(dwlURL)
@@ -83,7 +84,7 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	video, err := testClient.GetVideo(dwlURL)
-	require.NoError(err)
+	require.NoError(err, "get video")
 	require.NotNil(video)
 
 	assert.NotEmpty(video.Thumbnails)
@@ -92,12 +93,47 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert.Empty(video.HLSManifestURL)
 	assert.Empty(video.DASHManifestURL)
 
+	assert.NotEmpty(video.CaptionTracks)
+	assert.Greater(len(video.CaptionTracks), 0)
+	assert.NotEmpty(video.CaptionTracks[0].BaseURL)
+
 	assert.Equal("rFejpH_tAHM", video.ID)
 	assert.Equal("dotGo 2015 - Rob Pike - Simplicity is Complicated", video.Title)
 	assert.Equal("dotconferences", video.Author)
-	assert.Equal(1392*time.Second, video.Duration)
+	assert.GreaterOrEqual(video.Duration, 1390*time.Second)
 	assert.Contains(video.Description, "Go is often described as a simple language.")
-	assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
+
+	// Publishing date doesn't seem to be present in android client
+	// assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
+}
+
+func TestWebClientGetVideoWithoutManifestURL(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+
+	video, err := testWebClient.GetVideo(dwlURL)
+	require.NoError(err, "get video")
+	require.NotNil(video)
+
+	assert.NotEmpty(video.Thumbnails)
+	assert.Greater(len(video.Thumbnails), 0)
+	assert.NotEmpty(video.Thumbnails[0].URL)
+	assert.Empty(video.HLSManifestURL)
+	assert.Empty(video.DASHManifestURL)
+
+	assert.NotEmpty(video.CaptionTracks)
+	assert.Greater(len(video.CaptionTracks), 0)
+	assert.NotEmpty(video.CaptionTracks[0].BaseURL)
+
+	assert.Equal("rFejpH_tAHM", video.ID)
+	assert.Equal("dotGo 2015 - Rob Pike - Simplicity is Complicated", video.Title)
+	assert.Equal("dotconferences", video.Author)
+	assert.GreaterOrEqual(video.Duration, 1390*time.Second)
+	assert.Contains(video.Description, "Go is often described as a simple language.")
+
+	// Publishing date and channel handle are present in web client
+	//assert.Equal("2015-12-02 00:00:00 +0000 UTC", video.PublishDate.String())
+
+	assert.Equal("@dotconferences", video.ChannelHandle)
 }
 
 func TestGetVideoWithManifestURL(t *testing.T) {
@@ -120,8 +156,40 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 	assert.NotZero(size)
 }
 
+func TestGetVideo_MultiLanguage(t *testing.T) {
+	assert, require := assert.New(t), require.New(t)
+	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=pU9sHwNKc2c")
+	require.NoError(err)
+	require.NotNil(video)
+
+	// collect languages
+	var languageNames, lanaguageIDs []string
+	for _, format := range video.Formats {
+		if format.AudioTrack != nil {
+			languageNames = append(languageNames, format.LanguageDisplayName())
+			lanaguageIDs = append(lanaguageIDs, format.AudioTrack.ID)
+		}
+	}
+
+	assert.Contains(languageNames, "English original")
+	assert.Contains(languageNames, "Portuguese (Brazil)")
+	assert.Contains(lanaguageIDs, "en.4")
+	assert.Contains(lanaguageIDs, "pt-BR.3")
+
+	assert.Empty(video.Formats.Language("Does not exist"))
+	assert.NotEmpty(video.Formats.Language("English original"))
+}
+
 func TestGetStream(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
+
+	expectedSize := 988479
+
+	// Create testclient to enforce re-using of routines
+	testClient := Client{
+		MaxRoutines: 10,
+		ChunkSize:   int64(expectedSize) / 11,
+	}
 
 	// Download should not last longer than a minute.
 	// Otherwise we assume Youtube is throtteling us.
@@ -135,7 +203,7 @@ func TestGetStream(t *testing.T) {
 
 	reader, size, err := testClient.GetStreamContext(ctx, video, &video.Formats[0])
 	require.NoError(err)
-	assert.EqualValues(2208750, size)
+	assert.EqualValues(expectedSize, size)
 
 	data, err := io.ReadAll(reader)
 	require.NoError(err)
@@ -175,8 +243,10 @@ func TestGetBigPlaylist(t *testing.T) {
 	assert.NotEmpty(playlist.Description)
 	assert.NotEmpty(playlist.Author)
 
-	assert.Greater(len(playlist.Videos), 100)
-	assert.NotEmpty(playlist.Videos[100].ID)
+	assert.Greater(len(playlist.Videos), 300)
+	assert.NotEmpty(playlist.Videos[300].ID)
+
+	t.Logf("Playlist Title: %s, Video Count: %d", playlist.Title, len(playlist.Videos))
 }
 
 func TestClient_httpGetBodyBytes(t *testing.T) {

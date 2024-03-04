@@ -13,16 +13,15 @@ This package is a Youtube video download package, for more detail refer [https:/
 This tool is meant to be used to download CC0 licenced content, we do not support nor recommend using it for illegal activities.
 
 ## Overview
-  * [Install](#install)
+  * [Install](#installation)
   * [Usage](#usage)
-  * [Options](#options)
   * [Example: Download video from \[dotGo 2015 - Rob Pike - Simplicity is Complicated\]](#download-dotGo-2015-rob-pike-video)
 
 ## Installation
 
 ### Install via go get
 
-Please ensure you have installed Go 1.17 or later.
+Please ensure you have installed Go 1.21 or later.
 
 ```shell
 go get github.com/kkdai/youtube/v2

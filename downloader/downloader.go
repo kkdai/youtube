@@ -2,10 +2,8 @@ package downloader
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
-	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,7 +37,12 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, ou
 
 // Download : Starting download video by arguments.
 func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
-	dl.logf("Video '%s' - Quality '%s' - Codec '%s'", v.Title, format.QualityLabel, format.MimeType)
+	youtube.Logger.Info(
+		"Downloading video",
+		"id", v.ID,
+		"quality", format.Quality,
+		"mimeType", format.MimeType,
+	)
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
 		return err
@@ -52,18 +55,25 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	}
 	defer out.Close()
 
-	dl.logf("Download to file=%s", destFile)
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
 // DownloadComposite : Downloads audio and video streams separately and merges them via ffmpeg.
-func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype string) error {
-	videoFormat, audioFormat, err1 := getVideoAudioFormats(v, quality, mimetype)
+func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype, language string) error {
+	videoFormat, audioFormat, err1 := getVideoAudioFormats(v, quality, mimetype, language)
 	if err1 != nil {
 		return err1
 	}
 
-	dl.logf("Video '%s' - Quality '%s' - Video Codec '%s' - Audio Codec '%s'", v.Title, videoFormat.QualityLabel, videoFormat.MimeType, audioFormat.MimeType)
+	log := youtube.Logger.With("id", v.ID)
+
+	log.Info(
+		"Downloading composite video",
+		"videoQuality", videoFormat.QualityLabel,
+		"videoMimeType", videoFormat.MimeType,
+		"audioMimeType", audioFormat.MimeType,
+	)
+
 	destFile, err := dl.getOutputFile(v, videoFormat, outputFile)
 	if err != nil {
 		return err
@@ -71,26 +81,26 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	outputDir := filepath.Dir(destFile)
 
 	// Create temporary video file
-	videoFile, err := ioutil.TempFile(outputDir, "youtube_*.m4v")
+	videoFile, err := os.CreateTemp(outputDir, "youtube_*.m4v")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(videoFile.Name())
 
 	// Create temporary audio file
-	audioFile, err := ioutil.TempFile(outputDir, "youtube_*.m4a")
+	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(audioFile.Name())
 
-	dl.logf("Downloading video file...")
+	log.Debug("Downloading video file...")
 	err = dl.videoDLWorker(ctx, videoFile, v, videoFormat)
 	if err != nil {
 		return err
 	}
 
-	dl.logf("Downloading audio file...")
+	log.Debug("Downloading audio file...")
 	err = dl.videoDLWorker(ctx, audioFile, v, audioFormat)
 	if err != nil {
 		return err
@@ -107,13 +117,12 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	)
 	ffmpegVersionCmd.Stderr = os.Stderr
 	ffmpegVersionCmd.Stdout = os.Stdout
-	dl.logf("merging video and audio to %s", destFile)
+	log.Info("merging video and audio", "output", destFile)
 
 	return ffmpegVersionCmd.Run()
 }
 
-func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*youtube.Format, *youtube.Format, error) {
-	var videoFormat, audioFormat *youtube.Format
+func getVideoAudioFormats(v *youtube.Video, quality string, mimetype, language string) (*youtube.Format, *youtube.Format, error) {
 	var videoFormats, audioFormats youtube.FormatList
 
 	formats := v.Formats
@@ -128,25 +137,22 @@ func getVideoAudioFormats(v *youtube.Video, quality string, mimetype string) (*y
 		videoFormats = videoFormats.Quality(quality)
 	}
 
-	if len(videoFormats) > 0 {
-		videoFormats.Sort()
-		videoFormat = &videoFormats[0]
+	if language != "" {
+		audioFormats = audioFormats.Language(language)
 	}
 
-	if len(audioFormats) > 0 {
-		audioFormats.Sort()
-		audioFormat = &audioFormats[0]
+	if len(videoFormats) == 0 {
+		return nil, nil, errors.New("no video format found after filtering")
 	}
 
-	if videoFormat == nil {
-		return nil, nil, fmt.Errorf("no video format found after filtering")
+	if len(audioFormats) == 0 {
+		return nil, nil, errors.New("no audio format found after filtering")
 	}
 
-	if audioFormat == nil {
-		return nil, nil, fmt.Errorf("no audio format found after filtering")
-	}
+	videoFormats.Sort()
+	audioFormats.Sort()
 
-	return videoFormat, audioFormat, nil
+	return &videoFormats[0], &audioFormats[0], nil
 }
 
 func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *youtube.Video, format *youtube.Format) error {
@@ -184,10 +190,4 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 
 	progress.Wait()
 	return nil
-}
-
-func (dl *Downloader) logf(format string, v ...interface{}) {
-	if dl.Debug {
-		log.Printf(format, v...)
-	}
 }
