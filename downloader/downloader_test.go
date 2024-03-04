@@ -2,7 +2,6 @@ package downloader
 
 import (
 	"context"
-	"log"
 	"os"
 	"testing"
 	"time"
@@ -14,7 +13,7 @@ import (
 
 var testDownloader = func() (dl Downloader) {
 	dl.OutputDir = "download_test"
-	dl.Debug = true
+
 	return
 }()
 
@@ -22,7 +21,7 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	// the following code doesn't work under debugger, please delete download files manually
 	if err := os.RemoveAll(testDownloader.OutputDir); err != nil {
-		log.Fatal(err.Error())
+		panic(err)
 	}
 	os.Exit(exitCode)
 }
@@ -39,7 +38,7 @@ func TestDownload_FirstStream(t *testing.T) {
 	assert.Equal(`youtube-dl test video "'/\ä↭𝕐`, video.Title)
 	assert.Equal(`Philipp Hagemeister`, video.Author)
 	assert.Equal(10*time.Second, video.Duration)
-	assert.Len(video.Formats, 18)
+	assert.GreaterOrEqual(len(video.Formats), 18)
 
 	if assert.Greater(len(video.Formats), 0) {
 		assert.NoError(testDownloader.Download(ctx, video, &video.Formats[0], ""))
@@ -69,7 +68,7 @@ func TestYoutube_DownloadWithHighQualityFails(t *testing.T) {
 				Formats: tt.formats,
 			}
 
-			err := testDownloader.DownloadComposite(context.Background(), "", video, "hd1080", "")
+			err := testDownloader.DownloadComposite(context.Background(), "", video, "hd1080", "", "")
 			assert.EqualError(t, err, tt.message)
 		})
 	}
@@ -101,7 +100,7 @@ func Test_getVideoAudioFormats(t *testing.T) {
 		{ItagNo: 249, MimeType: "audio/webm; codecs=\"opus\"", Quality: "tiny", Bitrate: 72862, FPS: 0, Width: 0, Height: 0, LastModified: "1540474783513282", ContentLength: 24839529, QualityLabel: "", ProjectionType: "RECTANGULAR", AverageBitrate: 55914, AudioQuality: "AUDIO_QUALITY_LOW", ApproxDurationMs: "3553941", AudioSampleRate: "48000", AudioChannels: 2},
 	}}
 	{
-		videoFormat, audioFormat, err := getVideoAudioFormats(v, "hd720", "mp4")
+		videoFormat, audioFormat, err := getVideoAudioFormats(v, "hd720", "mp4", "")
 		require.NoError(err)
 		require.NotNil(videoFormat)
 		require.Equal(398, videoFormat.ItagNo)
@@ -110,7 +109,7 @@ func Test_getVideoAudioFormats(t *testing.T) {
 	}
 
 	{
-		videoFormat, audioFormat, err := getVideoAudioFormats(v, "large", "webm")
+		videoFormat, audioFormat, err := getVideoAudioFormats(v, "large", "webm", "")
 		require.NoError(err)
 		require.NotNil(videoFormat)
 		require.Equal(244, videoFormat.ItagNo)

@@ -1,7 +1,7 @@
 package youtube
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -10,11 +10,20 @@ import (
 var artifactsFolder = os.Getenv("ARTIFACTS")
 
 func writeArtifact(name string, content []byte) {
-	path := filepath.Join(artifactsFolder, name)
-	err := os.WriteFile(path, content, 0600)
+	// Ensure folder exists
+	err := os.MkdirAll(artifactsFolder, os.ModePerm)
 	if err != nil {
-		log.Printf("unable to write artifact %s: %v", path, err)
+		slog.Error("unable to create artifacts folder", "path", artifactsFolder, "error", err)
+		return
+	}
+
+	path := filepath.Join(artifactsFolder, name)
+	err = os.WriteFile(path, content, 0600)
+
+	log := slog.With("path", path)
+	if err != nil {
+		log.Error("unable to write artifact", "error", err)
 	} else {
-		log.Println("artifact created:", path)
+		log.Debug("artifact created")
 	}
 }

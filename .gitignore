@@ -5,3 +5,4 @@ download_test
 /dist
 /output
 *.out
+.DS_Store

@@ -18,6 +18,7 @@ type VideoFormat struct {
 	VideoQuality  string
 	AudioQuality  string
 	AudioChannels int
+	Language      string
 	Size          int64
 	Bitrate       int
 	MimeType      string
@@ -73,6 +74,7 @@ var infoCmd = &cobra.Command{
 				Size:          size,
 				Bitrate:       bitrate,
 				MimeType:      format.MimeType,
+				Language:      format.LanguageDisplayName(),
 			})
 		}
 
@@ -102,6 +104,7 @@ func writeInfoOutput(w io.Writer, info *VideoInfo) {
 		"size [MB]",
 		"bitrate",
 		"MimeType",
+		"language",
 	})
 
 	for _, format := range info.Formats {
@@ -114,6 +117,7 @@ func writeInfoOutput(w io.Writer, info *VideoInfo) {
 			fmt.Sprintf("%0.1f", float64(format.Size)/1024/1024),
 			strconv.Itoa(format.Bitrate),
 			format.MimeType,
+			format.Language,
 		})
 	}
 

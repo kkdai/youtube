@@ -24,6 +24,7 @@ func ExampleClient() {
 	if err != nil {
 		panic(err)
 	}
+	defer stream.Close()
 
 	file, err := os.Create("video.mp4")
 	if err != nil {

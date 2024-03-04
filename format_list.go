@@ -8,66 +8,59 @@ import (
 
 type FormatList []Format
 
-// FindByQuality returns the first format matching Quality or QualityLabel
-func (list FormatList) FindByQuality(quality string) *Format {
+// Type returns a new FormatList filtered by itag
+func (list FormatList) Select(f func(Format) bool) (result FormatList) {
 	for i := range list {
-		if list[i].Quality == quality || list[i].QualityLabel == quality {
-			return &list[i]
-		}
-	}
-	return nil
-}
-
-// FindByItag returns the first format matching the itag number
-func (list FormatList) FindByItag(itagNo int) *Format {
-	for i := range list {
-		if list[i].ItagNo == itagNo {
-			return &list[i]
-		}
-	}
-	return nil
-}
-
-// Type returns a new FormatList filtered by mime type of video
-func (list FormatList) Type(t string) (result FormatList) {
-	for i := range list {
-		if strings.Contains(list[i].MimeType, t) {
+		if f(list[i]) {
 			result = append(result, list[i])
 		}
 	}
 	return result
 }
 
+// Type returns a new FormatList filtered by itag
+func (list FormatList) Itag(itagNo int) FormatList {
+	return list.Select(func(f Format) bool {
+		return f.ItagNo == itagNo
+	})
+}
+
+// Type returns a new FormatList filtered by mime type
+func (list FormatList) Type(value string) FormatList {
+	return list.Select(func(f Format) bool {
+		return strings.Contains(f.MimeType, value)
+	})
+}
+
+// Type returns a new FormatList filtered by display name
+func (list FormatList) Language(displayName string) FormatList {
+	return list.Select(func(f Format) bool {
+		return f.LanguageDisplayName() == displayName
+	})
+}
+
 // Quality returns a new FormatList filtered by quality, quality label or itag,
 // but not audio quality
-func (list FormatList) Quality(quality string) (result FormatList) {
-	for _, f := range list {
-		itag, _ := strconv.Atoi(quality)
-		if itag == f.ItagNo || strings.Contains(f.Quality, quality) || strings.Contains(f.QualityLabel, quality) {
-			result = append(result, f)
-		}
-	}
-	return result
+func (list FormatList) Quality(quality string) FormatList {
+	itag, _ := strconv.Atoi(quality)
+
+	return list.Select(func(f Format) bool {
+		return itag == f.ItagNo || strings.Contains(f.Quality, quality) || strings.Contains(f.QualityLabel, quality)
+	})
 }
 
 // AudioChannels returns a new FormatList filtered by the matching AudioChannels
-func (list FormatList) AudioChannels(n int) (result FormatList) {
-	for _, f := range list {
-		if f.AudioChannels == n {
-			result = append(result, f)
-		}
-	}
-	return result
+func (list FormatList) AudioChannels(n int) FormatList {
+	return list.Select(func(f Format) bool {
+		return f.AudioChannels == n
+	})
 }
 
 // AudioChannels returns a new FormatList filtered by the matching AudioChannels
-func (list FormatList) WithAudioChannels() (result FormatList) {
-	for _, f := range list {
-		if f.AudioChannels > 0 {
-			result = append(result, f)
-		}
-	}
-	return result
+func (list FormatList) WithAudioChannels() FormatList {
+	return list.Select(func(f Format) bool {
+		return f.AudioChannels > 0
+	})
 }
 
 // FilterQuality reduces the format list to formats matching the quality
@@ -84,7 +77,7 @@ func (list FormatList) Sort() {
 }
 
 // sortFormat sorts video by resolution, FPS, codec (av01, vp9, avc1), bitrate
-// sorts audio by codec (mp4, opus), channels, bitrate, sample rate
+// sorts audio by default, codec (mp4, opus), channels, bitrate, sample rate
 func sortFormat(i int, j int, formats FormatList) bool {
 
 	// Sort by Width
@@ -102,28 +95,34 @@ func sortFormat(i int, j int, formats FormatList) bool {
 		if formats[i].FPS == formats[j].FPS {
 			if formats[i].FPS == 0 && formats[i].AudioChannels > 0 && formats[j].AudioChannels > 0 {
 				// Audio
-				// Sort by codec
-				codec := map[int]int{}
-				for _, index := range []int{i, j} {
-					if strings.Contains(formats[index].MimeType, "mp4") {
-						codec[index] = 1
-					} else if strings.Contains(formats[index].MimeType, "opus") {
-						codec[index] = 2
-					}
-				}
-				if codec[i] == codec[j] {
-					// Sort by Audio Channel
-					if formats[i].AudioChannels == formats[j].AudioChannels {
-						// Sort by Audio Bitrate
-						if formats[i].Bitrate == formats[j].Bitrate {
-							// Sort by Audio Sample Rate
-							return formats[i].AudioSampleRate > formats[j].AudioSampleRate
+				// Sort by default
+				if (formats[i].AudioTrack == nil && formats[j].AudioTrack == nil) || (formats[i].AudioTrack != nil && formats[j].AudioTrack != nil && formats[i].AudioTrack.AudioIsDefault == formats[j].AudioTrack.AudioIsDefault) {
+					// Sort by codec
+					codec := map[int]int{}
+					for _, index := range []int{i, j} {
+						if strings.Contains(formats[index].MimeType, "mp4") {
+							codec[index] = 1
+						} else if strings.Contains(formats[index].MimeType, "opus") {
+							codec[index] = 2
 						}
-						return formats[i].Bitrate > formats[j].Bitrate
 					}
-					return formats[i].AudioChannels > formats[j].AudioChannels
+					if codec[i] == codec[j] {
+						// Sort by Audio Channel
+						if formats[i].AudioChannels == formats[j].AudioChannels {
+							// Sort by Audio Bitrate
+							if formats[i].Bitrate == formats[j].Bitrate {
+								// Sort by Audio Sample Rate
+								return formats[i].AudioSampleRate > formats[j].AudioSampleRate
+							}
+							return formats[i].Bitrate > formats[j].Bitrate
+						}
+						return formats[i].AudioChannels > formats[j].AudioChannels
+					}
+					return codec[i] < codec[j]
+				} else if formats[i].AudioTrack != nil && formats[i].AudioTrack.AudioIsDefault {
+					return true
 				}
-				return codec[i] < codec[j]
+				return false
 			}
 			// Video
 			// Sort by codec
