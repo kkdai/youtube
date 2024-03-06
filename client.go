@@ -522,7 +522,11 @@ func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error
 		return nil, err
 	}
 
+	log := slog.With("url", req.URL)
+
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Error("httpGet failed", "code", resp.StatusCode, "body", string(body))
 		resp.Body.Close()
 		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
 	}
