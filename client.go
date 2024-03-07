@@ -525,11 +525,7 @@ func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		msg := string(body)
-		if len(msg) > 128 {
-			msg = msg[:127]
-		}
-		return nil, fmt.Errorf("unexpected status code (GET): %d, %s", resp.StatusCode, msg)
+		return nil, fmt.Errorf("unexpected status code (GET): %d, %s", resp.StatusCode, getErrorBody(body))
 	}
 
 	return resp, nil
@@ -571,11 +567,7 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		msg := string(body)
-		if len(msg) > 128 {
-			msg = msg[:127]
-		}
-		return nil, fmt.Errorf("unexpected status code (POST): %d, %s", resp.StatusCode, msg)
+		return nil, fmt.Errorf("unexpected status code (POST): %d, %s", resp.StatusCode, getErrorBody(body))
 	}
 
 	return resp, nil
@@ -625,4 +617,16 @@ func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
 	chunk.data <- data
 
 	return nil
+}
+
+func getErrorBody(b []byte) string {
+	var m map[string]interface{}
+	if err := json.Unmarshal(b, &m); err == nil {
+		b, _ = json.Marshal(m)
+	}
+	s := string(b)
+	if len(s) > 256 {
+		s = s[:256]
+	}
+	return s
 }
