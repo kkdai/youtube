@@ -529,7 +529,7 @@ func (c *Client) httpGet(ctx context.Context, url string) (*http.Response, error
 		if len(msg) > 128 {
 			msg = msg[:127]
 		}
-		return nil, fmt.Errorf("unexpected status code: %d, %s", resp.StatusCode, msg)
+		return nil, fmt.Errorf("unexpected status code (GET): %d, %s", resp.StatusCode, msg)
 	}
 
 	return resp, nil
@@ -569,8 +569,13 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return nil, ErrUnexpectedStatusCode(resp.StatusCode)
+		msg := string(body)
+		if len(msg) > 128 {
+			msg = msg[:127]
+		}
+		return nil, fmt.Errorf("unexpected status code (POST): %d, %s", resp.StatusCode, msg)
 	}
 
 	return resp, nil
