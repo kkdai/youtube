@@ -274,3 +274,34 @@ func TestClient_httpGetBodyBytes(t *testing.T) {
 		})
 	}
 }
+
+func Test_getErrorBody(t *testing.T) {
+	tests := []struct {
+		name    string
+		body    string
+		errbody string
+	}{
+		{"precondition",
+			`{
+			"error": {
+			  "code": 400,
+			  "message": "Precondition check failed.",
+			  "errors": [
+				{
+				  "message": "Precondition check failed.",
+				  "domain": "global",
+				  "reason": "failedPrecondition"
+				}
+			  ],
+			  "status": "FAILED_PRECONDITION"
+			}
+		  }`,
+			`{"error":{"code":400,"errors":[{"domain":"global","message":"Precondition check failed.","reason":"failedPrecondition"}],"message":"Precondition check failed.","status":"FAILED_PRECONDITION"}}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.errbody, getErrorBody([]byte(tt.body)))
+		})
+	}
+}
