@@ -184,7 +184,7 @@ var (
 		name:           "ANDROID",
 		version:        "17.31.35",
 		key:            "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
-		userAgent:      "com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip",
+		userAgent:      "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip",
 		androidVersion: 30,
 	}
 
@@ -617,6 +617,11 @@ func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
 	chunk.data <- data
 
 	return nil
+}
+
+func (c *Client) WithClient(ci clientInfo) *Client {
+	c.client = &ci
+	return c
 }
 
 func getErrorBody(b []byte) string {
