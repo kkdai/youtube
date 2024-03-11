@@ -21,10 +21,10 @@ var (
 		Use:   "list",
 		Short: "Print metadata of the desired playlist",
 		Args:  cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			return checkOutputFormat()
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			playlist, err := getDownloader().GetPlaylist(args[0])
 			exitOnError(err)
 
