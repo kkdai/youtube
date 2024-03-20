@@ -14,12 +14,13 @@ import (
 var outputFormat string
 
 const (
+	outputVideoIds    = "video-ids"
 	outputFormatPlain = "plain"
 	outputFormatJSON  = "json"
 	outputFormatXML   = "xml"
 )
 
-var outputFormats = []string{outputFormatPlain, outputFormatJSON, outputFormatXML}
+var outputFormats = []string{outputFormatPlain, outputFormatJSON, outputFormatXML, outputVideoIds}
 
 func addFormatFlag(flagSet *pflag.FlagSet) {
 	flagSet.StringVarP(&outputFormat, "format", "f", outputFormatPlain, "The output format ("+strings.Join(outputFormats, "/")+")")
@@ -37,10 +38,16 @@ func checkOutputFormat() error {
 
 type outputWriter func(w io.Writer)
 
-func writeOutput(w io.Writer, v interface{}, plainWriter outputWriter) error {
+func writeOutput(w io.Writer, v interface{}, writers map[string]outputWriter) error {
 	switch outputFormat {
+	case outputVideoIds:
+		fallthrough
 	case outputFormatPlain:
-		plainWriter(w)
+		writer, ok := writers[outputFormat]
+		if !ok {
+			return errUnhandledFormat(outputFormat)
+		}
+		writer(w)
 		return nil
 	case outputFormatJSON:
 		encoder := json.NewEncoder(w)
@@ -57,4 +64,10 @@ type errInvalidFormat string
 
 func (err errInvalidFormat) Error() string {
 	return fmt.Sprintf("invalid output format: %s", outputFormat)
+}
+
+type errUnhandledFormat string
+
+func (err errUnhandledFormat) Error() string {
+	return fmt.Sprintf("unhandled output format: %s", outputFormat)
 }
