@@ -120,6 +120,7 @@ func downloadAndEncode(thumbnails youtube.Thumbnails) error {
 
 	defer image.Close()
 
+	//nolint:gosec
 	ffmpeg := exec.Command("ffmpeg",
 		"-i", "-",
 		"-update", "true",

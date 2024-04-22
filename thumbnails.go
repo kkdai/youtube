@@ -170,7 +170,7 @@ func scoreThumbnail(t Thumbnail) int {
 	score := -2 * nameIndex
 
 	if strings.Contains(t.URL, ".webp") {
-		score += 1
+		score++
 	}
 
 	return score
