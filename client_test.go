@@ -257,7 +257,7 @@ func TestClient_httpGetBodyBytes(t *testing.T) {
 		{"unknown://", "unsupported protocol scheme"},
 		{"invalid\nurl", "invalid control character in URL"},
 		{"http://unknown-host/", "dial tcp"},
-		{"http://example.com/does-not-exist", "unexpected status code: 404"},
+		{"https://www.google.com/404", "unexpected status code: 404"},
 		{"http://example.com/", ""},
 	}
 	for _, tt := range tests {
