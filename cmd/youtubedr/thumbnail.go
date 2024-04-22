@@ -54,8 +54,6 @@ func downloadThumbnail(url string) error {
 	thumbnails = thumbnails.MaxHeight(maxRes)
 	thumbnails.Sort()
 
-	fmt.Println(thumbnails)
-	fmt.Println(minRes, maxRes)
 	if outputFile == "" {
 		return downloadAnyFormat(video.ID, thumbnails)
 	}
