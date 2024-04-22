@@ -7,13 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync/atomic"
-
-	"log/slog"
 )
 
 const (
@@ -25,7 +24,8 @@ const (
 )
 
 var (
-	ErrNoFormat = errors.New("no video format provided")
+	ErrNoFormat    = errors.New("no video format provided")
+	ErrNoThumbnail = errors.New("no thumbnail found")
 )
 
 // DefaultClient type to use. No reason to change but you could if you wanted to.
@@ -70,6 +70,30 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 	}
 
 	return c.videoFromID(ctx, id)
+}
+
+// GetThumbnail returns the thumbnail image for a video.
+func (c *Client) GetThumbnail(thumbnails Thumbnails) (io.ReadCloser, string, error) {
+	return c.GetThumbnailContext(context.Background(), thumbnails)
+}
+
+// GetThumbnailContext returns the thumbnail image for a video with a context.
+func (c *Client) GetThumbnailContext(ctx context.Context, thumbnails Thumbnails) (io.ReadCloser, string, error) {
+	c.assureClient()
+
+	for _, thumbnail := range thumbnails {
+		resp, err := c.httpGet(ctx, thumbnail.URL)
+		if errors.Is(err, ErrUnexpectedStatusCode(http.StatusNotFound)) {
+			continue
+		}
+		if err != nil {
+			return nil, "", err
+		}
+
+		return resp.Body, resp.Header.Get("Content-Type"), nil
+	}
+
+	return nil, "", ErrNoThumbnail
 }
 
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {

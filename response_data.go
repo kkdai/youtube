@@ -133,8 +133,6 @@ func (f *Format) LanguageDisplayName() string {
 	return f.AudioTrack.DisplayName
 }
 
-type Thumbnails []Thumbnail
-
 type Thumbnail struct {
 	URL    string
 	Width  uint
