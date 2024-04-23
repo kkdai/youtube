@@ -117,38 +117,54 @@ func (t Thumbnails) FilterExt(ext ...string) Thumbnails {
 // FilterLive removes thumbnails that do not match the provided live status.
 func (t Thumbnails) FilterLive(live bool) Thumbnails {
 	return slices.DeleteFunc(t, func(thumbnail Thumbnail) bool {
-		name := path.Base(thumbnail.URL)
+		u, err := url.Parse(thumbnail.URL)
+		if err != nil {
+			return true
+		}
+		name := path.Base(u.Path)
 		parts := strings.SplitN(name, "_", 2)
 		l := len(parts) > 1 && strings.HasPrefix(parts[1], "live")
 		return l != live
 	})
 }
 
-// MinWidth filters out thumbnails with greater than desired width.
+// MinWidth filters out thumbnails with less than desired width.
 func (t Thumbnails) MinWidth(w uint) Thumbnails {
 	return slices.DeleteFunc(t, func(thumbnail Thumbnail) bool {
 		return thumbnail.Width < w
 	})
 }
 
-// MaxWidth filters out thumbnails with less than desired width.
+// MaxWidth filters out thumbnails with greater desired width.
 func (t Thumbnails) MaxWidth(w uint) Thumbnails {
 	return slices.DeleteFunc(t, func(thumbnail Thumbnail) bool {
 		return thumbnail.Width > w
 	})
 }
 
-// MinHeight filters out thumbnails with greater than desired height.
-func (t Thumbnails) MinHeight(w uint) Thumbnails {
+// MinHeight filters out thumbnails with less than desired height.
+func (t Thumbnails) MinHeight(h uint) Thumbnails {
 	return slices.DeleteFunc(t, func(thumbnail Thumbnail) bool {
-		return thumbnail.Height < w
+		return thumbnail.Height < h
 	})
 }
 
-// MaxHeight filters out thumbnails with less than desired height.
-func (t Thumbnails) MaxHeight(w uint) Thumbnails {
+// MaxHeight filters out thumbnails with greater than desired height.
+func (t Thumbnails) MaxHeight(h uint) Thumbnails {
 	return slices.DeleteFunc(t, func(thumbnail Thumbnail) bool {
-		return thumbnail.Height > w
+		return thumbnail.Height > h
+	})
+}
+
+func (t Thumbnails) FilterName(names ...string) Thumbnails {
+	return slices.DeleteFunc(t, func(thumbnail Thumbnail) bool {
+		u, err := url.Parse(thumbnail.URL)
+		if err != nil {
+			return true
+		}
+		fileName := path.Base(u.Path)
+		nameNoExt := strings.TrimSuffix(fileName, path.Ext(fileName))
+		return !slices.Contains(names, nameNoExt)
 	})
 }
 
