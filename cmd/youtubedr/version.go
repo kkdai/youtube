@@ -18,7 +18,7 @@ var (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Prints version information",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println("Version:    ", version)
 		fmt.Println("Commit:     ", commit)
 		fmt.Println("Date:       ", date)

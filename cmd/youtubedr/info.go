@@ -38,10 +38,10 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Print metadata of the desired video",
 	Args:  cobra.ExactArgs(1),
-	PreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(_ *cobra.Command, _ []string) error {
 		return checkOutputFormat()
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		video, err := getDownloader().GetVideo(args[0])
 		exitOnError(err)
 

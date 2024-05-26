@@ -16,7 +16,7 @@ var downloadCmd = &cobra.Command{
 	Short:   "Downloads a video from youtube",
 	Example: `youtubedr -o "Campaign Diary".mp4 https://www.youtube.com/watch\?v\=XbNghLqsVwU`,
 	Args:    cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		exitOnError(download(args[0]))
 	},
 }
