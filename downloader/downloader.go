@@ -85,14 +85,34 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	if err != nil {
 		return err
 	}
-	defer os.Remove(videoFile.Name())
+	// defer os.Remove(videoFile.Name())
+defer func() {
+		if err := videoFile.Close(); err != nil {
+			log.Error("Failed to close video file", "error", err)
+			return
+		}
+		err := os.Remove(videoFile.Name())
+		if err != nil {
+			log.Error("Failed to delete video file", "error", err)
+		}
+	}()
 
 	// Create temporary audio file
 	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(audioFile.Name())
+	// defer os.Remove(audioFile.Name())
+	defer func() {
+		if err := audioFile.Close(); err != nil {
+			log.Error("Failed to close audio file", "error", err)
+			return
+		}
+		err := os.Remove(audioFile.Name())
+		if err != nil {
+			log.Error("Failed to delete audio file", "error", err)
+		}
+	}()
 
 	log.Debug("Downloading video file...")
 	err = dl.videoDLWorker(ctx, videoFile, v, videoFormat)
