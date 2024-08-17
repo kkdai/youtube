@@ -47,7 +47,11 @@ var (
 				}))
 			} else {
 				for i := 0; i < len(playlist.Videos); i++ {
-					exitOnError(download(playlist.Videos[i].ID))
+					err := download(playlist.Videos[i].ID)
+					if err != nil {
+						fmt.Println(err.Error())
+					}
+					err = nil
 				}
 			}
 		},
