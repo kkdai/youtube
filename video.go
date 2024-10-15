@@ -140,6 +140,19 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	return nil
 }
 
+func (v *Video) getCaptionTrackURLByLanguage(lang string) (string, error) {
+	for _, track := range v.CaptionTracks {
+		// language in caption tracks might have region code
+		// just match with first part of the language code
+		langShortCode := strings.Split(lang, "-")[0]
+		if langShortCode == lang {
+			return track.BaseURL, nil
+		}
+	}
+
+	return "", ErrTranscriptDisabled
+}
+
 func (v *Video) SortBitrateDesc(i int, j int) bool {
 	return v.Formats[i].Bitrate > v.Formats[j].Bitrate
 }

@@ -3,6 +3,7 @@ package youtube
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"strconv"
@@ -69,6 +70,33 @@ func (c *Client) GetTranscriptCtx(ctx context.Context, video *Video, lang string
 
 	transcript, err := parseTranscript(body)
 	if err != nil {
+		// if transcript isn't available, try to get from timedtext api
+		if err == ErrTranscriptDisabled {
+			return c.getCaptionTrackContext(ctx, video, lang)
+		}
+		return nil, err
+	}
+
+	return transcript, nil
+}
+
+func (c *Client) getCaptionTrackContext(ctx context.Context, video *Video, lang string) (VideoTranscript, error) {
+	if len(video.CaptionTracks) == 0 {
+		return nil, ErrTranscriptDisabled
+	}
+
+	captionsURL, err := video.getCaptionTrackURLByLanguage(lang)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.captionTrackDataByInnerTube(ctx, captionsURL)
+	if err != nil {
+		return nil, err
+	}
+
+	transcript, err := parseCaptionTrack(body)
+	if err != nil {
 		return nil, err
 	}
 
@@ -94,6 +122,52 @@ func parseTranscript(body []byte) (VideoTranscript, error) {
 	}
 
 	return nil, ErrTranscriptDisabled
+}
+
+func parseCaptionTrack(body []byte) (VideoTranscript, error) {
+	var captions TimedText
+	err := xml.Unmarshal(body, &captions)
+	if err != nil {
+		return nil, err
+	}
+
+	transcript := make(VideoTranscript, 0, len(captions.Body.Paragraphs))
+
+	// calculate durations to match transcript api
+	// if it's the last paragraph, use the duration from the paragraph
+	// otherwise, calculate the duration from the next paragraph's start time
+	for i, p := range captions.Body.Paragraphs {
+		text := ""
+		for _, s := range p.Segments {
+			text += s.Text
+		}
+		if text == "" {
+			lastTranscriptIdx := len(transcript) - 1
+			// if the text is empty, skip this paragraph, but add duration to last segment
+			if lastTranscriptIdx >= 0 && i < len(captions.Body.Paragraphs)-1 {
+				transcript[lastTranscriptIdx].Duration += captions.Body.Paragraphs[i+1].Time - p.Time
+			}
+			continue
+		}
+
+		var duration int
+		if i < len(captions.Body.Paragraphs)-1 {
+			duration = captions.Body.Paragraphs[i+1].Time - p.Time
+		} else {
+			duration = p.Duration
+		}
+
+		offsetText := fmt.Sprintf("%d:%02d", p.Time/60000, p.Time/1000%60)
+
+		transcript = append(transcript, TranscriptSegment{
+			Text:       text,
+			StartMs:    p.Time,
+			OffsetText: offsetText,
+			Duration:   duration,
+		})
+	}
+
+	return transcript, nil
 }
 
 type segmenter interface {
@@ -211,4 +285,23 @@ func (s *webData) ParseSegments() []TranscriptSegment {
 	}
 
 	return segments
+}
+
+type TimedText struct {
+	Name xml.Name `xml:"timedtext"`
+	Body Body     `xml:"body"`
+}
+
+type Body struct {
+	Paragraphs []Paragraph `xml:"p"`
+}
+
+type Paragraph struct {
+	Time     int       `xml:"t,attr"`
+	Duration int       `xml:"d,attr"`
+	Segments []Segment `xml:"s"`
+}
+
+type Segment struct {
+	Text string `xml:",chardata"`
 }
