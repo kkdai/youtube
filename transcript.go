@@ -65,7 +65,8 @@ func (c *Client) GetTranscriptCtx(ctx context.Context, video *Video, lang string
 
 	body, err := c.transcriptDataByInnertube(ctx, video.ID, lang)
 	if err != nil {
-		return nil, err
+		// if transcript by innertube failed, try to get from timedtext api
+		return c.getCaptionTrackContext(ctx, video, lang)
 	}
 
 	transcript, err := parseTranscript(body)
