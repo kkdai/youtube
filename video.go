@@ -145,7 +145,7 @@ func (v *Video) getCaptionTrackURLByLanguage(lang string) (string, error) {
 		// language in caption tracks might have region code
 		// just match with first part of the language code
 		langShortCode := strings.Split(lang, "-")[0]
-		if langShortCode == lang {
+		if langShortCode == track.LanguageCode {
 			return track.BaseURL, nil
 		}
 	}
