@@ -224,14 +224,6 @@ func (c *Client) transcriptDataByInnertube(ctx context.Context, id string, lang 
 	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/get_transcript?key="+c.client.key, data)
 }
 
-func (c *Client) captionTrackDataByInnerTube(ctx context.Context, url string) ([]byte, error) {
-	data := innertubeRequest{
-		Context: prepareInnertubeContext(*c.client),
-	}
-
-	return c.httpPostBodyBytes(ctx, url, data)
-}
-
 func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
 	return inntertubeContext{
 		Client: innertubeClient{

@@ -91,7 +91,7 @@ func (c *Client) getCaptionTrackContext(ctx context.Context, video *Video, lang 
 		return nil, err
 	}
 
-	body, err := c.captionTrackDataByInnerTube(ctx, captionsURL)
+	body, err := c.httpGetBodyBytes(ctx, captionsURL)
 	if err != nil {
 		return nil, err
 	}
@@ -139,9 +139,14 @@ func parseCaptionTrack(body []byte) (VideoTranscript, error) {
 	// otherwise, calculate the duration from the next paragraph's start time
 	for i, p := range captions.Body.Paragraphs {
 		text := ""
-		for _, s := range p.Segments {
-			text += s.Text
+		if p.Text == "" {
+			for _, s := range p.Segments {
+				text += s.Text
+			}
+		} else {
+			text = p.Text
 		}
+
 		if text == "" {
 			lastTranscriptIdx := len(transcript) - 1
 			// if the text is empty, skip this paragraph, but add duration to last segment
@@ -301,6 +306,7 @@ type Paragraph struct {
 	Time     int       `xml:"t,attr"`
 	Duration int       `xml:"d,attr"`
 	Segments []Segment `xml:"s"`
+	Text     string    `xml:",chardata"`
 }
 
 type Segment struct {
