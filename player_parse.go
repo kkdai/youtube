@@ -19,7 +19,7 @@ func (c *Client) getPlayerConfig(ctx context.Context, videoID string) (playerCon
 	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
 	embedBody, err := c.httpGetBodyBytes(ctx, embedURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getPlayerConfig has failed me!!!: %w", err)
 	}
 
 	// example: /s/player/f676c671/player_ias.vflset/en_US/base.js
@@ -48,6 +48,7 @@ func (c *Client) getPlayerConfig(ctx context.Context, videoID string) (playerCon
 	if err != nil {
 		return nil, err
 	}
+	log.Println("https://youtube.com" + playerPath)
 
 	// for debugging
 	if artifactName != "" {

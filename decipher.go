@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 )
 
 func (c *Client) decipherURL(ctx context.Context, videoID string, cipher string) (string, error) {
+	log.Println("decipherURL")
 	params, err := url.ParseQuery(cipher)
 	if err != nil {
 		return "", err
@@ -69,12 +71,14 @@ func (c *Client) unThrottle(ctx context.Context, videoID string, urlString strin
 	}
 
 	uri.RawQuery = query.Encode()
+	log.Println("before", urlString)
+	log.Println("after", uri.String())
 	return uri.String(), nil
 }
 
 func (c *Client) decryptNParam(config playerConfig, query url.Values) (url.Values, error) {
 	// decrypt n-parameter
-	nSig := query.Get("v")
+	nSig := query.Get("n")
 	log := Logger.With("n", nSig)
 
 	if nSig != "" {
@@ -82,11 +86,11 @@ func (c *Client) decryptNParam(config playerConfig, query url.Values) (url.Value
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode nSig: %w", err)
 		}
-		query.Set("v", nDecoded)
+		query.Set("n", nDecoded)
 		log = log.With("decoded", nDecoded)
 	}
 
-	log.Debug("nParam")
+	log.Info("nParam")
 
 	return query, nil
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -29,7 +30,7 @@ var (
 )
 
 // DefaultClient type to use. No reason to change but you could if you wanted to.
-var DefaultClient = AndroidClient
+var DefaultClient = WebClient
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
@@ -64,6 +65,7 @@ func (c *Client) GetVideo(url string) (*Video, error) {
 
 // GetVideoContext fetches video metadata with a context
 func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error) {
+	log.Println(url)
 	id, err := ExtractVideoID(url)
 	if err != nil {
 		return nil, fmt.Errorf("extractVideoID failed: %w", err)
@@ -75,13 +77,13 @@ func (c *Client) GetVideoContext(ctx context.Context, url string) (*Video, error
 func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 	c.assureClient()
 
+	v := Video{
+		ID: id,
+	}
+
 	body, err := c.videoDataByInnertube(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-
-	v := Video{
-		ID: id,
 	}
 
 	// return early if all good
@@ -142,8 +144,8 @@ type playbackContext struct {
 }
 
 type contentPlaybackContext struct {
-	// SignatureTimestamp string `json:"signatureTimestamp"`
-	HTML5Preference string `json:"html5Preference"`
+	SignatureTimestamp string `json:"signatureTimestamp"`
+	HTML5Preference    string `json:"html5Preference"`
 }
 
 type inntertubeContext struct {
@@ -159,6 +161,10 @@ type innertubeClient struct {
 	UserAgent         string `json:"userAgent,omitempty"`
 	TimeZone          string `json:"timeZone"`
 	UTCOffset         int    `json:"utcOffsetMinutes"`
+	DeviceMake        string `json:"deviceMake,omitempty"`
+	DeviceModel       string `json:"deviceModel,omitempty"`
+	OSName            string `json:"osName,omitempty"`
+	OSVersion         string `json:"osVersion,omitempty"`
 }
 
 // client info for the innertube API
@@ -168,15 +174,25 @@ type clientInfo struct {
 	version        string
 	userAgent      string
 	androidVersion int
+	ytClientName   string
+	deviceMake     string
+	deviceModel    string
+	osName         string
+	osVersion      string
 }
 
 var (
 	// WebClient, better to use Android client but go ahead.
 	WebClient = clientInfo{
-		name:      "WEB",
-		version:   "2.20220801.00.00",
-		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
-		userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+		name:         "IOS",
+		version:      "19.45.4",
+		key:          "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+		userAgent:    "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X;)",
+		ytClientName: "5",
+		deviceMake:   "Apple",
+		deviceModel:  "iPhone16,2",
+		osName:       "iPhone",
+		osVersion:    "18.1.0.22B83",
 	}
 
 	// AndroidClient, download go brrrrrr.
@@ -203,16 +219,16 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, e
 		Context:        prepareInnertubeContext(*c.client),
 		ContentCheckOK: true,
 		RacyCheckOk:    true,
-		Params:         playerParams,
+		//Params:         playerParams,
 		PlaybackContext: &playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
-				// SignatureTimestamp: sts,
-				HTML5Preference: "HTML5_PREF_WANTS",
+				SignatureTimestamp: "20047",
+				HTML5Preference:    "HTML5_PREF_WANTS",
 			},
 		},
 	}
 
-	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+c.client.key, data)
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?prettyPrint=false", data)
 }
 
 func (c *Client) transcriptDataByInnertube(ctx context.Context, id string, lang string) ([]byte, error) {
@@ -230,6 +246,10 @@ func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
 			HL:                "en",
 			GL:                "US",
 			TimeZone:          "UTC",
+			DeviceMake:        clientInfo.deviceMake,
+			DeviceModel:       clientInfo.deviceModel,
+			OSName:            clientInfo.osName,
+			OSVersion:         clientInfo.osVersion,
 			ClientName:        clientInfo.name,
 			ClientVersion:     clientInfo.version,
 			AndroidSDKVersion: clientInfo.androidVersion,
@@ -446,16 +466,19 @@ func (c *Client) GetStreamURL(video *Video, format *Format) (string, error) {
 
 // GetStreamURLContext returns the url for a specific format with a context
 func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *Format) (string, error) {
+	log.Println("GetStreamURLContext?")
 	if format == nil {
 		return "", ErrNoFormat
 	}
+	log.Println(format.URL)
 
 	c.assureClient()
 
 	if format.URL != "" {
-		if c.client.androidVersion > 0 {
-			return format.URL, nil
-		}
+		//if c.client.androidVersion > 0 {
+		//log.Println("androidVersion > 0 ?")
+		return format.URL, nil
+		//}
 
 		return c.unThrottle(ctx, video.ID, format.URL)
 	}
@@ -554,11 +577,14 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 		return nil, err
 	}
 
-	req.Header.Set("X-Youtube-Client-Name", "3")
+	req.Header.Set("X-Youtube-Client-Name", c.client.ytClientName)
 	req.Header.Set("X-Youtube-Client-Version", c.client.version)
+	req.Header.Set("User-Agent", c.client.userAgent)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	//req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("X-Goog-Visitor-Id", "CgtzbXhmc3dkdlhVZyjIiIW6BjIKCgJVUxIEGgAgEg=='")
 
+	log.Printf("data: %s. headers: %s", data, req.Header)
 	resp, err := c.httpDo(req)
 	if err != nil {
 		return nil, err
@@ -598,7 +624,7 @@ func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < http.StatusOK && resp.StatusCode >= 300 {
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
 		return ErrUnexpectedStatusCode(resp.StatusCode)
 	}
 
