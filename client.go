@@ -501,6 +501,12 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 
 	log := slog.With("method", req.Method, "url", req.URL)
 
+	if err == nil && res.StatusCode != http.StatusOK {
+		err = ErrUnexpectedStatusCode(res.StatusCode)
+		res.Body.Close()
+		res = nil
+	}
+
 	if err != nil {
 		log.Debug("HTTP request failed", "error", err)
 	} else {
@@ -596,7 +602,7 @@ func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < http.StatusOK && resp.StatusCode >= 300 {
+	if resp.StatusCode != http.StatusOK {
 		return ErrUnexpectedStatusCode(resp.StatusCode)
 	}
 
