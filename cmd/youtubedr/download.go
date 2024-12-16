@@ -56,7 +56,7 @@ func download(id string) error {
 func checkFFMPEG() error {
 	fmt.Println("check ffmpeg is installed....")
 	if err := exec.Command("ffmpeg", "-version").Run(); err != nil {
-		ffmpegCheck = fmt.Errorf("please check ffmpegCheck is installed correctly")
+		ffmpegCheck = fmt.Errorf("please check that ffmpeg is installed correctly")
 	}
 
 	return ffmpegCheck
