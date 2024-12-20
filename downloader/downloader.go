@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -85,14 +86,14 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	if err != nil {
 		return err
 	}
-	defer os.Remove(videoFile.Name())
+	defer closeAndRemoveFile(videoFile, log)
 
 	// Create temporary audio file
 	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(audioFile.Name())
+	defer closeAndRemoveFile(audioFile, log)
 
 	log.Debug("Downloading video file...")
 	err = dl.videoDLWorker(ctx, videoFile, v, videoFormat)
@@ -120,6 +121,17 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	log.Info("merging video and audio", "output", destFile)
 
 	return ffmpegVersionCmd.Run()
+}
+
+func closeAndRemoveFile(file *os.File, log *slog.Logger) {
+	if err := file.Close(); err != nil {
+		log.Error("Failed to close file", "error", err)
+		return
+	}
+	err := os.Remove(file.Name())
+	if err != nil {
+		log.Error("Failed to delete file", "error", err)
+	}
 }
 
 func getVideoAudioFormats(v *youtube.Video, quality string, mimetype, language string) (*youtube.Format, *youtube.Format, error) {
