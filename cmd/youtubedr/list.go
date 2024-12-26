@@ -16,6 +16,7 @@ type PlaylistInfo struct {
 }
 
 var (
+	isDownloader bool
 	// listCmd represents the list command
 	listCmd = &cobra.Command{
 		Use:   "list",
@@ -27,23 +28,32 @@ var (
 		Run: func(_ *cobra.Command, args []string) {
 			playlist, err := getDownloader().GetPlaylist(args[0])
 			exitOnError(err)
+			if !isDownloader {
+				playlistInfo := PlaylistInfo{
+					Title:  playlist.Title,
+					Author: playlist.Author,
+				}
+				for _, v := range playlist.Videos {
+					playlistInfo.Videos = append(playlistInfo.Videos, VideoInfo{
+						ID:       v.ID,
+						Title:    v.Title,
+						Author:   v.Author,
+						Duration: v.Duration.String(),
+					})
+				}
 
-			playlistInfo := PlaylistInfo{
-				Title:  playlist.Title,
-				Author: playlist.Author,
+				exitOnError(writeOutput(os.Stdout, &playlistInfo, func(w io.Writer) {
+					writePlaylistOutput(w, &playlistInfo)
+				}))
+			} else {
+				for i := 0; i < len(playlist.Videos); i++ {
+					err := download(playlist.Videos[i].ID)
+					if err != nil {
+						fmt.Println(err.Error())
+					}
+					err = nil
+				}
 			}
-			for _, v := range playlist.Videos {
-				playlistInfo.Videos = append(playlistInfo.Videos, VideoInfo{
-					ID:       v.ID,
-					Title:    v.Title,
-					Author:   v.Author,
-					Duration: v.Duration.String(),
-				})
-			}
-
-			exitOnError(writeOutput(os.Stdout, &playlistInfo, func(w io.Writer) {
-				writePlaylistOutput(w, &playlistInfo)
-			}))
 		},
 	}
 )
@@ -71,5 +81,8 @@ func writePlaylistOutput(w io.Writer, info *PlaylistInfo) {
 
 func init() {
 	rootCmd.AddCommand(listCmd)
+
+	listCmd.Flags().BoolVarP(&isDownloader, "downloader", "d", false, "Download playlist")
+	listCmd.Flags().StringVarP(&outputDir, "output", "o", ".", "The output directory.")
 	addFormatFlag(listCmd.Flags())
 }
