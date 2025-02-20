@@ -52,7 +52,7 @@ var playerResponsePattern = regexp.MustCompile(`var ytInitialPlayerResponse\s*=\
 
 func (v *Video) parseVideoPage(body []byte) error {
 	initialPlayerResponse := playerResponsePattern.FindSubmatch(body)
-	if initialPlayerResponse == nil || len(initialPlayerResponse) < 2 {
+	if len(initialPlayerResponse) < 2 {
 		return errors.New("no ytInitialPlayerResponse found in the server's answer")
 	}
 

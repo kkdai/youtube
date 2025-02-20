@@ -14,7 +14,7 @@ func (pb *ProtoBuilder) ToBytes() []byte {
 	return pb.byteBuffer.Bytes()
 }
 
-func (pb *ProtoBuilder) ToUrlEncodedBase64() string {
+func (pb *ProtoBuilder) ToURLEncodedBase64() string {
 	b64 := base64.URLEncoding.EncodeToString(pb.ToBytes())
 	return url.QueryEscape(b64)
 }

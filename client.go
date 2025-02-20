@@ -25,7 +25,7 @@ const (
 	playerParams = "CgIQBg=="
 )
 
-const CONTENT_PLAYBACK_NONCE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+const ContentPlaybackNonceAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
 var ErrNoFormat = errors.New("no video format provided")
 
@@ -257,11 +257,11 @@ func randomVisitorData(countryCode string) string {
 	pbE.Bytes(2, pbE2.ToBytes())
 
 	var pb ProtoBuilder
-	pb.String(1, randString(CONTENT_PLAYBACK_NONCE_ALPHABET, 11))
+	pb.String(1, randString(ContentPlaybackNonceAlphabet, 11))
 	pb.Varint(5, time.Now().Unix()-int64(rand.Intn(600000)))
 	pb.Bytes(6, pbE.ToBytes())
 
-	return pb.ToUrlEncodedBase64()
+	return pb.ToURLEncodedBase64()
 }
 
 func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
