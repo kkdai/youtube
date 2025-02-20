@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -22,6 +24,8 @@ const (
 
 	playerParams = "CgIQBg=="
 )
+
+const CONTENT_PLAYBACK_NONCE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
 var ErrNoFormat = errors.New("no video format provided")
 
@@ -157,6 +161,7 @@ type innertubeClient struct {
 	TimeZone          string `json:"timeZone"`
 	UTCOffset         int    `json:"utcOffsetMinutes"`
 	DeviceModel       string `json:"deviceModel,omitempty"`
+	VisitorData       string `json:"visitorData,omitempty"`
 }
 
 // client info for the innertube API
@@ -232,6 +237,33 @@ func (c *Client) transcriptDataByInnertube(ctx context.Context, id string, lang 
 	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/get_transcript?key="+c.client.key, data)
 }
 
+func randString(alphabet string, sz int) string {
+	var buf strings.Builder
+	buf.Grow(sz)
+	for i := 0; i < sz; i++ {
+		buf.WriteByte(alphabet[rand.Intn(len(alphabet))])
+	}
+	return buf.String()
+}
+
+func randomVisitorData(countryCode string) string {
+	var pbE2 ProtoBuilder
+
+	pbE2.String(2, "")
+	pbE2.Varint(4, int64(rand.Intn(255)+1))
+
+	var pbE ProtoBuilder
+	pbE.String(1, countryCode)
+	pbE.Bytes(2, pbE2.ToBytes())
+
+	var pb ProtoBuilder
+	pb.String(1, randString(CONTENT_PLAYBACK_NONCE_ALPHABET, 11))
+	pb.Varint(5, time.Now().Unix()-int64(rand.Intn(600000)))
+	pb.Bytes(6, pbE.ToBytes())
+
+	return pb.ToUrlEncodedBase64()
+}
+
 func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
 	return inntertubeContext{
 		Client: innertubeClient{
@@ -243,6 +275,7 @@ func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
 			ClientVersion:     clientInfo.version,
 			AndroidSDKVersion: clientInfo.androidVersion,
 			UserAgent:         clientInfo.userAgent,
+			VisitorData:       randomVisitorData("US"),
 		},
 	}
 }
