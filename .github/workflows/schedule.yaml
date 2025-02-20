@@ -32,7 +32,7 @@ jobs:
         run: make test-integration
 
       - name: Archive artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: output
           path: output
