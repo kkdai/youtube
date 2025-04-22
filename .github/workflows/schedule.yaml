@@ -8,7 +8,7 @@ jobs:
   test:
     strategy:
       matrix:
-        platform: [ubuntu-22.04]
+        platform: [ubuntu-24.04]
         go-version: [1.23.x]
     runs-on: ${{ matrix.platform }}
     name: integration tests
