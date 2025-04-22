@@ -17,7 +17,7 @@ const (
 )
 
 var testClient = Client{}
-var testWebClient = Client{client: &WebClient}
+var testWebClient = Client{clientInfo: &WebClient}
 
 func TestParseVideo(t *testing.T) {
 	video, err := testClient.GetVideo(dwlURL)
@@ -25,7 +25,7 @@ func TestParseVideo(t *testing.T) {
 	assert.NotNil(t, video)
 
 	_, err = testClient.GetVideo(errURL)
-	assert.IsType(t, err, &ErrPlayabiltyStatus{})
+	assert.IsType(t, &ErrPlayabiltyStatus{}, err)
 }
 
 func TestYoutube_findVideoID(t *testing.T) {
@@ -196,7 +196,7 @@ func TestGetStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	video, err := testClient.GetVideoContext(ctx, "https://www.youtube.com/watch?v=BaW_jenozKc")
+	video, err := testClient.GetVideoContext(ctx, "https://www.youtube.com/watch?v=jNQXAC9IVRw")
 	require.NoError(err)
 	require.NotNil(video)
 	require.Greater(len(video.Formats), 0)

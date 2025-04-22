@@ -1,6 +1,9 @@
 package youtube
 
 type playerResponseData struct {
+	ResponseContext struct {
+		VisitorData string `json:"visitorData"`
+	} `json:"responseContext"`
 	Captions struct {
 		PlayerCaptionsTracklistRenderer struct {
 			CaptionTracks []CaptionTrack `json:"captionTracks"`

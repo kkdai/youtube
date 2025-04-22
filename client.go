@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"time"
 )
 
 const (
@@ -47,14 +46,16 @@ type Client struct {
 	// playerCache caches the JavaScript code of a player response
 	playerCache playerCache
 
-	client *clientInfo
+	clientInfo *clientInfo
 
 	consentID string
+
+	visitorData string
 }
 
 func (c *Client) assureClient() {
-	if c.client == nil {
-		c.client = &DefaultClient
+	if c.clientInfo == nil {
+		c.clientInfo = &DefaultClient
 	}
 }
 
@@ -85,8 +86,14 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 		ID: id,
 	}
 
+	prData, err := v.parseVideoInfo(body)
+
+	if prData != nil && c.visitorData == "" {
+		c.visitorData = prData.ResponseContext.VisitorData
+	}
+
 	// return early if all good
-	if err = v.parseVideoInfo(body); err == nil {
+	if err == nil {
 		return &v, nil
 	}
 
@@ -103,11 +110,11 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 	// If the uploader marked the video as inappropriate for some ages, use embed player
 	if errors.Is(err, ErrLoginRequired) {
-		c.client = &EmbeddedClient
+		c.clientInfo = &EmbeddedClient
 
 		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id)
 		if errEmbed == nil {
-			errEmbed = v.parseVideoInfo(bodyEmbed)
+			_, errEmbed = v.parseVideoInfo(bodyEmbed)
 		}
 
 		if errEmbed == nil {
@@ -213,7 +220,7 @@ var (
 func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, error) {
 	data := innertubeRequest{
 		VideoID:        id,
-		Context:        prepareInnertubeContext(*c.client),
+		Context:        c.prepareInnertubeContext(),
 		ContentCheckOK: true,
 		RacyCheckOk:    true,
 		// Params:                   playerParams,
@@ -225,16 +232,16 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, e
 		},
 	}
 
-	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+c.client.key, data)
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+c.clientInfo.key, data)
 }
 
 func (c *Client) transcriptDataByInnertube(ctx context.Context, id string, lang string) ([]byte, error) {
 	data := innertubeRequest{
-		Context: prepareInnertubeContext(*c.client),
+		Context: c.prepareInnertubeContext(),
 		Params:  transcriptVideoID(id, lang),
 	}
 
-	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/get_transcript?key="+c.client.key, data)
+	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/get_transcript?key="+c.clientInfo.key, data)
 }
 
 func randString(alphabet string, sz int) string {
@@ -246,42 +253,24 @@ func randString(alphabet string, sz int) string {
 	return buf.String()
 }
 
-func randomVisitorData(countryCode string) string {
-	var pbE2 ProtoBuilder
-
-	pbE2.String(2, "")
-	pbE2.Varint(4, int64(rand.Intn(255)+1))
-
-	var pbE ProtoBuilder
-	pbE.String(1, countryCode)
-	pbE.Bytes(2, pbE2.ToBytes())
-
-	var pb ProtoBuilder
-	pb.String(1, randString(ContentPlaybackNonceAlphabet, 11))
-	pb.Varint(5, time.Now().Unix()-int64(rand.Intn(600000)))
-	pb.Bytes(6, pbE.ToBytes())
-
-	return pb.ToURLEncodedBase64()
-}
-
-func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
+func (c *Client) prepareInnertubeContext() inntertubeContext {
 	return inntertubeContext{
 		Client: innertubeClient{
 			HL:                "en",
 			GL:                "US",
 			TimeZone:          "UTC",
-			DeviceModel:       clientInfo.deviceModel,
-			ClientName:        clientInfo.name,
-			ClientVersion:     clientInfo.version,
-			AndroidSDKVersion: clientInfo.androidVersion,
-			UserAgent:         clientInfo.userAgent,
-			VisitorData:       randomVisitorData("US"),
+			DeviceModel:       c.clientInfo.deviceModel,
+			ClientName:        c.clientInfo.name,
+			ClientVersion:     c.clientInfo.version,
+			AndroidSDKVersion: c.clientInfo.androidVersion,
+			UserAgent:         c.clientInfo.userAgent,
+			VisitorData:       c.visitorData,
 		},
 	}
 }
 
-func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clientInfo) innertubeRequest {
-	context := prepareInnertubeContext(clientInfo)
+func (c *Client) prepareInnertubePlaylistData(ID string, continuation bool) innertubeRequest {
+	context := c.prepareInnertubeContext()
 
 	if continuation {
 		return innertubeRequest{
@@ -334,8 +323,8 @@ func (c *Client) GetPlaylistContext(ctx context.Context, url string) (*Playlist,
 		return nil, fmt.Errorf("extractPlaylistID failed: %w", err)
 	}
 
-	data := prepareInnertubePlaylistData(id, false, *c.client)
-	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+c.client.key, data)
+	data := c.prepareInnertubePlaylistData(id, false)
+	body, err := c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/browse?key="+c.clientInfo.key, data)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +483,7 @@ func (c *Client) GetStreamURLContext(ctx context.Context, video *Video, format *
 	c.assureClient()
 
 	if format.URL != "" {
-		if c.client.androidVersion > 0 {
+		if c.clientInfo.androidVersion > 0 {
 			return format.URL, nil
 		}
 
@@ -523,7 +512,7 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 		client = http.DefaultClient
 	}
 
-	req.Header.Set("User-Agent", c.client.userAgent)
+	req.Header.Set("User-Agent", c.clientInfo.userAgent)
 	req.Header.Set("Origin", "https://youtube.com")
 	req.Header.Set("Sec-Fetch-Mode", "navigate")
 
@@ -601,7 +590,8 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	}
 
 	req.Header.Set("X-Youtube-Client-Name", "3")
-	req.Header.Set("X-Youtube-Client-Version", c.client.version)
+	req.Header.Set("X-Youtube-Client-Version", c.clientInfo.version)
+	req.Header.Set("X-Goog-Visitor-Id", c.visitorData)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 

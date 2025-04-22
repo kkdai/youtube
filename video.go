@@ -31,17 +31,17 @@ type Video struct {
 
 const dateFormat = "2006-01-02"
 
-func (v *Video) parseVideoInfo(body []byte) error {
+func (v *Video) parseVideoInfo(body []byte) (*playerResponseData, error) {
 	var prData playerResponseData
 	if err := json.Unmarshal(body, &prData); err != nil {
-		return fmt.Errorf("unable to parse player response JSON: %w", err)
+		return nil, fmt.Errorf("unable to parse player response JSON: %w", err)
 	}
 
 	if err := v.isVideoFromInfoDownloadable(prData); err != nil {
-		return err
+		return &prData, err
 	}
 
-	return v.extractDataFromPlayerResponse(prData)
+	return &prData, v.extractDataFromPlayerResponse(prData)
 }
 
 func (v *Video) isVideoFromInfoDownloadable(prData playerResponseData) error {
