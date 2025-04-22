@@ -32,7 +32,7 @@ func TestDownload_FirstStream(t *testing.T) {
 	ctx := context.Background()
 
 	// youtube-dl test video
-	video, err := testDownloader.Client.GetVideoContext(ctx, "BaW_jenozKc")
+	video, err := testDownloader.GetVideoContext(ctx, "BaW_jenozKc")
 	require.NoError(err)
 	require.NotNil(video)
 

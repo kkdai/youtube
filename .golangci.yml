@@ -1,8 +1,25 @@
-issues:
-  exclude:
-  - Subprocess launched with function call
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-    # Exclude some linters from running on tests files.
-    - path: cmd/
-      text: InsecureSkipVerify
+version: "2"
+linters:
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: cmd/
+        text: InsecureSkipVerify
+      - path: (.+)\.go$
+        text: Subprocess launched with function call
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
