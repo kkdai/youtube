@@ -605,6 +605,12 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 
+	if xgoogvisitorid, err := getVisitorId(); err != nil {
+		return nil, err
+	} else {
+		req.Header.Set("x-goog-visitor-id", xgoogvisitorid)
+	}
+
 	resp, err := c.httpDo(req)
 	if err != nil {
 		return nil, err
@@ -616,6 +622,45 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	}
 
 	return resp, nil
+}
+
+func getVisitorId() (string, error) {
+	const sep = "\nytcfg.set("
+
+	var req http.Request
+	req.Header = http.Header{}
+	req.URL = &url.URL{}
+	req.URL.Host = "www.youtube.com"
+	req.URL.Scheme = "https"
+	resp, err := http.DefaultClient.Do(&req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	_, data1, found := strings.Cut(string(data), sep)
+	if !found {
+		return "", err
+	}
+	var value struct {
+		InnertubeContext struct {
+			Client struct {
+				VisitorData string
+			}
+		} `json:"INNERTUBE_CONTEXT"`
+	}
+	err = json.NewDecoder(strings.NewReader(data1)).Decode(&value)
+	if err != nil {
+		return "", err
+	}
+	visitor, err := url.PathUnescape(value.InnertubeContext.Client.VisitorData)
+	if err != nil {
+		return "", err
+	}
+	return visitor, nil
 }
 
 // httpPostBodyBytes reads the whole HTTP body and returns it
