@@ -624,7 +624,16 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	return resp, nil
 }
 
+var VisitorId struct {
+	Id    string
+	Ctime time.Time
+}
+
 func getVisitorId() (string, error) {
+	if VisitorId.Id != "" && time.Since(VisitorId.Ctime) < 10*time.Hour {
+		return VisitorId.Id, nil
+	}
+
 	const sep = "\nytcfg.set("
 
 	var req http.Request
@@ -653,15 +662,17 @@ func getVisitorId() (string, error) {
 			}
 		} `json:"INNERTUBE_CONTEXT"`
 	}
-	err = json.NewDecoder(strings.NewReader(data1)).Decode(&value)
-	if err != nil {
+	if err := json.NewDecoder(strings.NewReader(data1)).Decode(&value); err != nil {
 		return "", err
 	}
-	visitor, err := url.PathUnescape(value.InnertubeContext.Client.VisitorData)
-	if err != nil {
+
+	if VisitorId.Id, err = url.PathUnescape(value.InnertubeContext.Client.VisitorData); err != nil {
 		return "", err
 	}
-	return visitor, nil
+
+	VisitorId.Ctime = time.Now()
+
+	return VisitorId.Id, nil
 }
 
 // httpPostBodyBytes reads the whole HTTP body and returns it
