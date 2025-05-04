@@ -624,13 +624,14 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	return resp, nil
 }
 
+var VisitorIdMaxAge = 10 * time.Hour
 var VisitorId struct {
 	Id    string
 	Ctime time.Time
 }
 
 func getVisitorId() (string, error) {
-	if VisitorId.Id != "" && time.Since(VisitorId.Ctime) < 10*time.Hour {
+	if VisitorId.Id != "" && time.Since(VisitorId.Ctime) < VisitorIdMaxAge {
 		return VisitorId.Id, nil
 	}
 
