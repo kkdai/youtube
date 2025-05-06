@@ -50,6 +50,11 @@ type Client struct {
 	client *clientInfo
 
 	consentID string
+
+	visitorId struct {
+		value   string
+		updated time.Time
+	}
 }
 
 func (c *Client) assureClient() {
@@ -605,7 +610,7 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 
-	if xgoogvisitorid, err := getVisitorId(); err != nil {
+	if xgoogvisitorid, err := c.getVisitorId(); err != nil {
 		return nil, err
 	} else {
 		req.Header.Set("x-goog-visitor-id", xgoogvisitorid)
@@ -625,36 +630,36 @@ func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*h
 }
 
 var VisitorIdMaxAge = 10 * time.Hour
-var VisitorId struct {
-	Id    string
-	Ctime time.Time
-}
 
-func getVisitorId() (string, error) {
-	if VisitorId.Id != "" && time.Since(VisitorId.Ctime) < VisitorIdMaxAge {
-		return VisitorId.Id, nil
+func (c *Client) getVisitorId() (string, error) {
+	var err error
+	if c.visitorId.value == "" || time.Since(c.visitorId.updated) > VisitorIdMaxAge {
+		err = c.refreshVisitorId()
 	}
 
+	return c.visitorId.value, err
+}
+
+func (c *Client) refreshVisitorId() error {
 	const sep = "\nytcfg.set("
 
-	var req http.Request
-	req.Header = http.Header{}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15")
-	req.URL = &url.URL{}
-	req.URL.Host = "www.youtube.com"
-	req.URL.Scheme = "https"
-	resp, err := http.DefaultClient.Do(&req)
+	req, err := http.NewRequest(http.MethodGet, "https://www.youtube.com", nil)
 	if err != nil {
-		return "", err
+		return err
+	}
+
+	resp, err := c.httpDo(req)
+	if err != nil {
+		return err
 	}
 	defer resp.Body.Close()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return err
 	}
 	_, data1, found := strings.Cut(string(data), sep)
 	if !found {
-		return "", err
+		return err
 	}
 	var value struct {
 		InnertubeContext struct {
@@ -664,16 +669,15 @@ func getVisitorId() (string, error) {
 		} `json:"INNERTUBE_CONTEXT"`
 	}
 	if err := json.NewDecoder(strings.NewReader(data1)).Decode(&value); err != nil {
-		return "", err
+		return err
 	}
 
-	if VisitorId.Id, err = url.PathUnescape(value.InnertubeContext.Client.VisitorData); err != nil {
-		return "", err
+	if c.visitorId.value, err = url.PathUnescape(value.InnertubeContext.Client.VisitorData); err != nil {
+		return err
 	}
 
-	VisitorId.Ctime = time.Now()
-
-	return VisitorId.Id, nil
+	c.visitorId.updated = time.Now()
+	return nil
 }
 
 // httpPostBodyBytes reads the whole HTTP body and returns it
