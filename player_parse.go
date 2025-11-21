@@ -13,7 +13,7 @@ import (
 
 type playerConfig []byte
 
-var basejsPattern = regexp.MustCompile(`(/s/player/\w+/player_ias.vflset/\w+/base.js)`)
+var basejsPattern = regexp.MustCompile(`(/s/player/[A-Za-z0-9_-]+/[A-Za-z0-9._/-]*/base\.js)`)
 
 func (c *Client) getPlayerConfig(ctx context.Context, videoID string) (playerConfig, error) {
 	embedURL := fmt.Sprintf("https://youtube.com/embed/%s?hl=en", videoID)
