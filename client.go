@@ -30,7 +30,7 @@ const ContentPlaybackNonceAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
 var ErrNoFormat = errors.New("no video format provided")
 
 // DefaultClient type to use. No reason to change but you could if you wanted to.
-var DefaultClient = IOSClient
+var DefaultClient = AndroidClient
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
@@ -190,11 +190,11 @@ var (
 
 	// AndroidClient, download go brrrrrr.
 	AndroidClient = clientInfo{
-		name:           "ANDROID",
-		version:        "18.11.34",
-		key:            "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
-		userAgent:      "com.google.android.youtube/18.11.34 (Linux; U; Android 11) gzip",
-		androidVersion: 30,
+		name:      "ANDROID",
+		version:   "20.10.38",
+		key:       "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
+		userAgent: "com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip",
+		// androidVersion removed to avoid PoToken requirement (android_sdkless variant)
 	}
 
 	// IOSClient Client based brrrr.
