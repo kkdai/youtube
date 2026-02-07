@@ -47,7 +47,7 @@ type Client struct {
 	// playerCache caches the JavaScript code of a player response
 	playerCache playerCache
 
-	client *clientInfo
+	client *ClientInfo
 
 	consentID string
 
@@ -170,7 +170,7 @@ type innertubeClient struct {
 }
 
 // client info for the innertube API
-type clientInfo struct {
+type ClientInfo struct {
 	name           string
 	key            string
 	version        string
@@ -181,7 +181,7 @@ type clientInfo struct {
 
 var (
 	// WebClient, better to use Android client but go ahead.
-	WebClient = clientInfo{
+	WebClient = ClientInfo{
 		name:      "WEB",
 		version:   "2.20220801.00.00",
 		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
@@ -189,7 +189,7 @@ var (
 	}
 
 	// AndroidClient, download go brrrrrr.
-	AndroidClient = clientInfo{
+	AndroidClient = ClientInfo{
 		name:      "ANDROID",
 		version:   "20.10.38",
 		key:       "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w",
@@ -198,7 +198,7 @@ var (
 	}
 
 	// IOSClient Client based brrrr.
-	IOSClient = clientInfo{
+	IOSClient = ClientInfo{
 		name:        "IOS",
 		version:     "19.45.4",
 		key:         "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
@@ -207,7 +207,7 @@ var (
 	}
 
 	// EmbeddedClient, not really tested.
-	EmbeddedClient = clientInfo{
+	EmbeddedClient = ClientInfo{
 		name:      "WEB_EMBEDDED_PLAYER",
 		version:   "1.19700101",
 		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", // seems like same key works for both clients
@@ -269,7 +269,7 @@ func randomVisitorData(countryCode string) string {
 	return pb.ToURLEncodedBase64()
 }
 
-func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
+func prepareInnertubeContext(clientInfo ClientInfo) inntertubeContext {
 	return inntertubeContext{
 		Client: innertubeClient{
 			HL:                "en",
@@ -285,7 +285,7 @@ func prepareInnertubeContext(clientInfo clientInfo) inntertubeContext {
 	}
 }
 
-func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo clientInfo) innertubeRequest {
+func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo ClientInfo) innertubeRequest {
 	context := prepareInnertubeContext(clientInfo)
 
 	if continuation {
