@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	cfgFile  string
-	logLevel string
+	cfgFile     string
+	logLevel    string
+	cookiesPath string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -36,6 +37,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.youtubedr.yaml)")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Set log level (error/warn/info/debug)")
+	rootCmd.PersistentFlags().StringVar(&cookiesPath, "cookies", "", "path to cookies file, see https://everything.curl.dev/http/cookies/fileformat")
 	rootCmd.PersistentFlags().BoolVar(&insecureSkipVerify, "insecure", false, "Skip TLS server certificate verification")
 }
 
