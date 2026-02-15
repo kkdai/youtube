@@ -116,7 +116,10 @@ func (v *Video) extractDataFromPlayerResponse(prData playerResponseData) error {
 	}
 
 	if str := prData.Microformat.PlayerMicroformatRenderer.PublishDate; str != "" {
-		v.PublishDate, _ = time.Parse(dateFormat, str)
+		publishDate, err := time.Parse(time.RFC3339, str)
+		if err == nil {
+			v.PublishDate = publishDate.UTC()
+		}
 	}
 
 	if profileURL, err := url.Parse(prData.Microformat.PlayerMicroformatRenderer.OwnerProfileURL); err == nil && len(profileURL.Path) > 1 {

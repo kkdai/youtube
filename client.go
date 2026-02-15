@@ -92,6 +92,19 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 	// return early if all good
 	if err = v.parseVideoInfo(body); err == nil {
+		//We still need to get additional informations about the video from the HTML page
+		videoFromHtml := Video{ID: id}
+		html, err := c.httpGetBodyBytes(ctx, "https://www.youtube.com/watch?v="+id+"&bpctr=9999999999&has_verified=1")
+		if err != nil {
+			return nil, err
+		}
+
+		err = videoFromHtml.parseVideoPage(html)
+		if err != nil {
+			return nil, err
+		}
+		v.PublishDate = videoFromHtml.PublishDate
+
 		return &v, nil
 	}
 

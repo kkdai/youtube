@@ -180,3 +180,22 @@ func TestDownload_SensitiveContent(t *testing.T) {
 	_, err := testClient.GetVideo("MS91knuzoOA")
 	require.EqualError(t, err, "can't bypass age restriction: embedding of this video has been disabled")
 }
+
+func TestParse_PublishDate(t *testing.T) {
+	testcases := []struct {
+		videoID     string
+		publishDate time.Time
+	}{
+		{"eRqCe_VHs6M", time.Date(2020, time.July, 11, 13, 29, 21, 0, time.UTC)},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.videoID, func(t *testing.T) {
+			got, err := testClient.GetVideo(tc.videoID)
+			if err != nil {
+				t.Fatalf("video parsing failed")
+			}
+			require.Equal(t, tc.publishDate, got.PublishDate)
+		})
+	}
+}
