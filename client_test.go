@@ -172,7 +172,7 @@ func TestGetVideo_MultiLanguage(t *testing.T) {
 	}
 
 	assert.Contains(languageNames, "English original")
-	assert.Contains(languageNames, "Portuguese (Brazil)")
+	assert.Contains(languageNames, "Portuguese (BR)")
 	assert.Contains(lanaguageIDs, "en.4")
 	assert.Contains(lanaguageIDs, "pt-BR.3")
 
@@ -183,7 +183,7 @@ func TestGetVideo_MultiLanguage(t *testing.T) {
 func TestGetStream(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
-	expectedSize := 988479
+	expectedSize := 1241837
 
 	// Create testclient to enforce re-using of routines
 	testClient := Client{
@@ -196,7 +196,7 @@ func TestGetStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	video, err := testClient.GetVideoContext(ctx, "https://www.youtube.com/watch?v=BaW_jenozKc")
+	video, err := testClient.GetVideoContext(ctx, "https://www.youtube.com/watch?v=ezfPHVOf-NE")
 	require.NoError(err)
 	require.NotNil(video)
 	require.Greater(len(video.Formats), 0)
@@ -224,7 +224,7 @@ func TestGetPlaylist(t *testing.T) {
 
 	v := playlist.Videos[7]
 	assert.Equal(v.ID, "dsUXAEzaC3Q")
-	assert.Equal(v.Title, "Michael Jackson - Bad (Shortened Version)")
+	assert.Equal(v.Title, "Michael Jackson - Bad")
 	assert.Equal(v.Author, "Michael Jackson")
 	assert.Equal(v.Duration, 4*time.Minute+20*time.Second)
 

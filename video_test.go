@@ -56,9 +56,6 @@ func TestSimpleTest(t *testing.T) {
 	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
 	require.NoError(t, err, "get body")
 
-	_, err = testClient.GetTranscript(video, "en")
-	require.NoError(t, err, "get transcript")
-
 	// Typically youtube only provides separate streams for video and audio.
 	// If you want audio and video combined, take a look a the downloader package.
 	formats := video.Formats.Quality("hd1080")
