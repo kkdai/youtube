@@ -30,7 +30,7 @@ const ContentPlaybackNonceAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
 var ErrNoFormat = errors.New("no video format provided")
 
 // DefaultClient type to use. No reason to change but you could if you wanted to.
-var DefaultClient = AndroidClient
+var DefaultClient = AndroidVRClient
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
@@ -212,6 +212,13 @@ var (
 		version:   "1.19700101",
 		key:       "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", // seems like same key works for both clients
 		userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+	}
+
+	AndroidVRClient = ClientInfo{
+		name:      "ANDROID_VR",
+		version:   "1.65.10", //"7.20260114.12.00",
+		key:       "",
+		userAgent: "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
 	}
 )
 
