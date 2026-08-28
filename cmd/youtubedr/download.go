@@ -30,7 +30,7 @@ var (
 func init() {
 	rootCmd.AddCommand(downloadCmd)
 
-	downloadCmd.Flags().StringVarP(&outputFile, "filename", "o", "", "The output file, the default is genated by the video title.")
+	downloadCmd.Flags().StringVarP(&outputFile, "filename", "o", "", "The output file, the default filename is generated from the video title.")
 	downloadCmd.Flags().StringVarP(&outputDir, "directory", "d", ".", "The output directory.")
 	addVideoSelectionFlags(downloadCmd.Flags())
 }
