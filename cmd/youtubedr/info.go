@@ -78,8 +78,10 @@ var infoCmd = &cobra.Command{
 			})
 		}
 
-		exitOnError(writeOutput(os.Stdout, &videoInfo, func(w io.Writer) {
-			writeInfoOutput(w, &videoInfo)
+		exitOnError(writeOutput(os.Stdout, &videoInfo, map[string]outputWriter{
+			outputFormatPlain: func(w io.Writer) {
+				writeInfoOutput(w, &videoInfo)
+			},
 		}))
 	},
 }
