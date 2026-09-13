@@ -6,7 +6,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/pflag"
@@ -35,7 +37,7 @@ func getDownloader() *ytdl.Downloader {
 		return downloader
 	}
 
-	proxyFunc := httpproxy.FromEnvironment().ProxyFunc()
+	proxyFunc := proxyConfigFromEnvironment().ProxyFunc()
 	httpTransport := &http.Transport{
 		// Proxy: http.ProxyFromEnvironment() does not work. Why?
 		Proxy: func(r *http.Request) (uri *url.URL, err error) {
@@ -64,6 +66,8 @@ func getDownloader() *ytdl.Downloader {
 		OutputDir: outputDir,
 	}
 	downloader.HTTPClient = &http.Client{Transport: httpTransport}
+	downloader.ChunkSize = youtube.Size2Mb
+	downloader.MaxRoutines = 4
 
 	return downloader
 }
@@ -90,6 +94,13 @@ func getVideoWithFormat(videoID string) (*youtube.Video, *youtube.Format, error)
 	if itag > 0 {
 		formats = formats.Itag(itag)
 	}
+	// Non-hd downloads write a single stream. Prefer a muxed format so the
+	// result has audio; video-only adaptive streams also 403 more often.
+	if itag == 0 && !strings.HasPrefix(outputQuality, "hd") {
+		if withAudio := formats.WithAudioChannels(); len(withAudio) > 0 {
+			formats = withAudio
+		}
+	}
 	if formats == nil {
 		return nil, nil, fmt.Errorf("unable to find the specified format")
 	}
@@ -98,4 +109,26 @@ func getVideoWithFormat(videoID string) (*youtube.Video, *youtube.Format, error)
 
 	// select the first format
 	return video, &formats[0], nil
+}
+
+func proxyConfigFromEnvironment() *httpproxy.Config {
+	cfg := httpproxy.FromEnvironment()
+	if cfg.HTTPProxy == "" && cfg.HTTPSProxy == "" {
+		if all := firstEnv("ALL_PROXY", "all_proxy"); all != "" {
+			cfg.HTTPProxy = all
+			cfg.HTTPSProxy = all
+		}
+	}
+
+	return cfg
+}
+
+func firstEnv(keys ...string) string {
+	for _, key := range keys {
+		if value := os.Getenv(key); value != "" {
+			return value
+		}
+	}
+
+	return ""
 }

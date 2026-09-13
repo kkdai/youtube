@@ -20,7 +20,12 @@ import (
 const (
 	Size1Kb  = 1024
 	Size1Mb  = Size1Kb * 1024
+	Size2Mb  = Size1Mb * 2
 	Size10Mb = Size1Mb * 10
+
+	// maxMediaChunkSize is the largest googlevideo range that reliably succeeds.
+	// Larger single ranges (and full-file GETs) are rejected with HTTP 403.
+	maxMediaChunkSize = Size2Mb
 
 	playerParams = "CgIQBg=="
 )
@@ -29,8 +34,9 @@ const ContentPlaybackNonceAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
 
 var ErrNoFormat = errors.New("no video format provided")
 
-// DefaultClient type to use. No reason to change but you could if you wanted to.
-var DefaultClient = AndroidVRClient
+// DefaultClient type to use. Android VR only serves a prefix of googlevideo
+// streams (HTTP 403 on the tail); the android_sdkless client returns full URLs.
+var DefaultClient = AndroidClient
 
 // Client offers methods to download video metadata and video streams.
 type Client struct {
@@ -41,7 +47,7 @@ type Client struct {
 	// MaxRoutines to use when downloading a video.
 	MaxRoutines int
 
-	// ChunkSize to use when downloading videos in chunks. Default is Size10Mb.
+	// ChunkSize to use when downloading videos in chunks. Default is Size2Mb.
 	ChunkSize int64
 
 	// playerCache caches the JavaScript code of a player response
@@ -396,13 +402,16 @@ func (c *Client) GetStreamContext(ctx context.Context, video *Video, format *For
 
 	r, w := io.Pipe()
 	contentLength := format.ContentLength
+	if contentLength == 0 {
+		contentLength = c.probeContentLength(req)
+	}
 
 	if contentLength == 0 {
 		// some videos don't have length information
 		contentLength = c.downloadOnce(req, w, format)
 	} else {
 		// we have length information, let's download by chunks!
-		c.downloadChunked(ctx, req, w, format)
+		c.downloadChunked(ctx, req, w, contentLength)
 	}
 
 	return r, contentLength, nil
@@ -432,11 +441,15 @@ func (c *Client) downloadOnce(req *http.Request, w *io.PipeWriter, _ *Format) in
 }
 
 func (c *Client) getChunkSize() int64 {
+	size := int64(Size2Mb)
 	if c.ChunkSize > 0 {
-		return c.ChunkSize
+		size = c.ChunkSize
+	}
+	if size > maxMediaChunkSize {
+		return maxMediaChunkSize
 	}
 
-	return Size10Mb
+	return size
 }
 
 func (c *Client) getMaxRoutines(limit int) int {
@@ -453,8 +466,8 @@ func (c *Client) getMaxRoutines(limit int) int {
 	return routines
 }
 
-func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.PipeWriter, format *Format) {
-	chunks := getChunks(format.ContentLength, c.getChunkSize())
+func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.PipeWriter, contentLength int64) {
+	chunks := getChunks(contentLength, c.getChunkSize())
 	maxRoutines := c.getMaxRoutines(len(chunks))
 
 	cancelCtx, cancel := context.WithCancel(ctx)
@@ -567,7 +580,7 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 
 	log := slog.With("method", req.Method, "url", req.URL)
 
-	if err == nil && res.StatusCode != http.StatusOK {
+	if err == nil && !isDownloadStatusOK(res.StatusCode) {
 		err = ErrUnexpectedStatusCode(res.StatusCode)
 		res.Body.Close()
 		res = nil
@@ -714,10 +727,37 @@ func (c *Client) httpPostBodyBytes(ctx context.Context, url string, body interfa
 // downloadChunk writes the response data into the data channel of the chunk.
 // Downloading in multiple chunks is much faster:
 // https://github.com/kkdai/youtube/pull/190
+func isDownloadStatusOK(code int) bool {
+	return code == http.StatusOK || code == http.StatusPartialContent
+}
+
+func (c *Client) probeContentLength(req *http.Request) int64 {
+	probe := req.Clone(req.Context())
+	probe.Header.Set("Range", "bytes=0-0")
+
+	resp, err := c.httpDo(probe)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	if cr := resp.Header.Get("Content-Range"); cr != "" {
+		if i := strings.LastIndex(cr, "/"); i >= 0 && i+1 < len(cr) {
+			n, err := strconv.ParseInt(cr[i+1:], 10, 64)
+			if err == nil {
+				return n
+			}
+		}
+	}
+
+	return 0
+}
+
 func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
-	q := req.URL.Query()
-	q.Set("range", fmt.Sprintf("%d-%d", chunk.start, chunk.end))
-	req.URL.RawQuery = q.Encode()
+	// Use the HTTP Range header instead of rewriting the signed query string.
+	// Re-encoding videoplayback URLs can invalidate signatures and trigger 403.
+	req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", chunk.start, chunk.end))
 
 	resp, err := c.httpDo(req)
 	if err != nil {
@@ -725,7 +765,7 @@ func (c *Client) downloadChunk(req *http.Request, chunk *chunk) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isDownloadStatusOK(resp.StatusCode) {
 		return ErrUnexpectedStatusCode(resp.StatusCode)
 	}
 
