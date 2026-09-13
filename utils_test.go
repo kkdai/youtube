@@ -22,6 +22,16 @@ func TestGetChunks1(t *testing.T) {
 func TestGetChunks_length(t *testing.T) {
 	require := require.New(t)
 	require.Len(getChunks(10, 9), 2)
-	require.Len(getChunks(10, 10), 1)
-	require.Len(getChunks(10, 11), 1)
+	require.Len(getChunks(10, 10), 2)
+	require.Len(getChunks(10, 11), 2)
+	require.Len(getChunks(1, 10), 1)
+}
+
+func TestGetChunks_neverSingleFullFile(t *testing.T) {
+	require := require.New(t)
+	chunks := getChunks(863757, Size2Mb)
+
+	require.GreaterOrEqual(len(chunks), 2)
+	require.EqualValues(0, chunks[0].start)
+	require.EqualValues(863756, chunks[len(chunks)-1].end)
 }

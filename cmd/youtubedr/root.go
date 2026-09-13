@@ -20,7 +20,8 @@ var rootCmd = &cobra.Command{
 	Short: "Youtube downloader written in Golang",
 	Long: `This tool is meant to be used to download CC0 licenced content, we do not support nor recommend using it for illegal activities.
 
-Use the HTTPS_PROXY environment variable to set a proxy for requests to YouTube, since YouTube URLs are HTTPS. 
+Use HTTPS_PROXY, HTTP_PROXY, or ALL_PROXY (also lowercase) to set a proxy for requests to YouTube.
+HTTPS_PROXY / HTTP_PROXY take precedence over ALL_PROXY / all_proxy.
 The proxy type is determined by the proxy URL scheme.
 "http", "https", and "socks5" are supported. If the scheme is empty, "http" is assumed.`,
 	// Uncomment the following line if your bare application
