@@ -15,6 +15,15 @@ type chunk struct {
 func getChunks(totalSize, chunkSize int64) []chunk {
 	var chunks []chunk
 
+	if chunkSize <= 0 {
+		chunkSize = Size2Mb
+	}
+
+	// googlevideo rejects a single request that covers the entire file.
+	if totalSize > 1 && chunkSize >= totalSize {
+		chunkSize = totalSize / 2
+	}
+
 	for start := int64(0); start < totalSize; start += chunkSize {
 		end := chunkSize + start - 1
 		if end > totalSize-1 {
