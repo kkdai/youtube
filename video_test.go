@@ -54,6 +54,7 @@ func TestExtractVideoId(t *testing.T) {
 
 func TestSimpleTest(t *testing.T) {
 	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=9_MbW9FK1fA")
+	skipIfBlocked(t, err)
 	require.NoError(t, err, "get body")
 
 	// Typically youtube only provides separate streams for video and audio.
@@ -130,6 +131,7 @@ func TestDownload_Regular(t *testing.T) {
 			require := require.New(t)
 
 			video, err := testClient.GetVideo(tc.url)
+			skipIfBlocked(t, err)
 			require.NoError(err)
 
 			formats := video.Formats
@@ -166,6 +168,7 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.issue, func(t *testing.T) {
 			_, err := testClient.GetVideo(tc.videoID)
+			skipIfBlocked(t, err)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tc.err)
 		})
@@ -179,6 +182,7 @@ func TestDownload_SensitiveContent(t *testing.T) {
 
 	// Age-gated video with embedding disabled, taken from yt-dlp's test cases
 	_, err := client.GetVideo("Tq92D6wQ1mg")
+	skipIfBlocked(t, err)
 	require.ErrorIs(t, err, ErrLoginRequired)
 	require.EqualError(t, err, "login required to confirm your age")
 }
@@ -188,6 +192,7 @@ func TestDownload_AgeRestrictionKeepsClient(t *testing.T) {
 
 	// Falls back to the embedded client internally
 	_, err := client.GetVideo("Tq92D6wQ1mg")
+	skipIfBlocked(t, err)
 	require.EqualError(t, err, "can't bypass age restriction: embedding of this video has been disabled")
 	require.Same(t, &DefaultClient, client.client)
 }
@@ -203,10 +208,35 @@ func TestParse_PublishDate(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.videoID, func(t *testing.T) {
 			got, err := testClient.GetVideo(tc.videoID)
+			skipIfBlocked(t, err)
 			if err != nil {
 				t.Fatalf("video parsing failed")
 			}
 			require.Equal(t, tc.publishDate, got.PublishDate)
+		})
+	}
+}
+
+func TestIsVideoDownloadable_LoginRequired(t *testing.T) {
+	tests := []struct {
+		reason string
+		err    error
+	}{
+		{"This video may be inappropriate for some users.", ErrLoginRequired},
+		{"Sign in to confirm your age", ErrLoginRequired},
+		{"This video is private", ErrVideoPrivate},
+		{"Sign in to confirm you’re not a bot", ErrBotCheck},
+		{"Sign in to confirm you're not a bot", ErrBotCheck},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.reason, func(t *testing.T) {
+			var prData playerResponseData
+			prData.PlayabilityStatus.Status = "LOGIN_REQUIRED"
+			prData.PlayabilityStatus.Reason = tc.reason
+
+			err := (&Video{}).isVideoDownloadable(prData, false)
+			require.ErrorIs(t, err, tc.err)
 		})
 	}
 }

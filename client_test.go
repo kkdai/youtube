@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -19,8 +20,18 @@ const (
 var testClient = Client{}
 var testWebClient = Client{client: &WebClient}
 
+// skipIfBlocked skips integration tests when YouTube blocks the requests,
+// which is common for CI runners in data centers.
+func skipIfBlocked(t *testing.T, err error) {
+	t.Helper()
+	if errors.Is(err, ErrBotCheck) || errors.Is(err, ErrRateLimited) {
+		t.Skip("skipping:", err)
+	}
+}
+
 func TestParseVideo(t *testing.T) {
 	video, err := testClient.GetVideo(dwlURL)
+	skipIfBlocked(t, err)
 	assert.NoError(t, err)
 	assert.NotNil(t, video)
 
@@ -84,6 +95,7 @@ func TestGetVideoWithoutManifestURL(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	video, err := testClient.GetVideo(dwlURL)
+	skipIfBlocked(t, err)
 	require.NoError(err, "get video")
 	require.NotNil(video)
 
@@ -111,6 +123,7 @@ func TestWebClientGetVideoWithoutManifestURL(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	video, err := testWebClient.GetVideo(dwlURL)
+	skipIfBlocked(t, err)
 	require.NoError(err, "get video")
 	require.NotNil(video)
 
@@ -140,6 +153,7 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 
 	video, err := testClient.GetVideo(streamURL)
+	skipIfBlocked(t, err)
 	require.NoError(err)
 	require.NotNil(video)
 
@@ -159,6 +173,7 @@ func TestGetVideoWithManifestURL(t *testing.T) {
 func TestGetVideo_MultiLanguage(t *testing.T) {
 	assert, require := assert.New(t), require.New(t)
 	video, err := testClient.GetVideo("https://www.youtube.com/watch?v=pU9sHwNKc2c")
+	skipIfBlocked(t, err)
 	require.NoError(err)
 	require.NotNil(video)
 
@@ -197,6 +212,7 @@ func TestGetStream(t *testing.T) {
 	defer cancel()
 
 	video, err := testClient.GetVideoContext(ctx, "https://www.youtube.com/watch?v=ezfPHVOf-NE")
+	skipIfBlocked(t, err)
 	require.NoError(err)
 	require.NotNil(video)
 	require.Greater(len(video.Formats), 0)

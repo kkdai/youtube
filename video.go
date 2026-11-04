@@ -80,6 +80,10 @@ func (v *Video) isVideoDownloadable(prData playerResponseData, isVideoPage bool)
 		if strings.HasPrefix(prData.PlayabilityStatus.Reason, "This video is private") {
 			return ErrVideoPrivate
 		}
+		// e.g. "Sign in to confirm you’re not a bot", common for requests from data centers
+		if strings.Contains(strings.ToLower(prData.PlayabilityStatus.Reason), "not a bot") {
+			return ErrBotCheck
+		}
 		return ErrLoginRequired
 	}
 

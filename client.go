@@ -580,6 +580,9 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	})
 
 	res, err := client.Do(req)
+	if isRateLimitRedirect(err) {
+		err = fmt.Errorf("%w: %w", ErrRateLimited, err)
+	}
 
 	log := slog.With("method", req.Method, "url", req.URL)
 
@@ -596,6 +599,14 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	}
 
 	return res, err
+}
+
+// isRateLimitRedirect reports whether YouTube redirected the request to Google's
+// "unusual traffic" page (https://www.google.com/sorry/...), e.g. until the
+// HTTP client stopped after too many redirects.
+func isRateLimitRedirect(err error) bool {
+	var urlErr *url.Error
+	return errors.As(err, &urlErr) && strings.Contains(urlErr.URL, "google.com/sorry")
 }
 
 // httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it

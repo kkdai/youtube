@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"fmt"
+	"net/http"
 )
 
 const (
@@ -13,6 +14,8 @@ const (
 	ErrNotPlayableInEmbed         = constError("embedding of this video has been disabled")
 	ErrLoginRequired              = constError("login required to confirm your age")
 	ErrVideoPrivate               = constError("user restricted access to this video")
+	ErrBotCheck                   = constError("youtube requires a sign-in to confirm you're not a bot")
+	ErrRateLimited                = constError("youtube rate limited the requests")
 	ErrInvalidPlaylist            = constError("no playlist detected or invalid playlist ID")
 )
 
@@ -36,6 +39,11 @@ type ErrUnexpectedStatusCode int
 
 func (err ErrUnexpectedStatusCode) Error() string {
 	return fmt.Sprintf("unexpected status code: %d", err)
+}
+
+// Is reports HTTP 429 (Too Many Requests) as ErrRateLimited
+func (err ErrUnexpectedStatusCode) Is(target error) bool {
+	return target == ErrRateLimited && int(err) == http.StatusTooManyRequests
 }
 
 type ErrPlaylistStatus struct {

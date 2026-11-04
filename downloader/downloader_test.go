@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -18,6 +19,15 @@ var testDownloader = func() (dl Downloader) {
 	return
 }()
 
+// skipIfBlocked skips integration tests when YouTube blocks the requests,
+// which is common for CI runners in data centers.
+func skipIfBlocked(t *testing.T, err error) {
+	t.Helper()
+	if errors.Is(err, youtube.ErrBotCheck) || errors.Is(err, youtube.ErrRateLimited) {
+		t.Skip("skipping:", err)
+	}
+}
+
 func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	// the following code doesn't work under debugger, please delete download files manually
@@ -33,6 +43,7 @@ func TestDownload_FirstStream(t *testing.T) {
 
 	// youtube-dl test video
 	video, err := testDownloader.GetVideoContext(ctx, "ezfPHVOf-NE")
+	skipIfBlocked(t, err)
 	require.NoError(err)
 	require.NotNil(video)
 

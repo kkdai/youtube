@@ -13,6 +13,7 @@ func TestYoutube_GetItagInfo(t *testing.T) {
 	// url from issue #25
 	url := "https://www.youtube.com/watch?v=rFejpH_tAHM"
 	video, err := client.GetVideo(url)
+	skipIfBlocked(t, err)
 	require.NoError(err)
 	require.GreaterOrEqual(len(video.Formats), 8)
 }
