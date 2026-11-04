@@ -217,16 +217,16 @@ func TestGetPlaylist(t *testing.T) {
 	require.NoError(err)
 	require.NotNil(playlist)
 
-	assert.Equal(playlist.Title, "Test Playlist")
-	assert.Equal(playlist.Description, "")
-	assert.Equal(playlist.Author, "GoogleVoice")
-	assert.Equal(len(playlist.Videos), 8)
+	assert.Equal("Test Playlist", playlist.Title)
+	assert.Equal("", playlist.Description)
+	assert.Equal("GoogleVoice", playlist.Author)
+	assert.Len(playlist.Videos, 8)
 
 	v := playlist.Videos[7]
-	assert.Equal(v.ID, "dsUXAEzaC3Q")
-	assert.Equal(v.Title, "Michael Jackson - Bad")
-	assert.Equal(v.Author, "Michael Jackson")
-	assert.Equal(v.Duration, 4*time.Minute+20*time.Second)
+	assert.Equal("dsUXAEzaC3Q", v.ID)
+	assert.Equal("Michael Jackson - Bad (Shortened Version)", v.Title)
+	assert.Equal("Michael Jackson", v.Author)
+	assert.Equal(4*time.Minute+20*time.Second, v.Duration)
 
 	assert.NotEmpty(v.Thumbnails)
 	assert.NotEmpty(v.Thumbnails[0].URL)

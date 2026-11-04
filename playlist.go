@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	sjson "github.com/bitly/go-simplejson"
@@ -92,16 +93,20 @@ func (p *Playlist) parsePlaylistInfo(ctx context.Context, client *Client, body [
 		return fmt.Errorf("no playlist header / metadata found")
 	}
 
-	metadata = metadata.Get("playlistHeaderRenderer")
+	if header, ok := metadata.CheckGet("pageHeaderRenderer"); ok {
+		p.parsePageHeader(header)
+	} else {
+		metadata = metadata.Get("playlistHeaderRenderer")
 
-	p.Title = sjsonGetText(metadata, "title")
-	p.Description = sjsonGetText(metadata, "description", "descriptionText")
-	p.Author = j.GetPath("sidebar", "playlistSidebarRenderer", "items").GetIndex(1).
-		GetPath("playlistSidebarSecondaryInfoRenderer", "videoOwner", "videoOwnerRenderer", "title", "runs").
-		GetIndex(0).Get("text").MustString()
+		p.Title = sjsonGetText(metadata, "title")
+		p.Description = sjsonGetText(metadata, "description", "descriptionText")
+		p.Author = j.GetPath("sidebar", "playlistSidebarRenderer", "items").GetIndex(1).
+			GetPath("playlistSidebarSecondaryInfoRenderer", "videoOwner", "videoOwnerRenderer", "title", "runs").
+			GetIndex(0).Get("text").MustString()
 
-	if len(p.Author) == 0 {
-		p.Author = sjsonGetText(metadata, "owner", "ownerText")
+		if len(p.Author) == 0 {
+			p.Author = sjsonGetText(metadata, "owner", "ownerText")
+		}
 	}
 
 	contents, ok := j.CheckGet("contents")
@@ -182,6 +187,38 @@ func (p *Playlist) parsePlaylistInfo(ctx context.Context, client *Client, body [
 	}
 
 	return err
+}
+
+// parsePageHeader extracts title, description and author from the
+// header.pageHeaderRenderer layout that YouTube currently returns.
+func (p *Playlist) parsePageHeader(header *sjson.Json) {
+	p.Title = header.Get("pageTitle").MustString()
+
+	content := header.Get("content")
+	vm, ok := content.CheckGet("pageHeaderViewModel")
+	if !ok {
+		vm = content.GetPath("elementRenderer", "newElement", "type", "componentType",
+			"model", "youtubeModel", "viewModel", "pageHeaderViewModel")
+	}
+
+	if p.Title == "" {
+		p.Title = vm.GetPath("title", "dynamicTextViewModel", "text", "content").MustString()
+	}
+
+	p.Description = vm.GetPath("description", "descriptionPreviewViewModel", "description", "content").MustString()
+
+	// The owner is rendered as "by <name>"; requests are sent with hl=en.
+	rows := vm.GetPath("metadata", "contentMetadataViewModel", "metadataRows")
+	for i := range rows.MustArray() {
+		parts := rows.GetIndex(i).Get("metadataParts")
+		for k := range parts.MustArray() {
+			text := parts.GetIndex(k).GetPath("avatarStack", "avatarStackViewModel", "text", "content").MustString()
+			if text != "" {
+				p.Author = strings.TrimPrefix(text, "by ")
+				return
+			}
+		}
+	}
 }
 
 func extractPlaylistEntries(data []byte) ([]*PlaylistEntry, string, error) {
