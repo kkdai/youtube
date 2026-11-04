@@ -1,7 +1,6 @@
 package youtube
 
 import (
-	"encoding/base64"
 	"strings"
 
 	sjson "github.com/bitly/go-simplejson"
@@ -93,12 +92,4 @@ func sjsonGetText(j *sjson.Json, paths ...string) string {
 func getContinuation(j *sjson.Json) string {
 	return j.GetPath("continuations").
 		GetIndex(0).GetPath("nextContinuationData", "continuation").MustString()
-}
-
-func base64PadEnc(str string) string {
-	return base64.StdEncoding.EncodeToString([]byte(str))
-}
-
-func base64Enc(str string) string {
-	return base64.RawStdEncoding.EncodeToString([]byte(str))
 }

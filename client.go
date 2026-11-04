@@ -261,15 +261,6 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, e
 	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/player?key="+c.client.Key, data)
 }
 
-func (c *Client) transcriptDataByInnertube(ctx context.Context, id string, lang string) ([]byte, error) {
-	data := innertubeRequest{
-		Context: prepareInnertubeContext(*c.client),
-		Params:  transcriptVideoID(id, lang),
-	}
-
-	return c.httpPostBodyBytes(ctx, "https://www.youtube.com/youtubei/v1/get_transcript?key="+c.client.Key, data)
-}
-
 func randString(alphabet string, sz int) string {
 	var buf strings.Builder
 	buf.Grow(sz)
@@ -334,22 +325,6 @@ func prepareInnertubePlaylistData(ID string, continuation bool, clientInfo Clien
 		RacyCheckOk:    true,
 		Params:         playerParams,
 	}
-}
-
-// transcriptVideoID encodes the video ID to the param used to fetch transcripts.
-func transcriptVideoID(videoID string, lang string) string {
-	langCode := encTranscriptLang(lang)
-
-	// This can be optionally appened to the Sprintf str, not sure what it means
-	// *3engagement-panel-searchable-transcript-search-panel\x30\x00\x38\x01\x40\x01
-	return base64Enc(fmt.Sprintf("\n\x0b%s\x12\x12%s\x18\x01", videoID, langCode))
-}
-
-func encTranscriptLang(languageCode string) string {
-	s := fmt.Sprintf("\n\x03asr\x12\x02%s\x1a\x00", languageCode)
-	s = base64PadEnc(s)
-
-	return url.QueryEscape(s)
 }
 
 // GetPlaylist fetches playlist metadata

@@ -3,9 +3,10 @@ package youtube
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
-	"strconv"
+	"net/url"
 	"strings"
 )
 
@@ -53,6 +54,10 @@ func (c *Client) GetTranscript(video *Video, lang string) (VideoTranscript, erro
 
 // GetTranscriptCtx fetches the video transcript if available.
 //
+// The transcript is read from the video's caption track in the given language,
+// preferring the automatically generated one. The caption tracks of the video
+// are used if present, otherwise they are fetched.
+//
 // Not all videos have transcripts, only relatively new videos.
 // If transcripts are disabled or not available, ErrTranscriptDisabled is returned.
 func (c *Client) GetTranscriptCtx(ctx context.Context, video *Video, lang string) (VideoTranscript, error) {
@@ -62,153 +67,138 @@ func (c *Client) GetTranscriptCtx(ctx context.Context, video *Video, lang string
 		return nil, fmt.Errorf("no video provided")
 	}
 
-	body, err := c.transcriptDataByInnertube(ctx, video.ID, lang)
+	tracks := video.CaptionTracks
+	if len(tracks) == 0 {
+		var err error
+		if tracks, err = c.captionTracks(ctx, video.ID); err != nil {
+			return nil, err
+		}
+	}
+
+	track := findCaptionTrack(tracks, lang)
+	if track == nil {
+		return nil, ErrTranscriptDisabled
+	}
+
+	body, err := c.httpGetBodyBytes(ctx, srv3URL(track.BaseURL))
 	if err != nil {
 		return nil, err
 	}
 
-	transcript, err := parseTranscript(body)
+	return parseTranscript(body)
+}
+
+// captionTracks fetches the caption tracks of a video from the player API.
+func (c *Client) captionTracks(ctx context.Context, id string) ([]CaptionTrack, error) {
+	body, err := c.videoDataByInnertube(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return transcript, nil
+	var prData playerResponseData
+	if err := json.Unmarshal(body, &prData); err != nil {
+		return nil, err
+	}
+
+	// e.g. ErrBotCheck, so the caller doesn't assume missing captions
+	if err := (&Video{}).isVideoDownloadable(prData, false); err != nil {
+		return nil, err
+	}
+
+	return prData.Captions.PlayerCaptionsTracklistRenderer.CaptionTracks, nil
+}
+
+// findCaptionTrack returns the caption track for the language, preferring the
+// automatically generated one ("asr").
+func findCaptionTrack(tracks []CaptionTrack, lang string) *CaptionTrack {
+	var found *CaptionTrack
+
+	for i := range tracks {
+		if tracks[i].LanguageCode != lang {
+			continue
+		}
+		if tracks[i].Kind == "asr" {
+			return &tracks[i]
+		}
+		if found == nil {
+			found = &tracks[i]
+		}
+	}
+
+	return found
+}
+
+// srv3URL requests the caption track in the srv3 format, which parseTranscript expects.
+func srv3URL(baseURL string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return baseURL
+	}
+
+	q := u.Query()
+	q.Set("fmt", "srv3")
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
+// timedText is the srv3 XML format of a caption track.
+type timedText struct {
+	Paragraphs []struct {
+		StartMs    int    `xml:"t,attr"`
+		DurationMs int    `xml:"d,attr"`
+		Text       string `xml:",chardata"`
+		// Words of automatically generated captions
+		Words []struct {
+			Text string `xml:",chardata"`
+		} `xml:"s"`
+	} `xml:"body>p"`
 }
 
 func parseTranscript(body []byte) (VideoTranscript, error) {
-	var resp transcriptResp
-	if err := json.Unmarshal(body, &resp); err != nil {
+	var tt timedText
+	if err := xml.Unmarshal(body, &tt); err != nil {
 		return nil, err
 	}
 
-	if len(resp.Actions) > 0 {
-		// Android client response
-		if app := resp.Actions[0].AppSegment; app != nil {
-			return getSegments(app)
+	segments := make(VideoTranscript, 0, len(tt.Paragraphs))
+
+	for _, p := range tt.Paragraphs {
+		var text strings.Builder
+		text.WriteString(p.Text)
+		for _, w := range p.Words {
+			text.WriteString(w.Text)
 		}
 
-		// Web client response
-		if web := resp.Actions[0].WebSegment; web != nil {
-			return nil, fmt.Errorf("not implemented")
+		// skip line breaks of automatically generated captions
+		content := strings.TrimSpace(text.String())
+		if content == "" {
+			continue
 		}
-	}
-
-	return nil, ErrTranscriptDisabled
-}
-
-type segmenter interface {
-	ParseSegments() []TranscriptSegment
-}
-
-func getSegments(f segmenter) (VideoTranscript, error) {
-	if segments := f.ParseSegments(); len(segments) > 0 {
-		return segments, nil
-	}
-
-	return nil, ErrTranscriptDisabled
-}
-
-// transcriptResp is the JSON structure as returned by the transcript API.
-type transcriptResp struct {
-	Actions []struct {
-		AppSegment *appData `json:"elementsCommand"`
-		WebSegment *webData `json:"updateEngagementPanelAction"`
-	} `json:"actions"`
-}
-
-type appData struct {
-	TEC struct {
-		Args struct {
-			ListArgs struct {
-				Ow struct {
-					InitialSeg []struct {
-						TranscriptSegment struct {
-							StartMs string `json:"startMs"`
-							EndMs   string `json:"endMs"`
-							Text    struct {
-								String struct {
-									// Content is the actual transctipt text
-									Content string `json:"content"`
-								} `json:"elementsAttributedString"`
-							} `json:"snippet"`
-							StartTimeText struct {
-								String struct {
-									// Content is the fomratted timestamp, e.g. '4:00'
-									Content string `json:"content"`
-								} `json:"elementsAttributedString"`
-							} `json:"startTimeText"`
-						} `json:"transcriptSegmentRenderer"`
-					} `json:"initialSegments"`
-				} `json:"overwrite"`
-			} `json:"transformTranscriptSegmentListArguments"`
-		} `json:"arguments"`
-	} `json:"transformEntityCommand"`
-}
-
-func (s *appData) ParseSegments() []TranscriptSegment {
-	rawSegments := s.TEC.Args.ListArgs.Ow.InitialSeg
-	segments := make([]TranscriptSegment, 0, len(rawSegments))
-
-	for _, segment := range rawSegments {
-		startMs, _ := strconv.Atoi(segment.TranscriptSegment.StartMs)
-		endMs, _ := strconv.Atoi(segment.TranscriptSegment.EndMs)
 
 		segments = append(segments, TranscriptSegment{
-			Text:       segment.TranscriptSegment.Text.String.Content,
-			StartMs:    startMs,
-			OffsetText: segment.TranscriptSegment.StartTimeText.String.Content,
-			Duration:   endMs - startMs,
+			Text:       content,
+			StartMs:    p.StartMs,
+			OffsetText: formatOffset(p.StartMs),
+			Duration:   p.DurationMs,
 		})
 	}
 
-	return segments
-}
-
-type webData struct {
-	Content struct {
-		TR struct {
-			Body struct {
-				TBR struct {
-					Cues []struct {
-						Transcript struct {
-							FormattedStartOffset struct {
-								SimpleText string `json:"simpleText"`
-							} `json:"formattedStartOffset"`
-							Cues []struct {
-								TranscriptCueRenderer struct {
-									Cue struct {
-										SimpleText string `json:"simpleText"`
-									} `json:"cue"`
-									StartOffsetMs string `json:"startOffsetMs"`
-									DurationMs    string `json:"durationMs"`
-								} `json:"transcriptCueRenderer"`
-							} `json:"cues"`
-						} `json:"transcriptCueGroupRenderer"`
-					} `json:"cueGroups"`
-				} `json:"transcriptSearchPanelRenderer"`
-			} `json:"content"`
-		} `json:"transcriptRenderer"`
-	} `json:"content"`
-}
-
-func (s *webData) ParseSegments() []TranscriptSegment {
-	// TODO: doesn't actually work now, check json.
-	cues := s.Content.TR.Body.TBR.Cues
-	segments := make([]TranscriptSegment, 0, len(cues))
-
-	for _, s := range cues {
-		formatted := s.Transcript.FormattedStartOffset.SimpleText
-		segment := s.Transcript.Cues[0].TranscriptCueRenderer
-		start, _ := strconv.Atoi(segment.StartOffsetMs)
-		duration, _ := strconv.Atoi(segment.DurationMs)
-
-		segments = append(segments, TranscriptSegment{
-			Text:       segment.Cue.SimpleText,
-			StartMs:    start,
-			OffsetText: formatted,
-			Duration:   duration,
-		})
+	if len(segments) == 0 {
+		return nil, ErrTranscriptDisabled
 	}
 
-	return segments
+	return segments, nil
+}
+
+// formatOffset formats a timestamp like YouTube does, e.g. "4:05" or "1:02:03".
+func formatOffset(ms int) string {
+	seconds := ms / 1000
+	hours, minutes, seconds := seconds/3600, seconds%3600/60, seconds%60
+
+	if hours > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, seconds)
+	}
+
+	return fmt.Sprintf("%d:%02d", minutes, seconds)
 }
