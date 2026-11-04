@@ -278,19 +278,20 @@ func randString(alphabet string, sz int) string {
 }
 
 func randomVisitorData(countryCode string) string {
+	// ProtoBuilder writes into a bytes.Buffer, which never returns an error.
 	var pbE2 ProtoBuilder
 
-	pbE2.String(2, "")
-	pbE2.Varint(4, int64(rand.Intn(255)+1))
+	_ = pbE2.String(2, "")
+	_ = pbE2.Varint(4, int64(rand.Intn(255)+1))
 
 	var pbE ProtoBuilder
-	pbE.String(1, countryCode)
-	pbE.Bytes(2, pbE2.ToBytes())
+	_ = pbE.String(1, countryCode)
+	_ = pbE.Bytes(2, pbE2.ToBytes())
 
 	var pb ProtoBuilder
-	pb.String(1, randString(ContentPlaybackNonceAlphabet, 11))
-	pb.Varint(5, time.Now().Unix()-int64(rand.Intn(600000)))
-	pb.Bytes(6, pbE.ToBytes())
+	_ = pb.String(1, randString(ContentPlaybackNonceAlphabet, 11))
+	_ = pb.Varint(5, time.Now().Unix()-int64(rand.Intn(600000)))
+	_ = pb.Bytes(6, pbE.ToBytes())
 
 	return pb.ToURLEncodedBase64()
 }

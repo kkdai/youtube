@@ -1,5 +1,6 @@
 FILES_TO_FMT      ?= $(shell find . -path ./vendor -prune -o -name '*.go' -print)
 LOGLEVEL	?= debug
+GOLANGCI_LINT_VERSION ?= v2.15.0
 
 ## help: Show makefile commands
 .PHONY: help
@@ -25,7 +26,7 @@ deps:
 ## lint: Run golangci-lint check
 .PHONY: lint
 lint:
-	command -v golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
+	command -v golangci-lint || go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 	echo "golangci-lint checking..."
 	golangci-lint run --timeout=30m ./cmd/... ./...
 	go vet ./...

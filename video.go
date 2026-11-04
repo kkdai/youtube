@@ -29,8 +29,6 @@ type Video struct {
 	CaptionTracks   []CaptionTrack
 }
 
-const dateFormat = "2006-01-02"
-
 func (v *Video) parseVideoInfo(body []byte) error {
 	var prData playerResponseData
 	if err := json.Unmarshal(body, &prData); err != nil {

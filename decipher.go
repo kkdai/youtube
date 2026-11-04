@@ -194,9 +194,10 @@ func (config playerConfig) extraFunction(name string) (string, error) {
 			if config[pos-1] == '\\' && config[pos-2] != '\\' {
 				continue
 			}
-			if strChar == 0 {
+			switch strChar {
+			case 0:
 				strChar = b
-			} else if strChar == b {
+			case b:
 				strChar = 0
 			}
 		}

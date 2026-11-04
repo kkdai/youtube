@@ -1,13 +1,13 @@
 package youtube
 
 import (
+	"context"
 	"io"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 )
 
 const (
