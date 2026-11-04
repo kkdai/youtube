@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -271,8 +271,8 @@ func (c *Client) transcriptDataByInnertube(ctx context.Context, id string, lang 
 func randString(alphabet string, sz int) string {
 	var buf strings.Builder
 	buf.Grow(sz)
-	for i := 0; i < sz; i++ {
-		buf.WriteByte(alphabet[rand.Intn(len(alphabet))])
+	for range sz {
+		buf.WriteByte(alphabet[rand.IntN(len(alphabet))])
 	}
 	return buf.String()
 }
@@ -282,7 +282,7 @@ func randomVisitorData(countryCode string) string {
 	var pbE2 ProtoBuilder
 
 	_ = pbE2.String(2, "")
-	_ = pbE2.Varint(4, int64(rand.Intn(255)+1))
+	_ = pbE2.Varint(4, int64(rand.IntN(255)+1))
 
 	var pbE ProtoBuilder
 	_ = pbE.String(1, countryCode)
@@ -290,7 +290,7 @@ func randomVisitorData(countryCode string) string {
 
 	var pb ProtoBuilder
 	_ = pb.String(1, randString(ContentPlaybackNonceAlphabet, 11))
-	_ = pb.Varint(5, time.Now().Unix()-int64(rand.Intn(600000)))
+	_ = pb.Varint(5, time.Now().Unix()-int64(rand.IntN(600000)))
 	_ = pb.Bytes(6, pbE.ToBytes())
 
 	return pb.ToURLEncodedBase64()
@@ -478,7 +478,7 @@ func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.P
 	}
 
 	currentChunk := atomic.Uint32{}
-	for i := 0; i < maxRoutines; i++ {
+	for range maxRoutines {
 		go func() {
 			for {
 				chunkIndex := int(currentChunk.Add(1)) - 1
@@ -501,7 +501,7 @@ func (c *Client) downloadChunked(ctx context.Context, req *http.Request, w *io.P
 
 	go func() {
 		// copy chunks into the PipeWriter
-		for i := 0; i < len(chunks); i++ {
+		for i := range chunks {
 			select {
 			case <-cancelCtx.Done():
 				abort(context.Canceled)
@@ -567,7 +567,7 @@ func (c *Client) httpDo(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Sec-Fetch-Mode", "navigate")
 
 	if len(c.consentID) == 0 {
-		c.consentID = strconv.Itoa(rand.Intn(899) + 100) //nolint:gosec
+		c.consentID = strconv.Itoa(rand.IntN(899) + 100) //nolint:gosec
 	}
 
 	req.AddCookie(&http.Cookie{
@@ -628,7 +628,7 @@ func (c *Client) httpGetBodyBytes(ctx context.Context, url string) ([]byte, erro
 }
 
 // httpPost does a HTTP POST request with a body, checks the response to be a 200 OK and returns it
-func (c *Client) httpPost(ctx context.Context, url string, body interface{}) (*http.Response, error) {
+func (c *Client) httpPost(ctx context.Context, url string, body any) (*http.Response, error) {
 	data, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -715,7 +715,7 @@ func (c *Client) refreshVisitorId() error {
 }
 
 // httpPostBodyBytes reads the whole HTTP body and returns it
-func (c *Client) httpPostBodyBytes(ctx context.Context, url string, body interface{}) ([]byte, error) {
+func (c *Client) httpPostBodyBytes(ctx context.Context, url string, body any) ([]byte, error) {
 	resp, err := c.httpPost(ctx, url, body)
 	if err != nil {
 		return nil, err

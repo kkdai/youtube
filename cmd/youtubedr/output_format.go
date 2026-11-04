@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -26,10 +27,8 @@ func addFormatFlag(flagSet *pflag.FlagSet) {
 }
 
 func checkOutputFormat() error {
-	for i := range outputFormats {
-		if outputFormats[i] == outputFormat {
-			return nil
-		}
+	if slices.Contains(outputFormats, outputFormat) {
+		return nil
 	}
 
 	return errInvalidFormat(outputFormat)
@@ -37,7 +36,7 @@ func checkOutputFormat() error {
 
 type outputWriter func(w io.Writer)
 
-func writeOutput(w io.Writer, v interface{}, plainWriter outputWriter) error {
+func writeOutput(w io.Writer, v any, plainWriter outputWriter) error {
 	switch outputFormat {
 	case outputFormatPlain:
 		plainWriter(w)

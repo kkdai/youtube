@@ -5,7 +5,6 @@ go 1.26.0
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/dop251/goja v0.0.0-20261103214539-f5d1d0025744
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10

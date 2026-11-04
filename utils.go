@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"encoding/base64"
+	"strings"
 
 	sjson "github.com/bitly/go-simplejson"
 )
@@ -25,10 +26,7 @@ func getChunks(totalSize, chunkSize int64) []chunk {
 	}
 
 	for start := int64(0); start < totalSize; start += chunkSize {
-		end := chunkSize + start - 1
-		if end > totalSize-1 {
-			end = totalSize - 1
-		}
+		end := min(chunkSize+start-1, totalSize-1)
 
 		chunks = append(chunks, chunk{start, end, make(chan []byte, 1)})
 	}
@@ -78,15 +76,15 @@ func sjsonGetText(j *sjson.Json, paths ...string) string {
 	}
 
 	if p := j.Get("runs"); isValidJSON(p) {
-		var text string
+		var text strings.Builder
 
 		for i := 0; i < len(p.MustArray()); i++ {
 			if textNode := p.GetIndex(i).Get("text"); isValidJSON(textNode) {
-				text += textNode.MustString()
+				text.WriteString(textNode.MustString())
 			}
 		}
 
-		return text
+		return text.String()
 	}
 
 	return ""

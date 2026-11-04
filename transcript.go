@@ -35,12 +35,12 @@ func (tr TranscriptSegment) String() string {
 type VideoTranscript []TranscriptSegment
 
 func (vt VideoTranscript) String() string {
-	var str string
+	var str strings.Builder
 	for _, tr := range vt {
-		str += tr.String() + "\n"
+		str.WriteString(tr.String() + "\n")
 	}
 
-	return str
+	return str.String()
 }
 
 // GetTranscript fetches the video transcript if available.
