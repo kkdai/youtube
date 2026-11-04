@@ -174,8 +174,22 @@ func TestDownload_WhenPlayabilityStatusIsNotOK(t *testing.T) {
 
 // See https://github.com/kkdai/youtube/pull/238
 func TestDownload_SensitiveContent(t *testing.T) {
-	_, err := testClient.GetVideo("MS91knuzoOA")
+	// The embedded client can't confirm the age without a login
+	client := Client{client: &EmbeddedClient}
+
+	// Age-gated video with embedding disabled, taken from yt-dlp's test cases
+	_, err := client.GetVideo("Tq92D6wQ1mg")
+	require.ErrorIs(t, err, ErrLoginRequired)
+	require.EqualError(t, err, "login required to confirm your age")
+}
+
+func TestDownload_AgeRestrictionKeepsClient(t *testing.T) {
+	client := Client{}
+
+	// Falls back to the embedded client internally
+	_, err := client.GetVideo("Tq92D6wQ1mg")
 	require.EqualError(t, err, "can't bypass age restriction: embedding of this video has been disabled")
+	require.Same(t, &DefaultClient, client.client)
 }
 
 func TestParse_PublishDate(t *testing.T) {

@@ -127,9 +127,11 @@ func (c *Client) videoFromID(ctx context.Context, id string) (*Video, error) {
 
 	// If the uploader marked the video as inappropriate for some ages, use embed player
 	if errors.Is(err, ErrLoginRequired) {
-		c.client = &EmbeddedClient
+		// Use a copy, so that later requests of this client still use its own client type
+		embedded := *c
+		embedded.client = &EmbeddedClient
 
-		bodyEmbed, errEmbed := c.videoDataByInnertube(ctx, id)
+		bodyEmbed, errEmbed := embedded.videoDataByInnertube(ctx, id)
 		if errEmbed == nil {
 			errEmbed = v.parseVideoInfo(bodyEmbed)
 		}
