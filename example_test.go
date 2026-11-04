@@ -11,7 +11,7 @@ import (
 
 // ExampleDownload : Example code for how to use this package for download video.
 func ExampleClient() {
-	videoID := "BaW_jenozKc"
+	videoID := "ezfPHVOf-NE"
 	client := youtube.Client{}
 
 	video, err := client.GetVideo(videoID)
