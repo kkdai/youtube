@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/kkdai/youtube/v2"
-	"github.com/vbauerster/mpb/v5"
-	"github.com/vbauerster/mpb/v5/decor"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 // Downloader offers high level functions to download videos into files
@@ -189,14 +189,21 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 		mpb.AppendDecorators(
 			decor.EwmaETA(decor.ET_STYLE_GO, 90),
 			decor.Name(" ] "),
-			decor.EwmaSpeed(decor.UnitKiB, "% .2f", 60),
+			decor.EwmaSpeed(decor.SizeB1024(0), "% .2f", 60),
 		),
 	)
 
-	reader := bar.ProxyReader(stream)
+	reader, err := bar.ProxyReader(stream)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
 	mw := io.MultiWriter(out, prog)
 	_, err = io.Copy(mw, reader)
 	if err != nil {
+		bar.Abort(false)
+		progress.Wait()
 		return err
 	}
 

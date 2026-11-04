@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 	"github.com/spf13/cobra"
 )
 
@@ -78,13 +78,13 @@ var infoCmd = &cobra.Command{
 			})
 		}
 
-		exitOnError(writeOutput(os.Stdout, &videoInfo, func(w io.Writer) {
-			writeInfoOutput(w, &videoInfo)
+		exitOnError(writeOutput(os.Stdout, &videoInfo, func(w io.Writer) error {
+			return writeInfoOutput(w, &videoInfo)
 		}))
 	},
 }
 
-func writeInfoOutput(w io.Writer, info *VideoInfo) {
+func writeInfoOutput(w io.Writer, info *VideoInfo) error {
 	fmt.Println("Title:      ", info.Title)
 	fmt.Println("Author:     ", info.Author)
 	fmt.Println("Duration:   ", info.Duration)
@@ -93,22 +93,22 @@ func writeInfoOutput(w io.Writer, info *VideoInfo) {
 	}
 	fmt.Println()
 
-	table := tablewriter.NewWriter(w)
-	table.SetAutoWrapText(false)
-	table.SetHeader([]string{
-		"itag",
-		"fps",
-		"video\nquality",
-		"audio\nquality",
-		"audio\nchannels",
-		"size [MB]",
-		"bitrate",
-		"MimeType",
-		"language",
-	})
+	l, r := tw.AlignLeft, tw.AlignRight
+	table := newTable(w, r, r, l, l, r, r, r, l, l)
+	table.Header(
+		"ITAG",
+		"FPS",
+		"VIDEO\nQUALITY",
+		"AUDIO\nQUALITY",
+		"AUDIO\nCHANNELS",
+		"SIZE [MB]",
+		"BITRATE",
+		"MIMETYPE",
+		"LANGUAGE",
+	)
 
 	for _, format := range info.Formats {
-		table.Append([]string{
+		err := table.Append([]string{
 			strconv.Itoa(format.Itag),
 			strconv.Itoa(format.FPS),
 			format.VideoQuality,
@@ -119,9 +119,12 @@ func writeInfoOutput(w io.Writer, info *VideoInfo) {
 			format.MimeType,
 			format.Language,
 		})
+		if err != nil {
+			return err
+		}
 	}
 
-	table.Render()
+	return table.Render()
 }
 
 var printDescription bool

@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -41,32 +40,35 @@ var (
 				})
 			}
 
-			exitOnError(writeOutput(os.Stdout, &playlistInfo, func(w io.Writer) {
-				writePlaylistOutput(w, &playlistInfo)
+			exitOnError(writeOutput(os.Stdout, &playlistInfo, func(w io.Writer) error {
+				return writePlaylistOutput(w, &playlistInfo)
 			}))
 		},
 	}
 )
 
-func writePlaylistOutput(w io.Writer, info *PlaylistInfo) {
+func writePlaylistOutput(w io.Writer, info *PlaylistInfo) error {
 	fmt.Println("Title:      ", info.Title)
 	fmt.Println("Author:     ", info.Author)
 	fmt.Println("# Videos:   ", len(info.Videos))
 	fmt.Println()
 
-	table := tablewriter.NewWriter(w)
-	table.SetAutoWrapText(false)
-	table.SetHeader([]string{"ID", "Author", "Title", "Duration"})
+	table := newTable(w)
+	table.Header("ID", "AUTHOR", "TITLE", "DURATION")
 
 	for _, vid := range info.Videos {
-		table.Append([]string{
+		err := table.Append([]string{
 			vid.ID,
 			vid.Author,
 			vid.Title,
 			fmt.Sprintf("%v", vid.Duration),
 		})
+		if err != nil {
+			return err
+		}
 	}
-	table.Render()
+
+	return table.Render()
 }
 
 func init() {

@@ -8,8 +8,24 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 	"github.com/spf13/pflag"
 )
+
+// newTable returns an ASCII table writer for plain output that never wraps
+// cell text. align sets the alignment of each column's rows; headers are
+// printed as given and centered.
+func newTable(w io.Writer, align ...tw.Align) *tablewriter.Table {
+	return tablewriter.NewTable(w,
+		tablewriter.WithSymbols(tw.NewSymbols(tw.StyleASCII)),
+		tablewriter.WithHeaderAutoFormat(tw.Off),
+		tablewriter.WithHeaderAutoWrap(tw.WrapNone),
+		tablewriter.WithHeaderAlignment(tw.AlignCenter),
+		tablewriter.WithRowAutoWrap(tw.WrapNone),
+		tablewriter.WithRowAlignmentConfig(tw.CellAlignment{PerColumn: align}),
+	)
+}
 
 // the selected output Format
 var outputFormat string
@@ -34,13 +50,12 @@ func checkOutputFormat() error {
 	return errInvalidFormat(outputFormat)
 }
 
-type outputWriter func(w io.Writer)
+type outputWriter func(w io.Writer) error
 
 func writeOutput(w io.Writer, v any, plainWriter outputWriter) error {
 	switch outputFormat {
 	case outputFormatPlain:
-		plainWriter(w)
-		return nil
+		return plainWriter(w)
 	case outputFormatJSON:
 		encoder := json.NewEncoder(w)
 		encoder.SetIndent("", "  ")
