@@ -15,7 +15,7 @@ help: Makefile
 ## build: Build project
 .PHONY: build
 build:
-	goreleaser --rm-dist
+	goreleaser release --clean
 
 ## deps: Ensures fresh go.mod and go.sum
 .PHONY: deps
