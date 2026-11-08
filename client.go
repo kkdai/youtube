@@ -44,6 +44,10 @@ type Client struct {
 	// If not set, http.DefaultClient will be used
 	HTTPClient *http.Client
 
+	// PlayerParams is an optional opaque value sent in the params field of
+	// Innertube Player API requests. An empty string preserves existing behavior.
+	PlayerParams string
+
 	// MaxRoutines to use when downloading a video.
 	MaxRoutines int
 
@@ -249,7 +253,7 @@ func (c *Client) videoDataByInnertube(ctx context.Context, id string) ([]byte, e
 		Context:        prepareInnertubeContext(*c.client),
 		ContentCheckOK: true,
 		RacyCheckOk:    true,
-		// Params:                   playerParams,
+		Params:         c.PlayerParams,
 		PlaybackContext: &playbackContext{
 			ContentPlaybackContext: contentPlaybackContext{
 				// SignatureTimestamp: sts,
